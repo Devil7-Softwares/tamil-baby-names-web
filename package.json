@@ -1,0 +1,10 @@
+{
+  "name": "tamil-baby-names-web",
+  "version": "1.0.0",
+  "description": "Web version of https://github.com/Devil7-Softwares/Tamil_Baby_Names",
+  "main": "index.js",
+  "repository": "https://github.com/Devil7-Softwares/tamil-baby-names-web",
+  "author": "Dineshkumar T (Devil7DK)",
+  "license": "Apache-2.0",
+  "private": true
+}
