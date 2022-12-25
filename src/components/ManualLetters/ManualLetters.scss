@@ -1,0 +1,13 @@
+div.letters {
+    display: grid;
+    flex-flow: row wrap;
+    margin-top: 10px;
+    grid-template-columns: repeat(auto-fill, 40px);
+    gap: 5px;
+
+    >button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}

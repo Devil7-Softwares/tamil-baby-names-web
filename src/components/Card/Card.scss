@@ -1,0 +1,12 @@
+div.card {
+    padding: 10px;
+    background: #00000080;
+    backdrop-filter: blur(1px);
+
+    border-radius: 5px;
+    box-shadow: 0 0 5px #000;
+
+    >div.progress-overlay {
+        border-radius: 5px;
+    }
+}

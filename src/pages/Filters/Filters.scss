@@ -1,0 +1,43 @@
+div.card.filters {
+    min-width: 30vw;
+
+    h1,
+    h2 {
+        margin: 0.7em 0 0.2em 0;
+        font-weight: 500;
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    h2 {
+        font-size: 1.3em;
+    }
+
+    button.generate {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10px;
+        width: 100%;
+        padding: 25px;
+
+        font-size: 1.2em;
+    }
+
+    div.recaptcha {
+        margin-top: 15px;
+        width: 100%;
+    }
+
+    div.splitter {
+        background-color: #0000004f;
+        height: 2px;
+        margin-top: 15px;
+    }
+}

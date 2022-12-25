@@ -6,5 +6,68 @@
   "repository": "https://github.com/Devil7-Softwares/tamil-baby-names-web",
   "author": "Dineshkumar T (Devil7DK)",
   "license": "Apache-2.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "start": "concurrently --kill-others npm:start:*",
+    "start:backend": "ts-node-dev src/Server.ts",
+    "start:frontend": "parcel --no-autoinstall --target frontend",
+    "build": "parcel build --target frontend --target backend"
+  },
+  "dependencies": {
+    "@devil7softwares/react-drifter-stars": "^1.0.3",
+    "axios": "^1.2.1",
+    "clsx": "^1.2.1",
+    "cookie-parser": "^1.4.6",
+    "dayjs": "^1.11.7",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "file-saver": "^2.0.5",
+    "jsonwebtoken": "^8.5.1",
+    "mysql2": "^2.3.3",
+    "pdfmake": "^0.2.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-google-recaptcha": "^2.1.0",
+    "react-router-dom": "^6.5.0",
+    "sequelize": "^6.27.0"
+  },
+  "devDependencies": {
+    "@parcel/transformer-sass": "2.8.2",
+    "@types/cookie-parser": "^1.4.3",
+    "@types/express": "^4.17.15",
+    "@types/file-saver": "^2.0.5",
+    "@types/jsonwebtoken": "^8.5.9",
+    "@types/node": "^18.11.16",
+    "@types/pdfmake": "^0.2.2",
+    "@types/react": "^18.0.26",
+    "@types/react-dom": "^18.0.9",
+    "@types/react-google-recaptcha": "^2.1.5",
+    "concurrently": "^7.6.0",
+    "parcel": "^2.8.2",
+    "parcel-reporter-static-files-copy": "^1.4.0",
+    "prettier": "^2.8.1",
+    "process": "^0.11.10",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.9.4"
+  },
+  "targets": {
+    "frontend": {
+      "context": "browser",
+      "source": "src/index.html",
+      "distDir": "dist/public"
+    },
+    "backend": {
+      "context": "node",
+      "source": "src/Server.ts",
+      "includeNodeModules": false,
+      "distDir": "dist"
+    }
+  },
+  "alias": {
+    "buffer": false
+  },
+  "staticFiles": {
+    "staticPath": "src/assets/fonts",
+    "distDir": "dist/assets/fonts"
+  }
 }

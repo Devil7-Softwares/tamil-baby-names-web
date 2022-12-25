@@ -1,0 +1,36 @@
+button {
+    background: #0000004f;
+    color: #fff;
+    border: none;
+    border-radius: 2px;
+    padding: 5px 10px;
+
+    display: inline-flex;
+    align-items: center;
+
+    &:hover {
+        background-color: #0000006c;
+    }
+
+    &:active {
+        box-shadow: 0 0 2px #000;
+    }
+
+    &.checked {
+        background-color: #006eff7c;
+
+        &:hover {
+            background-color: #006effb2;
+        }
+
+        &:active {
+            box-shadow: 0 0 2px #006eff;
+        }
+    }
+
+    >img {
+        max-height: 1.5em;
+        max-width: 1.5em;
+        margin-right: 5px;
+    }
+}

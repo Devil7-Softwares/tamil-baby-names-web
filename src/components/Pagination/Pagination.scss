@@ -1,0 +1,73 @@
+div.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+
+    >div.pagination {
+        --border-color: #00000050;
+        --border-radius: 5px;
+
+        --background-default: #0000004f;
+        --background-default-hover: #0000006c;
+
+        display: flex;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+
+        >div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: default;
+            user-select: none;
+
+            height: 35px;
+            width: 40px;
+
+            background-color: var(--background-default);
+
+            &:not(.spacer) {
+                cursor: pointer;
+
+                &:hover {
+                    background-color: var(--background-default-hover);
+                }
+
+                &:active {
+                    box-shadow: 0 0 2px #000;
+                }
+
+                &.active {
+                    cursor: default;
+                    background-color: #006eff7c;
+
+                    &:hover {
+                        background-color: #006eff7c;
+                    }
+
+                    &:active {
+                        box-shadow: none;
+                    }
+                }
+
+                &.disabled {
+                    cursor: default;
+                    color: #8f8f8f;
+
+                    &:hover {
+                        background-color: var(--background-default);
+                    }
+
+                    &:active {
+                        box-shadow: none;
+                    }
+                }
+            }
+
+            &:not(:last-child) {
+                border-right: 1px solid var(--border-color);
+            }
+        }
+    }
+}

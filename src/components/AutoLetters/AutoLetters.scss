@@ -1,0 +1,26 @@
+div.auto-letters {
+    font-size: 0.8em;
+
+
+
+
+    >div.container {
+        background-color: #0000004f;
+
+        padding: 10px;
+        border-radius: 3px;
+        margin-top: 10px;
+
+        display: grid;
+        grid-template-columns: auto 200px;
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 10px;
+
+        &.output {
+            >div {
+                text-align: right;
+            }
+        }
+    }
+}

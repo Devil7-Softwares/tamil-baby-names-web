@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Tamil Baby Names</title>
+
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="preconnect" href="https://fonts.gstatic.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;1,300&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css?family=Lato:300,400,700"
+            rel="stylesheet"
+            type="text/css"
+        />
+
+        <style>
+            div.loader {
+                display: inline-block;
+                position: relative;
+                width: 80px;
+                height: 80px;
+            }
+            div.loader div {
+                position: absolute;
+                border: 4px solid #fff;
+                opacity: 1;
+                border-radius: 50%;
+                animation: loader 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+            }
+            div.loader div:nth-child(2) {
+                animation-delay: -0.5s;
+            }
+            div.loader-container {
+                align-items: center;
+                background: #23a6d5;
+                bottom: 0;
+                display: flex;
+                justify-content: center;
+                left: 0;
+                position: absolute;
+                right: 0;
+                top: 0;
+            }
+            @keyframes loader {
+                0% {
+                    top: 36px;
+                    left: 36px;
+                    width: 0;
+                    height: 0;
+                    opacity: 1;
+                }
+                100% {
+                    top: 0px;
+                    left: 0px;
+                    width: 72px;
+                    height: 72px;
+                    opacity: 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="pre-loader" class="loader-container">
+            <div class="loader">
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+
+        <div id="root"></div>
+
+        <script type="module" src="./index.tsx"></script>
+    </body>
+</html>

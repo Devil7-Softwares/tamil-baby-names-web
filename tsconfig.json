@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "jsx": "react",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "CommonJS",
+    "resolveJsonModule": true,
+    "strict": true,
+    "target": "ES2018"
+  },
+  "include": ["./src", "./types.d.ts"]
+}
