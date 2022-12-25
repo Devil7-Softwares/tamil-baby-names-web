@@ -1,0 +1,41 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checking-out latest source
+        uses: actions/checkout@v2
+      - name: Setting up nodejs
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - name: Installing node modules
+        run: yarn
+      - name: Building server & client
+        run: yarn build
+        env:
+          RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+      - name: Uploading files to server
+        uses: SamKirkland/FTP-Deploy-Action@4.0.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+      - name: Install node modules, build & restart apps via cloudlinux
+        uses: fifsky/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          user: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command: |
+            export DEPLOY_PATH=/home/${{ secrets.SSH_USERNAME }}/${{ secrets.DEPLOY_DIRECTORY }}
+            cloudlinux-selector install-modules --json --interpreter nodejs --user $USER --app-root $DEPLOY_PATH
+            cloudlinux-selector restart --json --interpreter nodejs --user $USER --app-root $DEPLOY_PATH
