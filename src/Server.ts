@@ -197,6 +197,16 @@ async function getNamesForFilter(
                           gender: filters.gender,
                       }
                     : null,
+                filters.religion
+                    ? {
+                          religion:
+                              filters.religion === 'hindu'
+                                  ? 'இந்து'
+                                  : filters.religion === 'christian'
+                                  ? 'கிறிஸ்துவர்'
+                                  : 'முஸ்லிம்',
+                      }
+                    : null,
             ].filter((item) => item !== null),
         };
 
@@ -220,6 +230,16 @@ async function getNamesForFilter(
                 filters.gender
                     ? {
                           gender: filters.gender,
+                      }
+                    : null,
+                filters.religion
+                    ? {
+                          religion:
+                              filters.religion === 'hindu'
+                                  ? 'இந்து'
+                                  : filters.religion === 'christian'
+                                  ? 'கிறிஸ்துவர்'
+                                  : 'முஸ்லிம்',
                       }
                     : null,
             ].filter((item) => item !== null),
@@ -298,7 +318,9 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                                       ]
                                     : ['Name', 'Meaning']),
                                 ...(!filters.gender ? ['Gender'] : []),
-                                ...(!filters.twinNames ? ['Religion'] : []),
+                                ...(!filters.twinNames && !filters.religion
+                                    ? ['Religion']
+                                    : []),
                                 'Language',
                             ],
                             ...rows.map((item) => [
@@ -313,7 +335,9 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                                 ...(!filters.gender
                                     ? [item.gender === 'boy' ? 'ஆண்' : 'பெண்']
                                     : []),
-                                ...('religion' in item ? [item.religion] : []),
+                                ...('religion' in item && !filters.religion
+                                    ? [item.religion]
+                                    : []),
                                 item.language,
                             ]),
                         ].map((row) =>

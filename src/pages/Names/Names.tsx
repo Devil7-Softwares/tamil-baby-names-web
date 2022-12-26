@@ -78,7 +78,9 @@ export const Names: React.FC = () => {
                                         ? 'auto 1fr auto 1fr'
                                         : 'auto 1fr'
                                 } ${!filters.gender ? '100px' : ''} ${
-                                    !filters.twinNames ? '100px' : ''
+                                    !filters.twinNames && !filters.religion
+                                        ? '100px'
+                                        : ''
                                 } 100px`,
                             }}
                         >
@@ -98,7 +100,8 @@ export const Names: React.FC = () => {
                                         </>
                                     )}
                                     {!filters.gender && <th>Gender</th>}
-                                    {!filters.twinNames && <th>Religion</th>}
+                                    {!filters.twinNames &&
+                                        !filters.religion && <th>Religion</th>}
                                     <th>Language</th>
                                 </tr>
                             </thead>
@@ -125,9 +128,10 @@ export const Names: React.FC = () => {
                                                     : 'பெண்'}
                                             </td>
                                         )}
-                                        {'religion' in item && (
-                                            <td>{item.religion}</td>
-                                        )}
+                                        {'religion' in item &&
+                                            !filters.religion && (
+                                                <td>{item.religion}</td>
+                                            )}
                                         <td>{item.language}</td>
                                     </tr>
                                 ))}
