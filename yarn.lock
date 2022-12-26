@@ -30,10 +30,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@devil7softwares/react-drifter-stars@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@devil7softwares/react-drifter-stars/-/react-drifter-stars-1.0.3.tgz#74166a6e505a67593f235bab3fbb576dbff27899"
-  integrity sha512-uqBJlddCYSOooMeopXKMmA/GkI0Nf3Jn2kHoVdzY+7suvoBaQSlzrxrxwx4zQzetIJaX5a5GX3BnP0tNhxyHow==
+"@devil7softwares/react-drifter-stars@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@devil7softwares/react-drifter-stars/-/react-drifter-stars-1.0.5.tgz#f2f213b9fac79329b939033118caa27261efd89c"
+  integrity sha512-5vG2hbF5YPYunUbg3LSddDEWV3mlizEtsz7tONUHQTfMAS0GzH80uHA+K2za5EpI2S7gZkSlOIwqkbw4dEvswg==
 
 "@foliojs-fork/fontkit@^1.9.1":
   version "1.9.1"

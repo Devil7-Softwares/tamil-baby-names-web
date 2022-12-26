@@ -14,7 +14,7 @@
     "build": "parcel build --target frontend --target backend"
   },
   "dependencies": {
-    "@devil7softwares/react-drifter-stars": "^1.0.3",
+    "@devil7softwares/react-drifter-stars": "^1.0.5",
     "axios": "^1.2.1",
     "clsx": "^1.2.1",
     "cookie-parser": "^1.4.6",
