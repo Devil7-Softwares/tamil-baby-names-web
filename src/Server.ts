@@ -418,10 +418,6 @@ sequalize
         try {
             await Names.sync();
             await TwinNames.sync();
-
-            app.listen(process.env.PORT || 3000, () => {
-                console.log('Server started!');
-            });
         } catch (error) {
             console.log('Failed to syncronise tables!', error);
         }
@@ -429,3 +425,7 @@ sequalize
     .catch((error) => {
         console.log('Failed to authenticate to database!', error);
     });
+
+app.listen(process.env.PORT || 3000, () => {
+    console.log('Server started!');
+});
