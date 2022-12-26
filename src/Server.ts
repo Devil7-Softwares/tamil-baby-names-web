@@ -351,12 +351,12 @@ app.get('/api/export', authMiddleware, async (req, res) => {
             }
         });
 
-        res.setHeader('Content-Type', 'application/pdf')
-            .setHeader(
-                'Content-Disposition',
-                'attachment; filename=BabyNames.pdf'
-            )
-            .send(pdfBuffer);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(
+            'Content-Disposition',
+            'attachment; filename=BabyNames.pdf'
+        );
+        res.send(pdfBuffer);
     } catch (error) {
         console.error('Failed to establish database connection!', error);
         res.status(500).send({
