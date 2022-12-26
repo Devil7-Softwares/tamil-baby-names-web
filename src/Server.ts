@@ -69,6 +69,10 @@ const publicDir = [
     join(__dirname, 'public'),
     join(process.cwd(), 'public'),
 ].find((path) => existsSync(path));
+const assetsDir =
+    [join(__dirname, 'assets'), join(process.cwd(), 'assets')].find((path) =>
+        existsSync(path)
+    ) || './assets';
 
 const authMiddleware: RequestHandler = (req, res, next) => {
     const accessToken = req.cookies['accessToken'];
@@ -261,15 +265,10 @@ app.get('/api/export', authMiddleware, async (req, res) => {
 
     const pdfPrinter = new PdfPrinter({
         Roboto: {
-            normal: join(__dirname, 'assets', 'fonts', 'Roboto-Regular.ttf'),
+            normal: join(assetsDir, 'fonts', 'Roboto-Regular.ttf'),
         },
         Barathi: {
-            normal: join(
-                __dirname,
-                'assets',
-                'fonts',
-                'TAU-Barathi-Regular.ttf'
-            ),
+            normal: join(assetsDir, 'fonts', 'TAU-Barathi-Regular.ttf'),
         },
     });
 
