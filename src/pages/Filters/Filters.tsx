@@ -1,5 +1,7 @@
 import React from 'react';
 import Arrow from '../../assets/arrow.png';
+import Single from '../../assets/single.png';
+import Twins from '../../assets/twins.png';
 import Gender from '../../assets/gender.png';
 import GenderBoy from '../../assets/gender-boy.png';
 import GenderGirl from '../../assets/gender-girl.png';
@@ -7,6 +9,9 @@ import Religion from '../../assets/religion.png';
 import Hindu from '../../assets/hindu.png';
 import Islam from '../../assets/islam.png';
 import Christian from '../../assets/christian.png';
+import All from '../../assets/all.png';
+import Astrology from '../../assets/astrology.png';
+import Choose from '../../assets/choose.png';
 import { Card, Button, ManualLetters, AutoLetters } from '../../components';
 import ReCAPTCHA from 'react-google-recaptcha';
 
@@ -114,13 +119,19 @@ export const Filters: React.FC = () => {
             <h2>Name Type</h2>
             <Button
                 name='false'
+                image={Single}
                 checked={!twinNames}
                 onClick={onTwinNamesClick}
             >
-                Single Names
+                Single
             </Button>
-            <Button name='true' checked={twinNames} onClick={onTwinNamesClick}>
-                Twin Names
+            <Button
+                name='true'
+                image={Twins}
+                checked={twinNames}
+                onClick={onTwinNamesClick}
+            >
+                Twin
             </Button>
 
             <h2>Gender</h2>
@@ -183,6 +194,7 @@ export const Filters: React.FC = () => {
 
             <h2>Starting Letter</h2>
             <Button
+                image={All}
                 name='none'
                 checked={startsWithMode === 'none'}
                 onCheckedChange={onStartsWithModeClick}
@@ -190,6 +202,7 @@ export const Filters: React.FC = () => {
                 Any Letter
             </Button>
             <Button
+                image={Astrology}
                 name='auto'
                 checked={startsWithMode === 'auto'}
                 onCheckedChange={onStartsWithModeClick}
@@ -197,6 +210,7 @@ export const Filters: React.FC = () => {
                 By Date &amp; Time of Birth
             </Button>
             <Button
+                image={Choose}
                 name='manual'
                 checked={startsWithMode === 'manual'}
                 onCheckedChange={onStartsWithModeClick}
