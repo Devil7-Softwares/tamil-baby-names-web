@@ -30,22 +30,32 @@ export const Filters: React.FC = () => {
         'none' | 'auto' | 'manual'
     >('none');
 
+    const onTwinNamesClick = (
+        e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    ) => {
+        const value = Boolean(e.currentTarget.name);
+        setTwinNames(value);
+    };
+
     const onGenderClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
-        setGender(e.currentTarget.name as typeof gender);
+        const value = e.currentTarget.name as typeof gender;
+        setGender(value);
     };
 
     const onReligionClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
-        setReligion(e.currentTarget.name as typeof religion);
+        const value = e.currentTarget.name as typeof religion;
+        setReligion(value);
     };
 
     const onStartsWithModeClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
-        setStartsWithMode(e.currentTarget.name as typeof startsWithMode);
+        const value = e.currentTarget.name as typeof startsWithMode;
+        setStartsWithMode(value);
     };
 
     const onGenerateClick = () => {
@@ -76,10 +86,14 @@ export const Filters: React.FC = () => {
     return (
         <Card className='filters' loading={loading}>
             <h2>Name Type</h2>
-            <Button checked={!twinNames} onClick={() => setTwinNames(false)}>
+            <Button
+                name='false'
+                checked={!twinNames}
+                onClick={onTwinNamesClick}
+            >
                 Single Names
             </Button>
-            <Button checked={twinNames} onClick={() => setTwinNames(true)}>
+            <Button name='true' checked={twinNames} onClick={onTwinNamesClick}>
                 Twin Names
             </Button>
 
