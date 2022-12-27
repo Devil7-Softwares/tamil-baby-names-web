@@ -84,10 +84,19 @@ export const Pagination: React.FC<IProps> = ({
 }: IProps) => {
     const [pages, setPages] = useState<(string | number)[]>();
 
+    const handleOnChange = (value: number) => {
+        gtag('event', 'pagination', {
+            currentPage: value,
+            totalPage: Math.ceil(totalCount / sizePerPage),
+        });
+
+        onChange(value);
+    };
+
     const Page: React.FC<{ value: number }> = ({ value }) => (
         <div
             className={clsx('page', value === currentPage && 'active')}
-            onClick={() => onChange(value)}
+            onClick={() => handleOnChange(value)}
         >
             {value}
         </div>
@@ -105,7 +114,7 @@ export const Pagination: React.FC<IProps> = ({
                         className={currentPage == 1 ? 'disabled' : ''}
                         onClick={() => {
                             if (currentPage > 1) {
-                                onChange(currentPage - 1);
+                                handleOnChange(currentPage - 1);
                             }
                         }}
                     >
@@ -126,7 +135,7 @@ export const Pagination: React.FC<IProps> = ({
                         }
                         onClick={() => {
                             if (currentPage < pages[pages.length - 1]) {
-                                onChange(currentPage + 1);
+                                handleOnChange(currentPage + 1);
                             }
                         }}
                     >

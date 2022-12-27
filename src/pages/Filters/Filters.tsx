@@ -34,6 +34,10 @@ export const Filters: React.FC = () => {
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
         const value = Boolean(e.currentTarget.name);
+        gtag('event', 'filters', {
+            filter: 'Twin Names',
+            value,
+        });
         setTwinNames(value);
     };
 
@@ -41,6 +45,10 @@ export const Filters: React.FC = () => {
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
         const value = e.currentTarget.name as typeof gender;
+        gtag('event', 'filters', {
+            filter: 'Gender',
+            value: value || 'Both',
+        });
         setGender(value);
     };
 
@@ -48,6 +56,10 @@ export const Filters: React.FC = () => {
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
         const value = e.currentTarget.name as typeof religion;
+        gtag('event', 'filters', {
+            filter: 'Religion',
+            value: value || 'All',
+        });
         setReligion(value);
     };
 
@@ -55,11 +67,25 @@ export const Filters: React.FC = () => {
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
         const value = e.currentTarget.name as typeof startsWithMode;
+        gtag('event', 'filters', {
+            filter: 'Start With Mode',
+            value,
+        });
         setStartsWithMode(value);
     };
 
     const onGenerateClick = () => {
         if (token) {
+            gtag('event', 'generate', {
+                filters: {
+                    twinNames,
+                    gender: gender || 'Both',
+                    religion: religion || 'All',
+                    startsWith,
+                    startsWithMode,
+                },
+            });
+
             setLoading(true);
             axios
                 .post<IResponseData>(

@@ -62,7 +62,10 @@ export const Names: React.FC = () => {
                 <div>
                     <div>Total Names: {total}</div>
                     <Button
-                        onClick={() => window.open('/api/export', '_blank')}
+                        onClick={() => {
+                            gtag('event', 'export');
+                            window.open('/api/export', '_blank');
+                        }}
                     >
                         Download
                     </Button>

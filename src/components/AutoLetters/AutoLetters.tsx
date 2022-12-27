@@ -81,6 +81,11 @@ export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
             if (taLetters.length > 0 || enLetters.length > 0) {
                 setStartsWith([...enLetters, ...taLetters]);
             }
+
+            gtag('event', 'astro', {
+                moonSign: moonSign.en,
+                lunarMansion: lunarMansion.en,
+            });
         }
     }, [dateTimeOfBirth, timezone]);
 
