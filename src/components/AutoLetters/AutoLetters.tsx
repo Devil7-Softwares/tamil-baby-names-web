@@ -36,9 +36,8 @@ export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
     );
     const [timezone, setTimezone] = useState(getDefaultTimezone());
 
-    const [moonSignIndex, setMoonSignIndex] = useState(0);
-    const [lunarMansionIndex, setLunarMansionIndex] = useState(0);
-
+    const [moonSign, setMoonSign] = useState({ en: '', ta: '' });
+    const [lunarMansion, setLunarMansion] = useState({ en: '', ta: '' });
     const [letters, setLetters] = useState<Record<T, string[]>>({
         en: [],
         ta: [],
@@ -48,24 +47,42 @@ export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
         const date = dayjs(dateTimeOfBirth, timezone).toDate();
 
         if (date.toString() !== 'Invalid Date') {
-            setMoonSignIndex(getMoonSignIndex(date));
-            setLunarMansionIndex(getLunarMansionIndex(date));
+            const moonSignIndex = getMoonSignIndex(date);
+            const lunarMansionIndex = getLunarMansionIndex(date);
+
+            const enMoonSign = getMoonSign(moonSignIndex, 'en');
+            const taMoonSign = getMoonSign(moonSignIndex, 'ta');
+            setMoonSign({
+                en: enMoonSign,
+                ta: taMoonSign,
+            });
+
+            const enLunarMansion = getLunarMansion(lunarMansionIndex, 'en');
+            const taLunarMansion = getLunarMansion(lunarMansionIndex, 'ta');
+            setLunarMansion({
+                en: enLunarMansion,
+                ta: taLunarMansion,
+            });
+
+            const enLetters = getStartingLettersForName(
+                lunarMansionIndex,
+                'en'
+            );
+            const taLetters = getStartingLettersForName(
+                lunarMansionIndex,
+                'ta'
+            );
+
+            setLetters({
+                en: enLetters,
+                ta: taLetters,
+            });
+
+            if (taLetters.length > 0 || enLetters.length > 0) {
+                setStartsWith([...enLetters, ...taLetters]);
+            }
         }
     }, [dateTimeOfBirth, timezone]);
-
-    useEffect(() => {
-        const en = getStartingLettersForName(lunarMansionIndex, 'en');
-        const ta = getStartingLettersForName(lunarMansionIndex, 'ta');
-
-        setLetters({
-            en,
-            ta,
-        });
-
-        if (ta.length > 0 || en.length > 0) {
-            setStartsWith([...en, ...ta]);
-        }
-    }, [lunarMansionIndex]);
 
     return (
         <div className='auto-letters'>
@@ -92,13 +109,11 @@ export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
             <div className='container output'>
                 <label>ராசி / Moon Sign</label>
                 <div>
-                    {getMoonSign(moonSignIndex, 'ta')} /{' '}
-                    {getMoonSign(moonSignIndex, 'en')}
+                    {moonSign.ta} / {moonSign.en}
                 </div>
                 <label>நட்சத்திரம் / Lunar Mansion</label>
                 <div>
-                    {getLunarMansion(lunarMansionIndex, 'ta')} /{' '}
-                    {getLunarMansion(lunarMansionIndex, 'en')}
+                    {lunarMansion.ta} / {lunarMansion.en}
                 </div>
                 <label>பெயர் எழுத்து / Letters for Name</label>
                 <div>
