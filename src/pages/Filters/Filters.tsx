@@ -76,6 +76,7 @@ export const Filters: React.FC = () => {
             filter: 'Start With Mode',
             value,
         });
+        setStartsWith([]);
         setStartsWithMode(value);
     };
 
