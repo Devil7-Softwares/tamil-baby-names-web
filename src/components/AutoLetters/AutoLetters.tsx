@@ -102,18 +102,8 @@ export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
                 </div>
                 <label>பெயர் எழுத்து / Letters for Name</label>
                 <div>
-                    <div>
-                        {getStartingLettersForName(
-                            lunarMansionIndex,
-                            'ta'
-                        ).join(', ')}
-                    </div>
-                    <div>
-                        {getStartingLettersForName(
-                            lunarMansionIndex,
-                            'en'
-                        ).join(', ')}
-                    </div>
+                    <div>{letters.ta.join(', ')}</div>
+                    <div>{letters.en.join(', ')}</div>
                 </div>
             </div>
         </div>
