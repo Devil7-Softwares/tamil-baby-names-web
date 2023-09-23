@@ -164,7 +164,7 @@ export const Filters: React.FC = () => {
             <Button
                 image={Religion}
                 checked={!religion}
-                onCheckedChange={onGenderClick}
+                onCheckedChange={onReligionClick}
             >
                 All
             </Button>
@@ -185,7 +185,7 @@ export const Filters: React.FC = () => {
                 Muslim
             </Button>
             <Button
-                name='chiristian'
+                name='christian'
                 image={Christian}
                 checked={religion === 'christian'}
                 onCheckedChange={onReligionClick}
