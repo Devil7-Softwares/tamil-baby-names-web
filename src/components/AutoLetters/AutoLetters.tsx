@@ -1,40 +1,29 @@
 import './AutoLetters.scss';
 import React, { useEffect, useState } from 'react';
-import Timezones from '../../assets/timezones.json';
 import dayjs from 'dayjs';
 import {
+    getDefaultTimezone,
     getLunarMansion,
     getLunarMansionIndex,
     getMoonSign,
     getMoonSignIndex,
     getStartingLettersForName,
+    useFilterState,
 } from '../../utils';
+import Timezones from '../../assets/timezones.json';
 
 interface IProps {
     setStartsWith: (letters: string[]) => void;
 }
 
-function getDefaultTimezone(): string {
-    const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (currentTimezone) {
-        const matchingTimezone = Timezones.find((timezone) =>
-            timezone.utc.includes(currentTimezone)
-        );
-
-        if (matchingTimezone) {
-            return matchingTimezone.utc[0];
-        }
-    }
-    return '';
-}
-
 type T = Parameters<typeof getLunarMansion>[1];
 
 export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
-    const [dateTimeOfBirth, setDateTimeOfBirth] = useState(
+    const [dateTimeOfBirth, setDateTimeOfBirth] = useFilterState(
+        'tob',
         dayjs().format('YYYY-MM-DDTHH:mm')
     );
-    const [timezone, setTimezone] = useState(getDefaultTimezone());
+    const [timezone, setTimezone] = useFilterState('tz', getDefaultTimezone());
 
     const [moonSign, setMoonSign] = useState({ en: '', ta: '' });
     const [lunarMansion, setLunarMansion] = useState({ en: '', ta: '' });

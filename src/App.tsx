@@ -3,6 +3,8 @@ import { Background } from './components';
 
 import './App.scss';
 import { Pages } from './pages';
+import { FilterStateProvider } from './utils';
+import { BrowserRouter } from 'react-router-dom';
 
 export const App: React.FC = () => {
     useEffect(() => {
@@ -11,8 +13,12 @@ export const App: React.FC = () => {
     }, []);
 
     return (
-        <Background>
-            <Pages />
-        </Background>
+        <BrowserRouter>
+            <FilterStateProvider>
+                <Background>
+                    <Pages />
+                </Background>
+            </FilterStateProvider>
+        </BrowserRouter>
     );
 };

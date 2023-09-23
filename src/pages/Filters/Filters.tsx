@@ -20,20 +20,22 @@ import { useState } from 'react';
 import { IFilterData, IResponseData } from '../../interfaces';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useFilterState } from '../../utils';
 
 export const Filters: React.FC = () => {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState<boolean>(false);
-    const [twinNames, setTwinNames] = useState<IFilterData['twinNames']>();
-    const [gender, setGender] = useState<IFilterData['gender']>();
-    const [religion, setReligion] = useState<IFilterData['religion']>();
-    const [startsWith, setStartsWith] = useState<IFilterData['startsWith']>();
     const [token, setToken] = useState<string | null>(null);
 
-    const [startsWithMode, setStartsWithMode] = useState<
-        'none' | 'auto' | 'manual'
-    >('none');
+    const [twinNames, setTwinNames] = useFilterState('twinNames', undefined);
+    const [gender, setGender] = useFilterState('gender', undefined);
+    const [religion, setReligion] = useFilterState('religion', undefined);
+    const [startsWith, setStartsWith] = useFilterState('startsWith', undefined);
+    const [startsWithMode, setStartsWithMode] = useFilterState(
+        'startsWithMode',
+        'none'
+    );
 
     const onTwinNamesClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
