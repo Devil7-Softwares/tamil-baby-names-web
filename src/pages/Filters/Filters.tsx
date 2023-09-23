@@ -38,7 +38,7 @@ export const Filters: React.FC = () => {
     const onTwinNamesClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
-        const value = Boolean(e.currentTarget.name);
+        const value = e.currentTarget.name === 'true';
         gtag('event', 'filters', {
             filter: 'Twin Names',
             value,
