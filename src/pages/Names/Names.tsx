@@ -28,14 +28,6 @@ export const Names: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(false);
 
-    const onExport = () => {
-        setExporting(true);
-        axios
-            .get('/api/export')
-            .then((response) => saveAs(response.data, 'Baby Names.pdf'))
-            .finally(() => setExporting(false));
-    };
-
     useEffect(() => {
         setLoading(true);
         axios
@@ -58,7 +50,18 @@ export const Names: React.FC = () => {
     return (
         <div className='names-container'>
             <Card className='top-container'>
-                <Button onClick={() => navigate('/')}>Back</Button>
+                <Button
+                    onClick={() =>
+                        navigate(
+                            window.localStorage &&
+                                window.localStorage.getItem('params')
+                                ? `/${window.localStorage.getItem('params')}`
+                                : '/'
+                        )
+                    }
+                >
+                    Back
+                </Button>
                 <div>
                     <div>Total Names: {total}</div>
                     <Button

@@ -19,11 +19,12 @@ import './Filters.scss';
 import { useState } from 'react';
 import { IFilterData, IResponseData } from '../../interfaces';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useFilterState } from '../../utils';
 
 export const Filters: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [loading, setLoading] = useState<boolean>(false);
     const [token, setToken] = useState<string | null>(null);
@@ -108,6 +109,13 @@ export const Filters: React.FC = () => {
                 )
                 .then((response) => {
                     if (response.data.success) {
+                        if (window.localStorage && location.search) {
+                            window.localStorage.setItem(
+                                'params',
+                                location.search
+                            );
+                        }
+
                         navigate('/names');
                     }
                 })
