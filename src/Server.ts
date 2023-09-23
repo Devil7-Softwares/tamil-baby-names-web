@@ -1,13 +1,15 @@
 import axios from 'axios';
 import { config } from 'dotenv';
 import express, { RequestHandler } from 'express';
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { DataTypes, Model, Op, Sequelize, WhereOptions } from 'sequelize';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { IFilterData, IName, IResponseData, ITwinName } from './interfaces';
 import cookieParser from 'cookie-parser';
 import PdfPrinter from 'pdfmake';
+import { getDocumentTitleByFilter, getStateFromParams } from './utils/Common';
+import { parse } from 'url';
 
 config();
 
@@ -426,9 +428,31 @@ app.post('/api/letters', async (req, res) => {
 });
 
 if (publicDir) {
+    const indexHtml = readFileSync(join(publicDir, 'index.html'), 'utf-8');
+
     app.get('*', (req, res) => {
         if (!res.headersSent) {
-            res.sendFile(join(publicDir, 'index.html'));
+            res.setHeader('Content-Type', 'text/html');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.status(200);
+
+            const search = parse(req.url || '').search;
+            if (search) {
+                const title = getDocumentTitleByFilter(
+                    getStateFromParams(new URLSearchParams(search))
+                );
+
+                res.send(
+                    indexHtml.replace(
+                        /<title>(.*?)<\/title>/,
+                        `<title>${title}</title>`
+                    )
+                );
+            } else {
+                res.send(indexHtml);
+            }
         }
     });
 }

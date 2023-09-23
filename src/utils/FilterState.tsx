@@ -5,13 +5,15 @@ import React, {
     createContext,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
     useState,
 } from 'react';
 import { IFilterState } from '../interfaces';
 import { useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { getDefaultTimezone } from './Common';
+import { getDefaultTimezone } from './Timezone';
+import { getDocumentTitleByFilter, getStateFromParams } from './Common';
 
 const FilterStateContext = createContext<IFilterState>({} as IFilterState);
 
@@ -21,27 +23,13 @@ export const FilterStateProvider: React.FC<PropsWithChildren> = ({
     const [searchParams] = useSearchParams();
 
     const state = useMemo<IFilterState>(
-        () => ({
-            gender:
-                (searchParams.get('gender') as IFilterState['gender']) ||
-                undefined,
-            startsWith:
-                (searchParams
-                    .get('startsWith')
-                    ?.split(',') as IFilterState['startsWith']) || undefined,
-            twinNames: searchParams.get('twinNames') === 'true',
-            religion:
-                (searchParams.get('religion') as IFilterState['religion']) ||
-                undefined,
-            startsWithMode:
-                (searchParams.get(
-                    'startsWithMode'
-                ) as IFilterState['startsWithMode']) || 'none',
-            tob: searchParams.get('tob') || dayjs().format('YYYY-MM-DDTHH:mm'),
-            tz: searchParams.get('tz') || getDefaultTimezone(),
-        }),
+        () => getStateFromParams(searchParams),
         [searchParams]
     );
+
+    useEffect(() => {
+        document.title = getDocumentTitleByFilter(state);
+    }, [state]);
 
     return (
         <FilterStateContext.Provider value={state}>
