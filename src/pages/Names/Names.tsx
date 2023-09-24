@@ -12,6 +12,7 @@ import {
     ITwinName,
 } from '../../interfaces';
 import { WithFilters } from '../../types';
+import { getDocumentTitleByFilter } from '../../utils/Common';
 
 export const Names: React.FC = () => {
     const navigate = useNavigate();
@@ -45,6 +46,10 @@ export const Names: React.FC = () => {
             })
             .finally(() => setLoading(false));
     }, [page, limit]);
+
+    useEffect(() => {
+        document.title = getDocumentTitleByFilter(filters);
+    }, [filters]);
 
     return (
         <div className='names-container'>
