@@ -1,6 +1,9 @@
 import './AutoLetters.scss';
-import React, { useEffect, useState } from 'react';
+
 import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+
+import Timezones from '../../assets/timezones.json';
 import {
     getDefaultTimezone,
     getLunarMansion,
@@ -10,7 +13,6 @@ import {
     getStartingLettersForName,
     useFilterState,
 } from '../../utils';
-import Timezones from '../../assets/timezones.json';
 
 interface IProps {
     setStartsWith: (letters: string[]) => void;

@@ -1,7 +1,7 @@
+import './Button.scss';
+
 import clsx from 'clsx';
 import React, { PropsWithChildren } from 'react';
-
-import './Button.scss';
 
 interface IProps
     extends React.DetailedHTMLProps<

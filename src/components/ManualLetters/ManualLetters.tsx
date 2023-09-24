@@ -1,10 +1,11 @@
+import './ManualLetters.scss';
+
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { IArrayResponseData, IResponseData } from '../../interfaces';
+
+import { IArrayResponseData } from '../../interfaces';
 import { Gender } from '../../types';
 import { Button } from '../Button';
-
-import './ManualLetters.scss';
 
 interface IProps {
     gender?: Gender;

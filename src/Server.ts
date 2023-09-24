@@ -1,15 +1,16 @@
 import axios from 'axios';
+import cookieParser from 'cookie-parser';
 import { config } from 'dotenv';
 import express, { RequestHandler } from 'express';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { DataTypes, Model, Op, Sequelize, WhereOptions } from 'sequelize';
+import { existsSync, readFileSync } from 'fs';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
-import { IFilterData, IName, IResponseData, ITwinName } from './interfaces';
-import cookieParser from 'cookie-parser';
+import { join } from 'path';
 import PdfPrinter from 'pdfmake';
-import { getDocumentTitleByFilter, getStateFromParams } from './utils/Common';
+import { DataTypes, Model, Op, Sequelize, WhereOptions } from 'sequelize';
 import { parse } from 'url';
+
+import { IFilterData, IName, ITwinName } from './interfaces';
+import { getDocumentTitleByFilter, getStateFromParams } from './utils/Common';
 
 config();
 

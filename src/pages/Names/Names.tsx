@@ -1,7 +1,9 @@
-import { saveAs } from 'file-saver';
+import './Names.scss';
+
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import { Button, Card, Pagination } from '../../components';
 import {
     IFilterData,
@@ -9,8 +11,6 @@ import {
     IPaginatedResponseData,
     ITwinName,
 } from '../../interfaces';
-
-import './Names.scss';
 import { WithFilters } from '../../types';
 
 export const Names: React.FC = () => {

@@ -1,7 +1,7 @@
+import './Pagination.scss';
+
 import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
-
-import './Pagination.scss';
 
 interface IProps {
     sizePerPage: number;

@@ -7,12 +7,10 @@ import React, {
     useContext,
     useEffect,
     useMemo,
-    useState,
 } from 'react';
-import { IFilterState } from '../interfaces';
 import { useSearchParams } from 'react-router-dom';
-import dayjs from 'dayjs';
-import { getDefaultTimezone } from './Timezone';
+
+import { IFilterState } from '../interfaces';
 import { getDocumentTitleByFilter, getStateFromParams } from './Common';
 
 const FilterStateContext = createContext<IFilterState>({} as IFilterState);

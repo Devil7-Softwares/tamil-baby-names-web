@@ -1,8 +1,9 @@
+import './Card.scss';
+
 import clsx from 'clsx';
 import React, { PropsWithChildren } from 'react';
-import { ProgressOverlay } from '../ProgressOverlay';
 
-import './Card.scss';
+import { ProgressOverlay } from '../ProgressOverlay';
 
 interface IProps {
     className?: string;

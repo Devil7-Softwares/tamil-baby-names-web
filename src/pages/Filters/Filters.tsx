@@ -1,25 +1,25 @@
-import React from 'react';
-import Arrow from '../../assets/arrow.png';
-import Single from '../../assets/single.png';
-import Twins from '../../assets/twins.png';
-import Gender from '../../assets/gender.png';
-import GenderBoy from '../../assets/gender-boy.png';
-import GenderGirl from '../../assets/gender-girl.png';
-import Religion from '../../assets/religion.png';
-import Hindu from '../../assets/hindu.png';
-import Islam from '../../assets/islam.png';
-import Christian from '../../assets/christian.png';
+import './Filters.scss';
+
+import axios from 'axios';
+import React, { useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import All from '../../assets/all.png';
+import Arrow from '../../assets/arrow.png';
 import Astrology from '../../assets/astrology.png';
 import Choose from '../../assets/choose.png';
-import { Card, Button, ManualLetters, AutoLetters } from '../../components';
-import ReCAPTCHA from 'react-google-recaptcha';
-
-import './Filters.scss';
-import { useState } from 'react';
-import { IFilterData, IResponseData } from '../../interfaces';
-import axios from 'axios';
-import { useLocation, useNavigate } from 'react-router-dom';
+import Christian from '../../assets/christian.png';
+import GenderBoy from '../../assets/gender-boy.png';
+import GenderGirl from '../../assets/gender-girl.png';
+import Gender from '../../assets/gender.png';
+import Hindu from '../../assets/hindu.png';
+import Islam from '../../assets/islam.png';
+import Religion from '../../assets/religion.png';
+import Single from '../../assets/single.png';
+import Twins from '../../assets/twins.png';
+import { AutoLetters, Button, Card, ManualLetters } from '../../components';
+import { IResponseData } from '../../interfaces';
 import { useFilterState } from '../../utils';
 
 export const Filters: React.FC = () => {

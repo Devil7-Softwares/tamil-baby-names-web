@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
-import { Background } from './components';
-
 import './App.scss';
+
+import React, { useEffect } from 'react';
+import { BrowserRouter } from 'react-router-dom';
+
+import { Background } from './components';
 import { Pages } from './pages';
 import { FilterStateProvider } from './utils';
-import { BrowserRouter } from 'react-router-dom';
 
 export const App: React.FC = () => {
     useEffect(() => {
