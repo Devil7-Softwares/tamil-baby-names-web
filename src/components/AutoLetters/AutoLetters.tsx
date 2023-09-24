@@ -5,7 +5,6 @@ import React, { useEffect, useState } from 'react';
 
 import Timezones from '../../assets/timezones.json';
 import {
-    getDefaultTimezone,
     getLunarMansion,
     getLunarMansionIndex,
     getMoonSign,
@@ -21,11 +20,8 @@ interface IProps {
 type T = Parameters<typeof getLunarMansion>[1];
 
 export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
-    const [dateTimeOfBirth, setDateTimeOfBirth] = useFilterState(
-        'tob',
-        dayjs().format('YYYY-MM-DDTHH:mm')
-    );
-    const [timezone, setTimezone] = useFilterState('tz', getDefaultTimezone());
+    const [dateTimeOfBirth, setDateTimeOfBirth] = useFilterState('tob');
+    const [timezone, setTimezone] = useFilterState('tz');
 
     const [moonSign, setMoonSign] = useState({ en: '', ta: '' });
     const [lunarMansion, setLunarMansion] = useState({ en: '', ta: '' });

@@ -37,8 +37,7 @@ export const FilterStateProvider: React.FC<PropsWithChildren> = ({
 };
 
 export const useFilterState = <K extends keyof IFilterState>(
-    key: K,
-    initialValue: IFilterState[K]
+    key: K
 ): [IFilterState[K], Dispatch<SetStateAction<IFilterState[K]>>] => {
     const [_, setSearchParams] = useSearchParams();
 
@@ -68,5 +67,5 @@ export const useFilterState = <K extends keyof IFilterState>(
         [key, state, setSearchParams]
     );
 
-    return [state[key] ?? initialValue, setFilterState];
+    return [state[key], setFilterState];
 };

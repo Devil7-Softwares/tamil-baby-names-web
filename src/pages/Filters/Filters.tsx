@@ -29,14 +29,12 @@ export const Filters: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [token, setToken] = useState<string | null>(null);
 
-    const [twinNames, setTwinNames] = useFilterState('twinNames', undefined);
-    const [gender, setGender] = useFilterState('gender', undefined);
-    const [religion, setReligion] = useFilterState('religion', undefined);
-    const [startsWith, setStartsWith] = useFilterState('startsWith', undefined);
-    const [startsWithMode, setStartsWithMode] = useFilterState(
-        'startsWithMode',
-        'none'
-    );
+    const [twinNames, setTwinNames] = useFilterState('twinNames');
+    const [gender, setGender] = useFilterState('gender');
+    const [religion, setReligion] = useFilterState('religion');
+    const [startsWith, setStartsWith] = useFilterState('startsWith');
+    const [startsWithMode, setStartsWithMode] =
+        useFilterState('startsWithMode');
 
     const onTwinNamesClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
