@@ -1,16 +1,28 @@
 import axios from 'axios';
 import cookieParser from 'cookie-parser';
+import dayjs from 'dayjs';
 import { config } from 'dotenv';
 import express, { RequestHandler } from 'express';
 import { existsSync, readFileSync } from 'fs';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { join } from 'path';
 import PdfPrinter from 'pdfmake';
+import { Content, TableCell } from 'pdfmake/interfaces';
 import { DataTypes, Model, Op, Sequelize, WhereOptions } from 'sequelize';
 import { parse } from 'url';
 
 import { IFilterData, IName, ITwinName } from './interfaces';
-import { getDocumentTitleByFilter, getStateFromParams } from './utils/Common';
+import {
+    getLunarMansion,
+    getLunarMansionIndex,
+    getMoonSign,
+    getMoonSignIndex,
+} from './utils';
+import {
+    getDocumentTitleByFilter,
+    getStateFromParams,
+    sentenseCase,
+} from './utils/Common';
 
 config();
 
@@ -294,6 +306,22 @@ async function getNamesForFilter(
     }
 }
 
+function withFonts(rows: TableCell[][]): TableCell[][] {
+    return rows.map((row) =>
+        row.map((cell) =>
+            typeof cell === 'object'
+                ? cell
+                : {
+                      font:
+                          typeof cell === 'number' ||
+                          /[^\u0000-\u00ff]/.test(String(cell))
+                              ? 'Barathi'
+                              : 'Roboto',
+                      text: cell,
+                  }
+        )
+    );
+}
 app.get('/api/names', authMiddleware, async (req, res) => {
     const filters = (res.locals.filterOptions || {}) as IFilterData;
 
@@ -325,6 +353,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
     const pdfPrinter = new PdfPrinter({
         Roboto: {
             normal: join(assetsDir, 'fonts', 'Roboto-Regular.ttf'),
+            bold: join(assetsDir, 'fonts', 'Roboto-Bold.ttf'),
         },
         Barathi: {
             normal: join(assetsDir, 'fonts', 'TAU-Barathi-Regular.ttf'),
@@ -334,19 +363,189 @@ app.get('/api/export', authMiddleware, async (req, res) => {
     try {
         const [rows] = await getNamesForFilter(filters);
 
+        const filterTable: TableCell[][] = [];
+        let iconName: string | null = null;
+        let rowHeight = 2;
+
+        if (filters.gender) {
+            filterTable.push(['Gender', ':', sentenseCase(filters.gender)]);
+            rowHeight += 20;
+        }
+
+        if (filters.religion) {
+            filterTable.push(['Religion', ':', sentenseCase(filters.religion)]);
+            rowHeight += 20;
+        }
+
+        if (filters.startsWithMode === 'auto') {
+            const date = dayjs(filters.tob, filters.tz);
+
+            if (date.isValid()) {
+                const moonSignIndex = getMoonSignIndex(date.toDate());
+                const lunarMansionIndex = getLunarMansionIndex(date.toDate());
+
+                const moonSignEN = getMoonSign(moonSignIndex, 'en');
+                const moonSignTA = getMoonSign(moonSignIndex, 'ta');
+                const lunarMansionEN = getLunarMansion(lunarMansionIndex, 'en');
+                const lunarMansionTA = getLunarMansion(lunarMansionIndex, 'ta');
+
+                iconName = moonSignEN.toLowerCase();
+
+                filterTable.push([
+                    {
+                        columns: [
+                            {
+                                text: 'Lunar Mansion / ',
+                                font: 'Roboto',
+                                preserveTrailingSpaces: true,
+                            },
+                            { text: 'ராசி', font: 'Barathi' },
+                        ],
+                    },
+                    ':',
+                    {
+                        stack: [
+                            {
+                                text: moonSignEN,
+                                font: 'Roboto',
+                            },
+                            {
+                                text: moonSignTA,
+                                font: 'Barathi',
+                            },
+                        ],
+                    },
+                ]);
+
+                filterTable.push([
+                    {
+                        columns: [
+                            {
+                                text: `Lunar Mansion / `,
+                                font: 'Roboto',
+                                preserveTrailingSpaces: true,
+                            },
+                            { text: 'நட்சத்திரம்', font: 'Barathi' },
+                        ],
+                    },
+                    ':',
+                    {
+                        stack: [
+                            {
+                                text: lunarMansionEN,
+                                font: 'Roboto',
+                            },
+                            { text: lunarMansionTA, font: 'Barathi' },
+                        ],
+                    },
+                ]);
+
+                rowHeight += 15 * 4;
+            }
+        }
+
+        if (
+            filters.startsWithMode !== 'none' &&
+            filters.startsWith &&
+            filters.startsWith.length
+        ) {
+            const startsWithEnglish = filters.startsWith.filter(
+                (item) => !/[^\u0000-\u00ff]/.test(String(item))
+            );
+
+            const startsWithTamil = filters.startsWith.filter((item) =>
+                /[^\u0000-\u00ff]/.test(String(item))
+            );
+
+            const startsWith: TableCell[] = [];
+
+            if (startsWithEnglish.length) {
+                startsWith.push({
+                    text: startsWithEnglish.join(', '),
+                    font: 'Roboto',
+                });
+            }
+
+            if (startsWithTamil.length) {
+                startsWith.push({
+                    text: startsWithTamil.join(', '),
+                    font: 'Barathi',
+                });
+            }
+
+            filterTable.push(['Starts With', ':', { stack: startsWith }]);
+
+            rowHeight += 15 * startsWith.length;
+        }
+
+        if (iconName) {
+            filterTable.unshift([
+                '',
+                '',
+                '',
+                {
+                    image: `data:image/png;base64,${readFileSync(
+                        join(assetsDir, 'zodiac', `${iconName}.png`)
+                    ).toString('base64')}`,
+                    rowSpan: filterTable.length + 1,
+                    background: '#ffffff',
+                    width: 90,
+                    absolutePosition: {
+                        x: 595.28 - 160,
+                        y: (rowHeight - 90) / 2,
+                    },
+                },
+            ]);
+        }
+
         const pdfDoc = pdfPrinter.createPdfKitDocument({
             pageOrientation: filters.twinNames ? 'landscape' : 'portrait',
             pageMargins: [20, 20, 20, 40],
+            pageSize: 'A4', // 595.28 x 841.89
             watermark: {
                 text: 'DEVIL7 SOFTWARES',
-                opacity: 0.2,
+                opacity: 0.1,
             },
             content: [
                 {
-                    pageBreak: 'after',
+                    columns: [
+                        { width: '*', text: '' },
+                        {
+                            text: 'Tamil Baby Names',
+                            fontSize: 20,
+                            bold: true,
+                            noWrap: true,
+                        },
+                        { width: '*', text: '' },
+                    ],
+                    marginBottom: 20,
+                },
+                filterTable.length
+                    ? {
+                          fontSize: 12,
+                          table: {
+                              dontBreakRows: true,
+                              body: withFonts(filterTable),
+                          },
+                          layout: 'noBorders',
+                          marginBottom: 10,
+                      }
+                    : (null as unknown as Content),
+                {
                     fontSize: 11,
                     table: {
-                        body: [
+                        headerRows: 1,
+                        widths: [
+                            ...(filters.twinNames
+                                ? ['auto', '*', 'auto', '*']
+                                : ['auto', '*']),
+                            ...(!filters.gender ? ['auto'] : []),
+                            ...(!filters.twinNames && !filters.religion
+                                ? ['auto']
+                                : []),
+                            'auto',
+                        ],
+                        body: withFonts([
                             [
                                 ...(filters.twinNames
                                     ? [
@@ -379,19 +578,10 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                                     : []),
                                 item.language,
                             ]),
-                        ].map((row) =>
-                            row.map((cell) => ({
-                                font:
-                                    typeof cell === 'number' ||
-                                    /[^\u0000-\u00ff]/.test(cell)
-                                        ? 'Barathi'
-                                        : 'Roboto',
-                                text: cell,
-                            }))
-                        ),
+                        ]),
                     },
                 },
-            ],
+            ].filter(Boolean),
             footer: [
                 {
                     text: req.hostname,
@@ -415,10 +605,16 @@ app.get('/api/export', authMiddleware, async (req, res) => {
         });
 
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader(
-            'Content-Disposition',
-            'attachment; filename=BabyNames.pdf'
-        );
+
+        if (req.query.inline === 'true') {
+            res.setHeader('Content-Disposition', 'inline');
+        } else {
+            res.setHeader(
+                'Content-Disposition',
+                'attachment; filename=BabyNames.pdf'
+            );
+        }
+
         res.send(pdfBuffer);
     } catch (error) {
         console.error('Failed to establish database connection!', error);
