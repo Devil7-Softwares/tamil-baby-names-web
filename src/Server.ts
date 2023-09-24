@@ -536,6 +536,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                     table: {
                         headerRows: 1,
                         widths: [
+                            'auto',
                             ...(filters.twinNames
                                 ? ['auto', '*', 'auto', '*']
                                 : ['auto', '*']),
@@ -547,6 +548,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                         ],
                         body: withFonts([
                             [
+                                'S.No',
                                 ...(filters.twinNames
                                     ? [
                                           'Name 1',
@@ -561,7 +563,8 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                                     : []),
                                 'Language',
                             ],
-                            ...rows.map((item) => [
+                            ...rows.map((item, index) => [
+                                index + 1,
                                 ...('name1' in item
                                     ? [
                                           item.name1,
