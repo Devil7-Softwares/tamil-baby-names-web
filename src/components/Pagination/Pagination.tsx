@@ -134,7 +134,9 @@ export const Pagination: React.FC<IProps> = ({
                                 : ''
                         }
                         onClick={() => {
-                            if (currentPage < pages[pages.length - 1]) {
+                            const maxPage = Math.ceil(totalCount / sizePerPage);
+
+                            if (currentPage < maxPage) {
                                 handleOnChange(currentPage + 1);
                             }
                         }}
