@@ -222,7 +222,7 @@ async function getNamesForFilter(
     if (filters.twinNames) {
         const where = {
             [Op.and]: [
-                filters.startsWith
+                filters.startsWithMode !== 'none' && filters.startsWith
                     ? {
                           [Op.or]: filters.startsWith.reduce<WhereOptions[]>(
                               (arr, char) => {
@@ -271,7 +271,7 @@ async function getNamesForFilter(
     } else {
         const where = {
             [Op.and]: [
-                filters.startsWith
+                filters.startsWithMode !== 'none' && filters.startsWith
                     ? {
                           firstLetter: {
                               [Op.in]: filters.startsWith,
@@ -497,6 +497,8 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                 },
             ]);
         }
+
+        console.log(filters);
 
         const pdfDoc = pdfPrinter.createPdfKitDocument({
             pageOrientation: filters.twinNames ? 'landscape' : 'portrait',
