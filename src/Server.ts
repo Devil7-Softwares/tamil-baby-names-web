@@ -75,6 +75,9 @@ const assetsDir =
     [join(__dirname, 'assets'), join(process.cwd(), 'assets')].find((path) =>
         existsSync(path)
     ) || './assets';
+const indexHtml = publicDir
+    ? readFileSync(join(publicDir, 'index.html'), 'utf-8')
+    : null;
 
 const authMiddleware: RequestHandler = (req, res, next) => {
     const accessToken = req.cookies['accessToken'];
@@ -108,6 +111,36 @@ const authMiddleware: RequestHandler = (req, res, next) => {
     }
 };
 
+const indexHandler: RequestHandler = (req, res) => {
+    if (!indexHtml) {
+        return res.status(404).send('Not found!');
+    }
+
+    if (!res.headersSent) {
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.status(200);
+
+        const search = parse(req.url || '').search;
+        if (search) {
+            const title = getDocumentTitleByFilter(
+                getStateFromParams(new URLSearchParams(search))
+            );
+
+            res.send(
+                indexHtml.replace(
+                    /<title>(.*?)<\/title>/,
+                    `<title>${title}</title>`
+                )
+            );
+        } else {
+            res.send(indexHtml);
+        }
+    }
+};
+
 const app = express();
 
 app.use(express.json());
@@ -116,6 +149,9 @@ app.use(cookieParser());
 
 if (publicDir) {
     console.log(`Using public dir: ${publicDir}`);
+
+    app.get('/', indexHandler);
+
     app.use(express.static(publicDir));
 } else {
     console.log(`No public dir found!`);
@@ -428,33 +464,7 @@ app.post('/api/letters', async (req, res) => {
 });
 
 if (publicDir) {
-    const indexHtml = readFileSync(join(publicDir, 'index.html'), 'utf-8');
-
-    app.get('*', (req, res) => {
-        if (!res.headersSent) {
-            res.setHeader('Content-Type', 'text/html');
-            res.setHeader('Cache-Control', 'no-cache');
-            res.setHeader('Pragma', 'no-cache');
-            res.setHeader('Expires', '0');
-            res.status(200);
-
-            const search = parse(req.url || '').search;
-            if (search) {
-                const title = getDocumentTitleByFilter(
-                    getStateFromParams(new URLSearchParams(search))
-                );
-
-                res.send(
-                    indexHtml.replace(
-                        /<title>(.*?)<\/title>/,
-                        `<title>${title}</title>`
-                    )
-                );
-            } else {
-                res.send(indexHtml);
-            }
-        }
-    });
+    app.get('*', indexHandler);
 }
 
 sequalize
