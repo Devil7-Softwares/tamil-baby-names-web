@@ -36,6 +36,9 @@ export const Filters: React.FC = () => {
     const [startsWithMode, setStartsWithMode] =
         useFilterState('startsWithMode');
 
+    const [tob] = useFilterState('tob');
+    const [tz] = useFilterState('tz');
+
     const onTwinNamesClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>
     ) => {
@@ -102,6 +105,9 @@ export const Filters: React.FC = () => {
                         startsWith,
                         twinNames,
                         religion,
+                        startsWithMode,
+                        tob,
+                        tz,
                     },
                     { headers: { token } }
                 )

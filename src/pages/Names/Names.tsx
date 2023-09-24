@@ -22,11 +22,10 @@ export const Names: React.FC = () => {
     const page = Number(searchParams.get('page'));
     const limit = Number(searchParams.get('limit'));
 
-    const [filters, setFilters] = useState<IFilterData>({});
+    const [filters, setFilters] = useState<IFilterData>({} as IFilterData);
     const [total, setTotal] = useState(0);
     const [data, setData] = useState<IName[] | ITwinName[]>([]);
     const [loading, setLoading] = useState(false);
-    const [exporting, setExporting] = useState(false);
 
     useEffect(() => {
         setLoading(true);

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 
-import { IFilterState } from '../interfaces';
+import { IFilterData } from '../interfaces';
 import { getDefaultTimezone } from './Timezone';
 import { getLunarMansion, getLunarMansionIndex } from './astro';
 
@@ -10,23 +10,23 @@ const sentenseCase = (str: string) => {
 
 export const getStateFromParams = (params: URLSearchParams) => {
     return {
-        gender: (params.get('gender') as IFilterState['gender']) || undefined,
+        gender: (params.get('gender') as IFilterData['gender']) || undefined,
         startsWith:
             (params
                 .get('startsWith')
-                ?.split(',') as IFilterState['startsWith']) || undefined,
+                ?.split(',') as IFilterData['startsWith']) || undefined,
         twinNames: params.get('twinNames') === 'true',
         religion:
-            (params.get('religion') as IFilterState['religion']) || undefined,
+            (params.get('religion') as IFilterData['religion']) || undefined,
         startsWithMode:
-            (params.get('startsWithMode') as IFilterState['startsWithMode']) ||
+            (params.get('startsWithMode') as IFilterData['startsWithMode']) ||
             'none',
         tob: params.get('tob') || dayjs().format('YYYY-MM-DDTHH:mm'),
         tz: params.get('tz') || getDefaultTimezone(),
     };
 };
 
-export const getDocumentTitleByFilter = (filter: IFilterState) => {
+export const getDocumentTitleByFilter = (filter: IFilterData) => {
     let documentTitle = [];
 
     if (filter.twinNames) {

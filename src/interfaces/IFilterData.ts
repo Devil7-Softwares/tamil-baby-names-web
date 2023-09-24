@@ -5,4 +5,7 @@ export interface IFilterData {
     startsWith?: string[];
     twinNames?: boolean;
     religion?: Religion;
+    startsWithMode: 'none' | 'auto' | 'manual';
+    tob: string;
+    tz: string;
 }

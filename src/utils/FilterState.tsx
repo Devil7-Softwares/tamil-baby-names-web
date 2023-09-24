@@ -10,17 +10,17 @@ import React, {
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { IFilterState } from '../interfaces';
+import { IFilterData } from '../interfaces';
 import { getDocumentTitleByFilter, getStateFromParams } from './Common';
 
-const FilterStateContext = createContext<IFilterState>({} as IFilterState);
+const FilterStateContext = createContext<IFilterData>({} as IFilterData);
 
 export const FilterStateProvider: React.FC<PropsWithChildren> = ({
     children,
 }) => {
     const [searchParams] = useSearchParams();
 
-    const state = useMemo<IFilterState>(
+    const state = useMemo<IFilterData>(
         () => getStateFromParams(searchParams),
         [searchParams]
     );
@@ -36,9 +36,9 @@ export const FilterStateProvider: React.FC<PropsWithChildren> = ({
     );
 };
 
-export const useFilterState = <K extends keyof IFilterState>(
+export const useFilterState = <K extends keyof IFilterData>(
     key: K
-): [IFilterState[K], Dispatch<SetStateAction<IFilterState[K]>>] => {
+): [IFilterData[K], Dispatch<SetStateAction<IFilterData[K]>>] => {
     const [_, setSearchParams] = useSearchParams();
 
     const state = useContext(FilterStateContext);
@@ -46,8 +46,8 @@ export const useFilterState = <K extends keyof IFilterState>(
     const setFilterState = useCallback(
         (
             value:
-                | IFilterState[K]
-                | ((prevState: IFilterState[K]) => IFilterState[K])
+                | IFilterData[K]
+                | ((prevState: IFilterData[K]) => IFilterData[K])
         ) => {
             const newValue =
                 value instanceof Function ? value(state[key]) : value;
