@@ -17,7 +17,7 @@ import {
     getLunarMansionIndex,
     getMoonSign,
     getMoonSignIndex,
-} from './utils';
+} from './utils/astro';
 import {
     getDocumentTitleByFilter,
     getStateFromParams,
@@ -600,7 +600,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
 
         const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
             try {
-                var chunks: Uint8Array[] = [];
+                const chunks: Uint8Array[] = [];
                 pdfDoc.on('data', (chunk) => chunks.push(chunk));
                 pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
                 pdfDoc.end();

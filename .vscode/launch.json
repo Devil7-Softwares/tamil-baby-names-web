@@ -6,8 +6,8 @@
       "request": "launch",
       "name": "Debug",
       "cwd": "${workspaceRoot}",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run-script", "start:backend"]
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev:server"]
     }
   ]
 }

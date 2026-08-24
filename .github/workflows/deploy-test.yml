@@ -11,13 +11,15 @@ jobs:
 
     steps:
       - name: Checking-out latest source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setting up nodejs
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: 14
+          node-version: 24
+      - name: Enabling corepack
+        run: corepack enable
       - name: Installing node modules
-        run: yarn
+        run: yarn install --immutable
       - name: Building server & client
         run: yarn build
         env:

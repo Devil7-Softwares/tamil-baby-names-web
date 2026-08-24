@@ -27,7 +27,7 @@ export const getStateFromParams = (params: URLSearchParams) => {
 };
 
 export const getDocumentTitleByFilter = (filter: IFilterData) => {
-    let documentTitle = [];
+    const documentTitle = [];
 
     if (filter.twinNames) {
         if (filter.gender) {

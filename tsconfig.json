@@ -1,13 +1,8 @@
 {
-  "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "jsx": "react",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "module": "CommonJS",
-    "resolveJsonModule": true,
-    "strict": true,
-    "target": "ES2018"
-  },
-  "include": ["./src", "./types.d.ts"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.server.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }

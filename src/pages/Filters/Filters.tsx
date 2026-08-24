@@ -248,7 +248,7 @@ export const Filters: React.FC = () => {
 
             <ReCAPTCHA
                 className='recaptcha'
-                sitekey={process.env.RECAPTCHA_SITE_KEY || ''}
+                sitekey={import.meta.env.RECAPTCHA_SITE_KEY || ''}
                 onChange={setToken}
             />
 

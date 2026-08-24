@@ -42,7 +42,7 @@ export const ManualLetters: React.FC<IProps> = ({
                     key={`letter-${letter}`}
                     name={letter}
                     checked={selected.includes(letter)}
-                    onCheckedChange={(e, checked) => {
+                    onCheckedChange={(_e, checked) => {
                         if (checked && !selected.includes(letter)) {
                             setSelected([...selected, letter]);
                         } else if (!checked && selected.includes(letter)) {
