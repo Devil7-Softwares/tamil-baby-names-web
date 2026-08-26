@@ -293,11 +293,38 @@ async function getNamesForFilter(
         const where = {
             [Op.and]: [
                 startsWith && startsWith.length
-                    ? {
-                          firstLetter: {
-                              [Op.in]: startsWith,
-                          },
-                      }
+                    ? filters.startsWithMode === 'manual'
+                        ? {
+                              // A picked letter means "names beginning with
+                              // it": prefix-match `first_letter` (it stores
+                              // whole syllables, so `க` must reach `கா`) and
+                              // the name itself for Latin spellings.
+                              [Op.or]: startsWith.reduce<WhereOptions[]>(
+                                  (arr, char) => {
+                                      arr.push({
+                                          firstLetter: {
+                                              [Op.like]: `${char}%`,
+                                          },
+                                      });
+                                      arr.push({
+                                          name: {
+                                              [Op.like]: `${char}%`,
+                                          },
+                                      });
+
+                                      return arr;
+                                  },
+                                  [],
+                              ),
+                          }
+                        : {
+                              // Auto mode names exact syllables, and
+                              // `first_letter` already normalises Latin
+                              // spellings onto them, so match it exactly.
+                              firstLetter: {
+                                  [Op.in]: startsWith,
+                              },
+                          }
                     : null,
                 filters.gender
                     ? {
