@@ -14,6 +14,13 @@ import {
 import { WithFilters } from '../../types';
 import { getDocumentTitleByFilter } from '../../utils/Common';
 
+interface ILoadedNames {
+    key: string;
+    data: IName[] | ITwinName[];
+    total: number;
+    filters: IFilterData;
+}
+
 export const Names: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams(
@@ -23,32 +30,49 @@ export const Names: React.FC = () => {
     const page = Number(searchParams.get('page'));
     const limit = Number(searchParams.get('limit'));
 
-    const [filters, setFilters] = useState<IFilterData>({} as IFilterData);
-    const [total, setTotal] = useState(0);
-    const [data, setData] = useState<IName[] | ITwinName[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loaded, setLoaded] = useState<ILoadedNames | null>(null);
+
+    const requestKey = `${page}|${limit}`;
+    const loading = loaded?.key !== requestKey;
+
+    const filters = loaded?.filters;
+    const data = loaded?.data || [];
+    const total = loaded?.total || 0;
 
     useEffect(() => {
-        setLoading(true);
+        let cancelled = false;
+
         axios
             .get<WithFilters<IPaginatedResponseData<IName>>>('/api/names', {
                 params: { limit, page },
             })
             .then((response) => {
-                if (response.data.success) {
-                    setData(response.data.data);
-                    setTotal(response.data.total);
-                    setFilters(response.data.filters);
+                if (cancelled) {
+                    return;
                 }
+
+                setLoaded({
+                    key: `${page}|${limit}`,
+                    data: response.data.success ? response.data.data : [],
+                    total: response.data.success ? response.data.total : 0,
+                    filters: response.data.filters,
+                });
             })
             .catch(() => {
-                navigate('/');
-            })
-            .finally(() => setLoading(false));
-    }, [page, limit]);
+                if (!cancelled) {
+                    navigate('/');
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [page, limit, navigate]);
 
     useEffect(() => {
-        document.title = getDocumentTitleByFilter(filters);
+        if (filters) {
+            document.title = getDocumentTitleByFilter(filters);
+        }
     }, [filters]);
 
     return (
@@ -84,11 +108,11 @@ export const Names: React.FC = () => {
                         <table
                             style={{
                                 gridTemplateColumns: `${
-                                    filters.twinNames
+                                    filters?.twinNames
                                         ? 'auto 1fr auto 1fr'
                                         : 'auto 1fr'
-                                } ${!filters.gender ? '100px' : ''} ${
-                                    !filters.twinNames && !filters.religion
+                                } ${!filters?.gender ? '100px' : ''} ${
+                                    !filters?.twinNames && !filters?.religion
                                         ? '100px'
                                         : ''
                                 } 100px`,
@@ -96,7 +120,7 @@ export const Names: React.FC = () => {
                         >
                             <thead>
                                 <tr>
-                                    {filters.twinNames ? (
+                                    {filters?.twinNames ? (
                                         <>
                                             <th>Name 1</th>
                                             <th>Meaning 1</th>
@@ -109,9 +133,9 @@ export const Names: React.FC = () => {
                                             <th>Meaning</th>
                                         </>
                                     )}
-                                    {!filters.gender && <th>Gender</th>}
-                                    {!filters.twinNames &&
-                                        !filters.religion && <th>Religion</th>}
+                                    {!filters?.gender && <th>Gender</th>}
+                                    {!filters?.twinNames &&
+                                        !filters?.religion && <th>Religion</th>}
                                     <th>Language</th>
                                 </tr>
                             </thead>
@@ -131,7 +155,7 @@ export const Names: React.FC = () => {
                                                 <td>{item.meaning2}</td>
                                             </>
                                         )}
-                                        {!filters.gender && (
+                                        {!filters?.gender && (
                                             <td>
                                                 {item.gender === 'boy'
                                                     ? 'ஆண்'
@@ -139,7 +163,7 @@ export const Names: React.FC = () => {
                                             </td>
                                         )}
                                         {'religion' in item &&
-                                            !filters.religion && (
+                                            !filters?.religion && (
                                                 <td>{item.religion}</td>
                                             )}
                                         <td>{item.language}</td>
