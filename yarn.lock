@@ -180,16 +180,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@devil7softwares/react-drifter-stars@npm:^1.0.5":
-  version: 1.0.5
-  resolution: "@devil7softwares/react-drifter-stars@npm:1.0.5"
-  peerDependencies:
-    react: ^18.2.0
-    react-dom: ^18.2.0
-  checksum: 10c0/1bc82e2d066dc664683fb93bc4f9dffa38e48681f8eaaad606b18b7e09b76e310451b8555561d5528cc8a0b684989adfec56c9535fba084ea4dfae37ad8f719f
-  languageName: node
-  linkType: hard
-
 "@emnapi/core@npm:1.10.0":
   version: 1.10.0
   resolution: "@emnapi/core@npm:1.10.0"
@@ -4346,6 +4336,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-drifter-stars@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "react-drifter-stars@npm:2.0.2"
+  peerDependencies:
+    react: ^18.2.0 || ^19.0.0
+    react-dom: ^18.2.0 || ^19.0.0
+  checksum: 10c0/3384390ebd8d04360e61f6f61d6d9d9339cfc9f0f2aa13b1dca7362649d1a4a47fbadea97329920a5502d2f135d7c724c53ceb2722196dc2f12526ef0c5b07c3
+  languageName: node
+  linkType: hard
+
 "react-google-recaptcha@npm:^2.1.0":
   version: 2.1.0
   resolution: "react-google-recaptcha@npm:2.1.0"
@@ -4980,7 +4980,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "tamil-baby-names-web@workspace:."
   dependencies:
-    "@devil7softwares/react-drifter-stars": "npm:^1.0.5"
     "@eslint/js": "npm:^10.0.1"
     "@types/cookie-parser": "npm:^1.4.3"
     "@types/express": "npm:^5.0.6"
@@ -5014,6 +5013,7 @@ __metadata:
     prettier: "npm:^3.9.6"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
+    react-drifter-stars: "npm:^2.0.2"
     react-google-recaptcha: "npm:^2.1.0"
     react-router-dom: "npm:^6.5.0"
     sass: "npm:^1.103.1"

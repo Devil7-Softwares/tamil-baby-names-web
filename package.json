@@ -21,7 +21,6 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@devil7softwares/react-drifter-stars": "^1.0.5",
     "axios": "^1.2.1",
     "clsx": "^1.2.1",
     "cookie-parser": "^1.4.6",
@@ -35,6 +34,7 @@
     "pdfmake": "^0.3.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-drifter-stars": "^2.0.2",
     "react-google-recaptcha": "^2.1.0",
     "react-router-dom": "^6.5.0",
     "sequelize": "^6.27.0"

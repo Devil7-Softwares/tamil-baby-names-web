@@ -1,5 +1,5 @@
-import DrifterStars from '@devil7softwares/react-drifter-stars';
 import React, { PropsWithChildren } from 'react';
+import DrifterStars from 'react-drifter-stars';
 
 export const Background: React.FC<
     PropsWithChildren<Record<string, unknown>>
