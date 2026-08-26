@@ -670,7 +670,7 @@ app.post('/api/letters', async (req, res) => {
 });
 
 if (publicDir) {
-    app.get('*', indexHandler);
+    app.get('/*splat', indexHandler);
 }
 
 sequalize
