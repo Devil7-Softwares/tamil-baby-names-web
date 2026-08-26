@@ -36,7 +36,7 @@
     "react-dom": "^19.2.8",
     "react-drifter-stars": "^2.0.2",
     "react-google-recaptcha": "^2.1.0",
-    "react-router-dom": "^6.5.0",
+    "react-router-dom": "^7.18.2",
     "sequelize": "^6.27.0"
   },
   "devDependencies": {
