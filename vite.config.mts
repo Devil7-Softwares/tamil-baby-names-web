@@ -1,6 +1,9 @@
 import react from '@vitejs/plugin-react';
+import { configDotenv } from 'dotenv';
 import { defineConfig } from 'vite';
 import { compression } from 'vite-plugin-compression2';
+
+configDotenv({ quiet: true });
 
 export default defineConfig({
     plugins: [
@@ -18,6 +21,7 @@ export default defineConfig({
         sourcemap: true,
     },
     server: {
+        host: process.env.VITE_HOST || 'localhost',
         proxy: {
             '/api': {
                 target: 'http://localhost:3000',
