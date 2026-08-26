@@ -1,4 +1,6 @@
 import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 import { IFilterData } from '../interfaces';
 import {
@@ -8,8 +10,32 @@ import {
 } from './astro';
 import { getDefaultTimezone } from './Timezone';
 
+// Extended here rather than only in the entry points, since the astro helpers
+// below are shared by the browser bundle and the server bundle.
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 export const sentenseCase = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+/**
+ * Birth date as an absolute instant. `tob` is a wall-clock value, so it only
+ * identifies a moment once it is read in the selected timezone.
+ */
+export const getBirthDate = (tob?: string, tz?: string): Date | null => {
+    if (!tob || !tz) {
+        return null;
+    }
+
+    try {
+        const date = dayjs.tz(tob, tz);
+
+        return date.isValid() ? date.toDate() : null;
+    } catch {
+        // dayjs.tz throws on an unknown timezone name.
+        return null;
+    }
 };
 
 export const getStartingLettersForFilter = (
@@ -19,11 +45,11 @@ export const getStartingLettersForFilter = (
         return filter.startsWith;
     }
 
-    if (filter.startsWithMode === 'auto' && filter.tob && filter.tz) {
-        const date = dayjs(filter.tob, filter.tz);
+    if (filter.startsWithMode === 'auto') {
+        const date = getBirthDate(filter.tob, filter.tz);
 
-        if (date.isValid()) {
-            const lunarMansionIndex = getLunarMansionIndex(date.toDate());
+        if (date) {
+            const lunarMansionIndex = getLunarMansionIndex(date);
 
             return [
                 ...getStartingLettersForName(lunarMansionIndex, 'en'),
@@ -103,11 +129,11 @@ export const getDocumentTitleByFilter = (filter: IFilterData) => {
         filter.startsWith.length > 0
     ) {
         documentTitle.push(`Starting with ${filter.startsWith}`);
-    } else if (filter.startsWithMode === 'auto' && filter.tob && filter.tz) {
-        const date = dayjs(filter.tob, filter.tz);
+    } else if (filter.startsWithMode === 'auto') {
+        const date = getBirthDate(filter.tob, filter.tz);
 
-        if (date.isValid()) {
-            const lunarMansionIndex = getLunarMansionIndex(date.toDate());
+        if (date) {
+            const lunarMansionIndex = getLunarMansionIndex(date);
             const lunarMansion = getLunarMansion(lunarMansionIndex, 'en');
 
             documentTitle.push(`For ${lunarMansion} Nakshatra`);

@@ -1,6 +1,5 @@
 import './AutoLetters.scss';
 
-import dayjs from 'dayjs';
 import React, { useEffect, useMemo } from 'react';
 
 import Timezones from '../../assets/timezones.json';
@@ -12,6 +11,7 @@ import {
     getStartingLettersForName,
     useFilterState,
 } from '../../utils';
+import { getBirthDate } from '../../utils/Common';
 
 type T = Parameters<typeof getLunarMansion>[1];
 
@@ -20,9 +20,9 @@ export const AutoLetters: React.FC = () => {
     const [timezone, setTimezone] = useFilterState('tz');
 
     const astro = useMemo(() => {
-        const date = dayjs(dateTimeOfBirth, timezone).toDate();
+        const date = getBirthDate(dateTimeOfBirth, timezone);
 
-        if (date.toString() === 'Invalid Date') {
+        if (!date) {
             return null;
         }
 

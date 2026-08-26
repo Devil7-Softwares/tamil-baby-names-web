@@ -1,6 +1,5 @@
 import axios from 'axios';
 import cookieParser from 'cookie-parser';
-import dayjs from 'dayjs';
 import { config } from 'dotenv';
 import express, { RequestHandler } from 'express';
 import expressStaticGzip from 'express-static-gzip';
@@ -20,6 +19,7 @@ import {
     getMoonSignIndex,
 } from './utils/astro';
 import {
+    getBirthDate,
     getDocumentTitleByFilter,
     getStartingLettersForFilter,
     getStateFromParams,
@@ -389,11 +389,11 @@ app.get('/api/export', authMiddleware, async (req, res) => {
         }
 
         if (filters.startsWithMode === 'auto') {
-            const date = dayjs(filters.tob, filters.tz);
+            const date = getBirthDate(filters.tob, filters.tz);
 
-            if (date.isValid()) {
-                const moonSignIndex = getMoonSignIndex(date.toDate());
-                const lunarMansionIndex = getLunarMansionIndex(date.toDate());
+            if (date) {
+                const moonSignIndex = getMoonSignIndex(date);
+                const lunarMansionIndex = getLunarMansionIndex(date);
 
                 const moonSignEN = getMoonSign(moonSignIndex, 'en');
                 const moonSignTA = getMoonSign(moonSignIndex, 'ta');
