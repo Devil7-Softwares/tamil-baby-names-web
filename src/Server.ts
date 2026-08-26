@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import dayjs from 'dayjs';
 import { config } from 'dotenv';
 import express, { RequestHandler } from 'express';
+import expressStaticGzip from 'express-static-gzip';
 import { existsSync, readFileSync } from 'fs';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { join } from 'path';
@@ -165,7 +166,12 @@ if (publicDir) {
 
     app.get('/', indexHandler);
 
-    app.use(express.static(publicDir));
+    app.use(
+        expressStaticGzip(publicDir, {
+            enableBrotli: true,
+            orderPreference: ['br', 'gz'],
+        })
+    );
 } else {
     console.log(`No public dir found!`);
 }
