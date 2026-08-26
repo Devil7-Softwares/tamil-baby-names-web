@@ -27,6 +27,11 @@ import {
 
 config({ quiet: true });
 
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+    throw new Error('JWT_SECRET environment variable must be set.');
+}
+
 const sequalize = new Sequelize({
     host: process.env.MYSQL_HOST,
     database: process.env.MYSQL_DATABASE,
@@ -120,10 +125,10 @@ const authMiddleware: RequestHandler = (req, res, next) => {
     }
 
     try {
-        res.locals.filterOptions = jwt.verify(
-            accessToken,
-            process.env.JWT_SECRET || 'Jwt@123',
-        ) as Record<string, unknown>;
+        res.locals.filterOptions = jwt.verify(accessToken, jwtSecret) as Record<
+            string,
+            unknown
+        >;
 
         if (res.locals.filterOptions.exp) delete res.locals.filterOptions.exp;
         if (res.locals.filterOptions.iat) delete res.locals.filterOptions.iat;
@@ -227,7 +232,7 @@ app.post('/api/generate', async (req, res) => {
         });
     }
 
-    const accessToken = jwt.sign(filters, process.env.JWT_SECRET || 'Jwt@123', {
+    const accessToken = jwt.sign(filters, jwtSecret, {
         expiresIn: '1h',
     });
 
