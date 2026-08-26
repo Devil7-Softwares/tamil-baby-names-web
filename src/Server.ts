@@ -243,6 +243,29 @@ app.post('/api/generate', async (req, res) => {
     });
 });
 
+const TAMIL_VOWEL_SIGN = /[\u0BBE-\u0BCD]/;
+
+const isBareTamilLetter = (letter: string) =>
+    /[\u0B80-\u0BFF]/.test(letter) && !TAMIL_VOWEL_SIGN.test(letter.slice(-1));
+
+const startsWithLetter = (
+    column: 'name1' | 'name2',
+    letter: string,
+    exactSyllable: boolean,
+): WhereOptions =>
+    exactSyllable && isBareTamilLetter(letter)
+        ? {
+              [Op.and]: [
+                  { [column]: { [Op.like]: `${letter}%` } },
+                  {
+                      [column]: {
+                          [Op.notRegexp]: `^${letter}[\\x{0BBE}-\\x{0BCD}]`,
+                      },
+                  },
+              ],
+          }
+        : { [column]: { [Op.like]: `${letter}%` } };
+
 async function getNamesForFilter(
     filters: IFilterData,
     page?: number,
@@ -257,16 +280,23 @@ async function getNamesForFilter(
                     ? {
                           [Op.or]: startsWith.reduce<WhereOptions[]>(
                               (arr, char) => {
-                                  arr.push({
-                                      name1: {
-                                          [Op.like]: `${char}%`,
-                                      },
-                                  });
-                                  arr.push({
-                                      name2: {
-                                          [Op.like]: `${char}%`,
-                                      },
-                                  });
+                                  const exactSyllable =
+                                      filters.startsWithMode === 'auto';
+
+                                  arr.push(
+                                      startsWithLetter(
+                                          'name1',
+                                          char,
+                                          exactSyllable,
+                                      ),
+                                  );
+                                  arr.push(
+                                      startsWithLetter(
+                                          'name2',
+                                          char,
+                                          exactSyllable,
+                                      ),
+                                  );
 
                                   return arr;
                               },
