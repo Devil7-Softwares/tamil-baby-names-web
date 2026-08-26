@@ -403,7 +403,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                     {
                         columns: [
                             {
-                                text: 'Lunar Mansion / ',
+                                text: 'Moon Sign / ',
                                 font: 'Roboto',
                                 preserveTrailingSpaces: true,
                             },
