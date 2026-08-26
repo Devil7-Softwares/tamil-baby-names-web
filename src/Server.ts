@@ -6,8 +6,8 @@ import express, { RequestHandler } from 'express';
 import expressStaticGzip from 'express-static-gzip';
 import { existsSync, readFileSync } from 'fs';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
-import { join } from 'path';
-import PdfPrinter from 'pdfmake';
+import { join, resolve } from 'path';
+import pdfmake from 'pdfmake';
 import { Content, TableCell } from 'pdfmake/interfaces';
 import { DataTypes, Model, Op, Sequelize, WhereOptions } from 'sequelize';
 import { parse } from 'url';
@@ -89,6 +89,23 @@ const assetsDir =
     [join(__dirname, 'assets'), join(process.cwd(), 'assets')].find((path) =>
         existsSync(path),
     ) || './assets';
+const fontsDir = join(assetsDir, 'fonts');
+
+pdfmake.setFonts({
+    Roboto: {
+        normal: join(fontsDir, 'Roboto-Regular.ttf'),
+        bold: join(fontsDir, 'Roboto-Bold.ttf'),
+    },
+    Barathi: {
+        normal: join(fontsDir, 'TAU-Barathi-Regular.ttf'),
+    },
+});
+
+pdfmake.setLocalAccessPolicy((path) =>
+    resolve(path).startsWith(resolve(fontsDir)),
+);
+pdfmake.setUrlAccessPolicy(() => false);
+
 const indexHtml = publicDir
     ? readFileSync(join(publicDir, 'index.html'), 'utf-8')
     : null;
@@ -356,16 +373,6 @@ app.get('/api/names', authMiddleware, async (req, res) => {
 app.get('/api/export', authMiddleware, async (req, res) => {
     const filters = (res.locals.filterOptions || {}) as IFilterData;
 
-    const pdfPrinter = new PdfPrinter({
-        Roboto: {
-            normal: join(assetsDir, 'fonts', 'Roboto-Regular.ttf'),
-            bold: join(assetsDir, 'fonts', 'Roboto-Bold.ttf'),
-        },
-        Barathi: {
-            normal: join(assetsDir, 'fonts', 'TAU-Barathi-Regular.ttf'),
-        },
-    });
-
     try {
         const [rows] = await getNamesForFilter(filters);
 
@@ -463,7 +470,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                 /[^\u0000-\u00ff]/.test(String(item)),
             );
 
-            const startsWith: TableCell[] = [];
+            const startsWith: Content[] = [];
 
             if (startsWithEnglish.length) {
                 startsWith.push({
@@ -506,7 +513,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
 
         console.log(filters);
 
-        const pdfDoc = pdfPrinter.createPdfKitDocument({
+        const pdfDoc = pdfmake.createPdf({
             pageOrientation: filters.twinNames ? 'landscape' : 'portrait',
             pageMargins: [20, 20, 20, 40],
             pageSize: 'A4', // 595.28 x 841.89
@@ -604,16 +611,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
             ],
         });
 
-        const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-            try {
-                const chunks: Uint8Array[] = [];
-                pdfDoc.on('data', (chunk) => chunks.push(chunk));
-                pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-                pdfDoc.end();
-            } catch (err) {
-                reject(err);
-            }
-        });
+        const pdfBuffer = await pdfDoc.getBuffer();
 
         res.setHeader('Content-Type', 'application/pdf');
 
