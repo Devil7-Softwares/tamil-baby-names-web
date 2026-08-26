@@ -1,7 +1,7 @@
 import './Pagination.scss';
 
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 
 interface IProps {
     sizePerPage: number;
@@ -82,7 +82,10 @@ export const Pagination: React.FC<IProps> = ({
     totalCount,
     onChange,
 }: IProps) => {
-    const [pages, setPages] = useState<(string | number)[]>();
+    const pages = useMemo(
+        () => getPagination(totalCount, sizePerPage, currentPage),
+        [totalCount, sizePerPage, currentPage],
+    );
 
     const handleOnChange = (value: number) => {
         gtag('event', 'pagination', {
@@ -101,10 +104,6 @@ export const Pagination: React.FC<IProps> = ({
             {value}
         </div>
     );
-
-    useEffect(() => {
-        setPages(getPagination(totalCount, sizePerPage, currentPage));
-    }, [totalCount, sizePerPage, currentPage]);
 
     return (
         <div className='pagination-container'>
