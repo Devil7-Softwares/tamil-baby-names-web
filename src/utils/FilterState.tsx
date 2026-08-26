@@ -52,13 +52,19 @@ export const useFilterState = <K extends keyof IFilterData>(
             const newValue =
                 value instanceof Function ? value(state[key]) : value;
 
+            const isEmpty =
+                newValue === undefined ||
+                newValue === null ||
+                newValue === '' ||
+                (Array.isArray(newValue) && newValue.length === 0);
+
             setSearchParams((prevParams) => {
                 const newParams = new URLSearchParams(prevParams);
 
-                if (newValue) {
-                    newParams.set(key, newValue.toString());
-                } else {
+                if (isEmpty) {
                     newParams.delete(key);
+                } else {
+                    newParams.set(key, newValue.toString());
                 }
 
                 return newParams;
