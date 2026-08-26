@@ -1,11 +1,33 @@
 import { Gender, Religion } from '../types';
 
-export interface IFilterData {
+type FilterDataBase = {
     gender?: Gender;
-    startsWith?: string[];
     twinNames?: boolean;
     religion?: Religion;
-    startsWithMode: 'none' | 'auto' | 'manual';
     tob: string;
     tz: string;
+};
+
+// Every variant declares `startsWith` so that `keyof IFilterData` stays the full
+// set of keys; `useFilterState` indexes the union one key at a time and a key
+// missing from any variant would drop out of `keyof`.
+
+interface FilterDataStartsWithNone extends FilterDataBase {
+    startsWithMode: 'none';
+    startsWith?: never;
 }
+
+interface FilterDataStartsWithAuto extends FilterDataBase {
+    startsWithMode: 'auto';
+    startsWith?: never;
+}
+
+interface FilterDataStartsWithManual extends FilterDataBase {
+    startsWithMode: 'manual';
+    startsWith: string[];
+}
+
+export type IFilterData =
+    | FilterDataStartsWithNone
+    | FilterDataStartsWithAuto
+    | FilterDataStartsWithManual;

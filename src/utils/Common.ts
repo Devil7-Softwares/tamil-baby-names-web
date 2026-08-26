@@ -35,22 +35,29 @@ export const getStartingLettersForFilter = (
     return undefined;
 };
 
-export const getStateFromParams = (params: URLSearchParams) => {
-    return {
+export const getStateFromParams = (params: URLSearchParams): IFilterData => {
+    const base = {
         gender: (params.get('gender') as IFilterData['gender']) || undefined,
-        startsWith:
-            (params
-                .get('startsWith')
-                ?.split(',') as IFilterData['startsWith']) || undefined,
         twinNames: params.get('twinNames') === 'true',
         religion:
             (params.get('religion') as IFilterData['religion']) || undefined,
-        startsWithMode:
-            (params.get('startsWithMode') as IFilterData['startsWithMode']) ||
-            'none',
         tob: params.get('tob') || dayjs().format('YYYY-MM-DDTHH:mm'),
         tz: params.get('tz') || getDefaultTimezone(),
     };
+
+    const startsWithMode =
+        (params.get('startsWithMode') as IFilterData['startsWithMode']) ||
+        'none';
+
+    if (startsWithMode === 'manual') {
+        return {
+            ...base,
+            startsWithMode,
+            startsWith: params.get('startsWith')?.split(',') || [],
+        };
+    }
+
+    return { ...base, startsWithMode };
 };
 
 export const getDocumentTitleByFilter = (filter: IFilterData) => {
