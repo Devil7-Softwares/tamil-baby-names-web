@@ -13,6 +13,27 @@ import {
 } from '../../utils';
 import { getBirthDate } from '../../utils/Common';
 
+const timezoneOptions = Object.values(
+    Timezones.reduce<Record<string, (typeof Timezones)[number]>>(
+        (acc, timezone) => {
+            const zone = timezone.utc[0];
+
+            if (!zone) {
+                return acc;
+            }
+
+            const existing = acc[zone];
+
+            if (!existing || /daylight/i.test(existing.text)) {
+                acc[zone] = timezone;
+            }
+
+            return acc;
+        },
+        {},
+    ),
+);
+
 type T = Parameters<typeof getLunarMansion>[1];
 
 export const AutoLetters: React.FC = () => {
@@ -71,8 +92,8 @@ export const AutoLetters: React.FC = () => {
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
                 >
-                    {Timezones.map((timezone) => (
-                        <option key={timezone.text} value={timezone.utc[0]}>
+                    {timezoneOptions.map((timezone) => (
+                        <option key={timezone.utc[0]} value={timezone.utc[0]}>
                             {timezone.text}
                         </option>
                     ))}
