@@ -2529,10 +2529,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^16.0.3":
-  version: 16.0.3
-  resolution: "dotenv@npm:16.0.3"
-  checksum: 10c0/109457ac5f9e930ca8066ea33887b6f839ab24d647a7a8b49ddcd1f32662e2c35591c5e5b9819063e430148a664d0927f0cbe60cf9575d89bc524f47ff7e78f0
+"dotenv@npm:^17.4.2":
+  version: 17.4.2
+  resolution: "dotenv@npm:17.4.2"
+  checksum: 10c0/164f8e77a646c8446867d5b588d26ea6005c8ea7c5eb41cf926f6113d23f2191355f6e0cfd95ea9bab98394a5b0a3f1e51a8399711b666fe55cc7b0bd745f942
   languageName: node
   linkType: hard
 
@@ -5599,7 +5599,7 @@ __metadata:
     concurrently: "npm:^7.6.0"
     cookie-parser: "npm:^1.4.6"
     dayjs: "npm:^1.11.7"
-    dotenv: "npm:^16.0.3"
+    dotenv: "npm:^17.4.2"
     eslint: "npm:^10.9.1"
     eslint-plugin-import-x: "npm:^4.17.1"
     eslint-plugin-react-hooks: "npm:^7.1.1"

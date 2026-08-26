@@ -25,7 +25,7 @@ import {
     sentenseCase,
 } from './utils/Common';
 
-config();
+config({ quiet: true });
 
 const sequalize = new Sequelize({
     host: process.env.MYSQL_HOST,
