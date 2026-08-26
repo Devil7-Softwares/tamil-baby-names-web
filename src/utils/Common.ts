@@ -34,12 +34,12 @@ export const getDocumentTitleByFilter = (filter: IFilterData) => {
             if (filter.religion) {
                 documentTitle.push(
                     `Twin Names for ${sentenseCase(
-                        filter.religion
-                    )} ${sentenseCase(filter.gender)}s`
+                        filter.religion,
+                    )} ${sentenseCase(filter.gender)}s`,
                 );
             } else {
                 documentTitle.push(
-                    `Twin Names for ${sentenseCase(filter.gender)}s`
+                    `Twin Names for ${sentenseCase(filter.gender)}s`,
                 );
             }
         } else if (filter.religion) {
@@ -52,8 +52,8 @@ export const getDocumentTitleByFilter = (filter: IFilterData) => {
             if (filter.religion) {
                 documentTitle.push(
                     `${sentenseCase(filter.religion)} ${sentenseCase(
-                        filter.gender
-                    )} Names`
+                        filter.gender,
+                    )} Names`,
                 );
             } else {
                 documentTitle.push(`${sentenseCase(filter.gender)} Names`);

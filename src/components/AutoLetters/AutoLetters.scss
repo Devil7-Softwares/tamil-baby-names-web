@@ -1,10 +1,7 @@
 div.auto-letters {
     font-size: 0.8em;
 
-
-
-
-    >div.container {
+    > div.container {
         background-color: #0000004f;
 
         padding: 10px;
@@ -18,7 +15,7 @@ div.auto-letters {
         row-gap: 10px;
 
         &.output {
-            >div {
+            > div {
                 text-align: right;
             }
         }

@@ -4655,12 +4655,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^2.8.1":
-  version: 2.8.1
-  resolution: "prettier@npm:2.8.1"
+"prettier@npm:^3.9.6":
+  version: 3.9.6
+  resolution: "prettier@npm:3.9.6"
   bin:
-    prettier: bin-prettier.js
-  checksum: 10c0/66a2967780f7ebb724e0470c61b97ac19d2e91258f26288e4920138621a845958d86df23ec37c9342ddf475872396f2c458e9fbabb095631b03e436f315002b2
+    prettier: bin/prettier.cjs
+  checksum: 10c0/9f7ddae234035868f3daab3dc34e6de7e54622185afb017378029f0c09a9c023248ccf6f34def0b17a0538e18c47aa1b3188bab72965d1bf735919baa0747e99
   languageName: node
   linkType: hard
 
@@ -5612,7 +5612,7 @@ __metadata:
     jsonwebtoken: "npm:^8.5.1"
     mysql2: "npm:^2.3.3"
     pdfmake: "npm:^0.2.7"
-    prettier: "npm:^2.8.1"
+    prettier: "npm:^3.9.6"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-google-recaptcha: "npm:^2.1.0"

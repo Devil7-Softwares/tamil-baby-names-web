@@ -3,7 +3,7 @@ div.pagination-container {
     justify-content: center;
     margin-top: 10px;
 
-    >div.pagination {
+    > div.pagination {
         --border-color: #00000050;
         --border-radius: 5px;
 
@@ -14,7 +14,7 @@ div.pagination-container {
         border: 1px solid var(--border-color);
         border-radius: var(--border-radius);
 
-        >div {
+        > div {
             display: flex;
             align-items: center;
             justify-content: center;

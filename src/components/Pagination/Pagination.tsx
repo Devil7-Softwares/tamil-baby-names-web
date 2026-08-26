@@ -20,7 +20,7 @@ const range = (start: number, end: number) => {
 const getPagination = (
     totalCount: number,
     sizePerPage: number,
-    currentPage: number
+    currentPage: number,
 ) => {
     const siblingCount = 1;
 
@@ -40,7 +40,7 @@ const getPagination = (
     const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
     const rightSiblingIndex = Math.min(
         currentPage + siblingCount,
-        totalPageCount
+        totalPageCount,
     );
 
     /*
@@ -65,7 +65,7 @@ const getPagination = (
         const rightItemCount = 3 + 2 * siblingCount;
         const rightRange = range(
             totalPageCount - rightItemCount + 1,
-            totalPageCount
+            totalPageCount,
         );
         return [firstPageIndex, DOTS, ...rightRange];
     }

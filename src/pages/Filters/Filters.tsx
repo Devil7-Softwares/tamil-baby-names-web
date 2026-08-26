@@ -40,7 +40,7 @@ export const Filters: React.FC = () => {
     const [tz] = useFilterState('tz');
 
     const onTwinNamesClick = (
-        e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+        e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     ) => {
         const value = e.currentTarget.name === 'true';
         gtag('event', 'filters', {
@@ -51,7 +51,7 @@ export const Filters: React.FC = () => {
     };
 
     const onGenderClick = (
-        e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+        e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     ) => {
         const value = e.currentTarget.name as typeof gender;
         gtag('event', 'filters', {
@@ -62,7 +62,7 @@ export const Filters: React.FC = () => {
     };
 
     const onReligionClick = (
-        e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+        e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     ) => {
         const value = e.currentTarget.name as typeof religion;
         gtag('event', 'filters', {
@@ -73,7 +73,7 @@ export const Filters: React.FC = () => {
     };
 
     const onStartsWithModeClick = (
-        e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+        e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     ) => {
         const value = e.currentTarget.name as typeof startsWithMode;
         gtag('event', 'filters', {
@@ -109,14 +109,14 @@ export const Filters: React.FC = () => {
                         tob,
                         tz,
                     },
-                    { headers: { token } }
+                    { headers: { token } },
                 )
                 .then((response) => {
                     if (response.data.success) {
                         if (window.localStorage && location.search) {
                             window.localStorage.setItem(
                                 'params',
-                                location.search
+                                location.search,
                             );
                         }
 

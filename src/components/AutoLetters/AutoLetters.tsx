@@ -53,11 +53,11 @@ export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
 
             const enLetters = getStartingLettersForName(
                 lunarMansionIndex,
-                'en'
+                'en',
             );
             const taLetters = getStartingLettersForName(
                 lunarMansionIndex,
-                'ta'
+                'ta',
             );
 
             setLetters({

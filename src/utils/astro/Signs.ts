@@ -99,12 +99,12 @@ export function getLunarMansionIndex(date: Date) {
 
 export function getMoonSign(
     index: number,
-    locale: keyof typeof locales
+    locale: keyof typeof locales,
 ): string;
 export function getMoonSign(date: Date, locale: keyof typeof locales): string;
 export function getMoonSign(
     dateOrIndex: Date | number,
-    locale: keyof typeof locales
+    locale: keyof typeof locales,
 ): string {
     return locales[locale].moonSigns[
         dateOrIndex instanceof Date
@@ -115,15 +115,15 @@ export function getMoonSign(
 
 export function getLunarMansion(
     index: number,
-    locale: keyof typeof locales
+    locale: keyof typeof locales,
 ): string;
 export function getLunarMansion(
     date: Date,
-    locale: keyof typeof locales
+    locale: keyof typeof locales,
 ): string;
 export function getLunarMansion(
     dateOrIndex: Date | number,
-    locale: keyof typeof locales
+    locale: keyof typeof locales,
 ): string {
     return locales[locale].lunarMansions[
         dateOrIndex instanceof Date
@@ -134,15 +134,15 @@ export function getLunarMansion(
 
 export function getStartingLettersForName(
     index: number,
-    locale: keyof typeof locales
+    locale: keyof typeof locales,
 ): string[];
 export function getStartingLettersForName(
     date: Date,
-    locale: keyof typeof locales
+    locale: keyof typeof locales,
 ): string[];
 export function getStartingLettersForName(
     dateOrIndex: Date | number,
-    locale: keyof typeof locales
+    locale: keyof typeof locales,
 ): string[] {
     return locales[locale].namingLettersByLunarMansions[
         dateOrIndex instanceof Date

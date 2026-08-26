@@ -47,7 +47,7 @@ export const ManualLetters: React.FC<IProps> = ({
                             setSelected([...selected, letter]);
                         } else if (!checked && selected.includes(letter)) {
                             setSelected(
-                                selected.filter((item) => item !== letter)
+                                selected.filter((item) => item !== letter),
                             );
                         }
                     }}

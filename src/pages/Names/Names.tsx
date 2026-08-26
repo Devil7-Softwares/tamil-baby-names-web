@@ -17,7 +17,7 @@ import { getDocumentTitleByFilter } from '../../utils/Common';
 export const Names: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams(
-        new URLSearchParams({ page: '1', limit: '25' })
+        new URLSearchParams({ page: '1', limit: '25' }),
     );
 
     const page = Number(searchParams.get('page'));
@@ -60,7 +60,7 @@ export const Names: React.FC = () => {
                             window.localStorage &&
                                 window.localStorage.getItem('params')
                                 ? `/${window.localStorage.getItem('params')}`
-                                : '/'
+                                : '/',
                         )
                     }
                 >

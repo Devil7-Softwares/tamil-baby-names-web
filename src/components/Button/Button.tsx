@@ -3,16 +3,15 @@ import './Button.scss';
 import clsx from 'clsx';
 import React, { PropsWithChildren } from 'react';
 
-interface IProps
-    extends React.DetailedHTMLProps<
-        React.ButtonHTMLAttributes<HTMLButtonElement>,
-        HTMLButtonElement
-    > {
+interface IProps extends React.DetailedHTMLProps<
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    HTMLButtonElement
+> {
     image?: string;
     checked?: boolean;
     onCheckedChange?: (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-        checked: boolean
+        checked: boolean,
     ) => void;
 }
 

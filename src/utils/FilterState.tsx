@@ -22,7 +22,7 @@ export const FilterStateProvider: React.FC<PropsWithChildren> = ({
 
     const state = useMemo<IFilterData>(
         () => getStateFromParams(searchParams),
-        [searchParams]
+        [searchParams],
     );
 
     useEffect(() => {
@@ -37,7 +37,7 @@ export const FilterStateProvider: React.FC<PropsWithChildren> = ({
 };
 
 export const useFilterState = <K extends keyof IFilterData>(
-    key: K
+    key: K,
 ): [IFilterData[K], Dispatch<SetStateAction<IFilterData[K]>>] => {
     const [_, setSearchParams] = useSearchParams();
 
@@ -47,7 +47,7 @@ export const useFilterState = <K extends keyof IFilterData>(
         (
             value:
                 | IFilterData[K]
-                | ((prevState: IFilterData[K]) => IFilterData[K])
+                | ((prevState: IFilterData[K]) => IFilterData[K]),
         ) => {
             const newValue =
                 value instanceof Function ? value(state[key]) : value;
@@ -64,7 +64,7 @@ export const useFilterState = <K extends keyof IFilterData>(
                 return newParams;
             });
         },
-        [key, state, setSearchParams]
+        [key, state, setSearchParams],
     );
 
     return [state[key], setFilterState];

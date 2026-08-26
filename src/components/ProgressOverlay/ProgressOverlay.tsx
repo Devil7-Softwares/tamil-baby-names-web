@@ -6,7 +6,9 @@ interface IProps {
     loading?: boolean;
 }
 
-export const ProgressOverlay: React.FC<IProps> = ({ loading = true }: IProps) =>
+export const ProgressOverlay: React.FC<IProps> = ({
+    loading = true,
+}: IProps) =>
     loading ? (
         <div className='progress-overlay'>
             <div className='loader'>

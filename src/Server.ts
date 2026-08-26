@@ -55,7 +55,7 @@ const Names = sequalize.define<Model<IName>>(
         charset: 'utf8mb4',
         collate: 'utf8mb4_unicode_ci',
         timestamps: false,
-    }
+    },
 );
 
 const TwinNames = sequalize.define<Model<ITwinName>>(
@@ -78,7 +78,7 @@ const TwinNames = sequalize.define<Model<ITwinName>>(
         charset: 'utf8mb4',
         collate: 'utf8mb4_unicode_ci',
         timestamps: false,
-    }
+    },
 );
 
 const publicDir = [
@@ -87,7 +87,7 @@ const publicDir = [
 ].find((path) => existsSync(path));
 const assetsDir =
     [join(__dirname, 'assets'), join(process.cwd(), 'assets')].find((path) =>
-        existsSync(path)
+        existsSync(path),
     ) || './assets';
 const indexHtml = publicDir
     ? readFileSync(join(publicDir, 'index.html'), 'utf-8')
@@ -105,7 +105,7 @@ const authMiddleware: RequestHandler = (req, res, next) => {
     try {
         res.locals.filterOptions = jwt.verify(
             accessToken,
-            process.env.JWT_SECRET || 'Jwt@123'
+            process.env.JWT_SECRET || 'Jwt@123',
         ) as Record<string, unknown>;
 
         if (res.locals.filterOptions.exp) delete res.locals.filterOptions.exp;
@@ -140,14 +140,14 @@ const indexHandler: RequestHandler = (req, res) => {
         const search = parse(req.url || '').search;
         if (search) {
             const title = getDocumentTitleByFilter(
-                getStateFromParams(new URLSearchParams(search))
+                getStateFromParams(new URLSearchParams(search)),
             );
 
             res.send(
                 indexHtml.replace(
                     /<title>(.*?)<\/title>/,
-                    `<title>${title}</title>`
-                )
+                    `<title>${title}</title>`,
+                ),
             );
         } else {
             res.send(indexHtml);
@@ -170,7 +170,7 @@ if (publicDir) {
         expressStaticGzip(publicDir, {
             enableBrotli: true,
             orderPreference: ['br', 'gz'],
-        })
+        }),
     );
 } else {
     console.log(`No public dir found!`);
@@ -189,13 +189,13 @@ app.post('/api/generate', async (req, res) => {
 
     try {
         const captchaResponse = await axios.post(
-            `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`
+            `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
         );
 
         if (!captchaResponse.data.success) {
             console.error(
                 'Recaptcha verfication failed!',
-                captchaResponse.data
+                captchaResponse.data,
             );
             return res.status(400).send({
                 success: false,
@@ -223,7 +223,7 @@ app.post('/api/generate', async (req, res) => {
 async function getNamesForFilter(
     filters: IFilterData,
     page?: number,
-    limit?: number
+    limit?: number,
 ): Promise<[IName[] | ITwinName[], number]> {
     if (filters.twinNames) {
         const where = {
@@ -245,7 +245,7 @@ async function getNamesForFilter(
 
                                   return arr;
                               },
-                              []
+                              [],
                           ),
                       }
                     : null,
@@ -260,8 +260,8 @@ async function getNamesForFilter(
                               filters.religion === 'hindu'
                                   ? 'இந்து'
                                   : filters.religion === 'christian'
-                                  ? 'கிறிஸ்துவர்'
-                                  : 'முஸ்லிம்',
+                                    ? 'கிறிஸ்துவர்'
+                                    : 'முஸ்லிம்',
                       }
                     : null,
             ].filter((item) => item !== null),
@@ -295,8 +295,8 @@ async function getNamesForFilter(
                               filters.religion === 'hindu'
                                   ? 'இந்து'
                                   : filters.religion === 'christian'
-                                  ? 'கிறிஸ்துவர்'
-                                  : 'முஸ்லிம்',
+                                    ? 'கிறிஸ்துவர்'
+                                    : 'முஸ்லிம்',
                       }
                     : null,
             ].filter((item) => item !== null),
@@ -324,8 +324,8 @@ function withFonts(rows: TableCell[][]): TableCell[][] {
                               ? 'Barathi'
                               : 'Roboto',
                       text: cell,
-                  }
-        )
+                  },
+        ),
     );
 }
 app.get('/api/names', authMiddleware, async (req, res) => {
@@ -456,11 +456,11 @@ app.get('/api/export', authMiddleware, async (req, res) => {
             filters.startsWith.length
         ) {
             const startsWithEnglish = filters.startsWith.filter(
-                (item) => !/[^\u0000-\u00ff]/.test(String(item))
+                (item) => !/[^\u0000-\u00ff]/.test(String(item)),
             );
 
             const startsWithTamil = filters.startsWith.filter((item) =>
-                /[^\u0000-\u00ff]/.test(String(item))
+                /[^\u0000-\u00ff]/.test(String(item)),
             );
 
             const startsWith: TableCell[] = [];
@@ -491,7 +491,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                 '',
                 {
                     image: `data:image/png;base64,${readFileSync(
-                        join(assetsDir, 'zodiac', `${iconName}.png`)
+                        join(assetsDir, 'zodiac', `${iconName}.png`),
                     ).toString('base64')}`,
                     rowSpan: filterTable.length + 1,
                     background: '#ffffff',
@@ -622,7 +622,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
         } else {
             res.setHeader(
                 'Content-Disposition',
-                'attachment; filename=BabyNames.pdf'
+                'attachment; filename=BabyNames.pdf',
             );
         }
 
@@ -659,7 +659,7 @@ app.post('/api/letters', async (req, res) => {
             success: true,
             message: 'Names fetched successfully!',
             data: (letters as Array<{ firstLetter: string }>).map(
-                (item) => item.firstLetter
+                (item) => item.firstLetter,
             ),
         });
     } catch (error) {
