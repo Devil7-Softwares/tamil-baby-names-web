@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { defineConfig } from 'tsup';
 
-const runtimeAssetDirs = ['fonts'];
+const runtimeAssetDirs = ['fonts', 'zodiac'];
 
 async function copyRuntimeAssets() {
     for (const dir of runtimeAssetDirs) {
