@@ -1,11 +1,38 @@
 import dayjs from 'dayjs';
 
 import { IFilterData } from '../interfaces';
-import { getLunarMansion, getLunarMansionIndex } from './astro';
+import {
+    getLunarMansion,
+    getLunarMansionIndex,
+    getStartingLettersForName,
+} from './astro';
 import { getDefaultTimezone } from './Timezone';
 
 export const sentenseCase = (str: string) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+export const getStartingLettersForFilter = (
+    filter: IFilterData,
+): string[] | undefined => {
+    if (filter.startsWithMode === 'manual') {
+        return filter.startsWith;
+    }
+
+    if (filter.startsWithMode === 'auto' && filter.tob && filter.tz) {
+        const date = dayjs(filter.tob, filter.tz);
+
+        if (date.isValid()) {
+            const lunarMansionIndex = getLunarMansionIndex(date.toDate());
+
+            return [
+                ...getStartingLettersForName(lunarMansionIndex, 'en'),
+                ...getStartingLettersForName(lunarMansionIndex, 'ta'),
+            ];
+        }
+    }
+
+    return undefined;
 };
 
 export const getStateFromParams = (params: URLSearchParams) => {

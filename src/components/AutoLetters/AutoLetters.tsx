@@ -13,13 +13,9 @@ import {
     useFilterState,
 } from '../../utils';
 
-interface IProps {
-    setStartsWith: (letters: string[]) => void;
-}
-
 type T = Parameters<typeof getLunarMansion>[1];
 
-export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
+export const AutoLetters: React.FC = () => {
     const [dateTimeOfBirth, setDateTimeOfBirth] = useFilterState('tob');
     const [timezone, setTimezone] = useFilterState('tz');
 
@@ -54,16 +50,11 @@ export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
             return;
         }
 
-        const { en, ta } = astro.letters;
-        if (en.length > 0 || ta.length > 0) {
-            setStartsWith([...en, ...ta]);
-        }
-
         gtag('event', 'astro', {
             moonSign: astro.moonSign.en,
             lunarMansion: astro.lunarMansion.en,
         });
-    }, [astro, setStartsWith]);
+    }, [astro]);
 
     return (
         <div className='auto-letters'>

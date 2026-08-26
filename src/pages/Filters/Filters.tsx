@@ -36,8 +36,8 @@ export const Filters: React.FC = () => {
     const [startsWithMode, setStartsWithMode] =
         useFilterState('startsWithMode');
 
-    const [tob] = useFilterState('tob');
-    const [tz] = useFilterState('tz');
+    const [tob, setTob] = useFilterState('tob');
+    const [tz, setTz] = useFilterState('tz');
 
     const onTwinNamesClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -82,6 +82,11 @@ export const Filters: React.FC = () => {
         });
         setStartsWith([]);
         setStartsWithMode(value);
+
+        if (value === 'auto') {
+            setTob(tob);
+            setTz(tz);
+        }
     };
 
     const onGenerateClick = () => {
@@ -234,7 +239,7 @@ export const Filters: React.FC = () => {
             </Button>
 
             {startsWithMode === 'auto' ? (
-                <AutoLetters setStartsWith={setStartsWith} />
+                <AutoLetters />
             ) : startsWithMode === 'manual' ? (
                 <ManualLetters
                     gender={gender}

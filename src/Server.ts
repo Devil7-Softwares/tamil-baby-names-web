@@ -21,6 +21,7 @@ import {
 } from './utils/astro';
 import {
     getDocumentTitleByFilter,
+    getStartingLettersForFilter,
     getStateFromParams,
     sentenseCase,
 } from './utils/Common';
@@ -247,12 +248,14 @@ async function getNamesForFilter(
     page?: number,
     limit?: number,
 ): Promise<[IName[] | ITwinName[], number]> {
+    const startsWith = getStartingLettersForFilter(filters);
+
     if (filters.twinNames) {
         const where = {
             [Op.and]: [
-                filters.startsWithMode !== 'none' && filters.startsWith
+                startsWith && startsWith.length
                     ? {
-                          [Op.or]: filters.startsWith.reduce<WhereOptions[]>(
+                          [Op.or]: startsWith.reduce<WhereOptions[]>(
                               (arr, char) => {
                                   arr.push({
                                       name1: {
@@ -289,10 +292,10 @@ async function getNamesForFilter(
     } else {
         const where = {
             [Op.and]: [
-                filters.startsWithMode !== 'none' && filters.startsWith
+                startsWith && startsWith.length
                     ? {
                           firstLetter: {
-                              [Op.in]: filters.startsWith,
+                              [Op.in]: startsWith,
                           },
                       }
                     : null,
@@ -452,16 +455,14 @@ app.get('/api/export', authMiddleware, async (req, res) => {
             }
         }
 
-        if (
-            filters.startsWithMode !== 'none' &&
-            filters.startsWith &&
-            filters.startsWith.length
-        ) {
-            const startsWithEnglish = filters.startsWith.filter(
+        const startingLetters = getStartingLettersForFilter(filters);
+
+        if (startingLetters && startingLetters.length) {
+            const startsWithEnglish = startingLetters.filter(
                 (item) => !/[^\u0000-\u00ff]/.test(String(item)),
             );
 
-            const startsWithTamil = filters.startsWith.filter((item) =>
+            const startsWithTamil = startingLetters.filter((item) =>
                 /[^\u0000-\u00ff]/.test(String(item)),
             );
 
