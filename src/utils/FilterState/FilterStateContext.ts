@@ -5,16 +5,17 @@ import {
     useCallback,
     useContext,
 } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { IFilterData } from '../../interfaces';
+import { getStateFromParams } from '../Common';
 
 export const FilterStateContext = createContext<IFilterData>({} as IFilterData);
 
 export const useFilterState = <K extends keyof IFilterData>(
     key: K,
 ): [IFilterData[K], Dispatch<SetStateAction<IFilterData[K]>>] => {
-    const [_, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
 
     const state = useContext(FilterStateContext);
 
@@ -24,8 +25,12 @@ export const useFilterState = <K extends keyof IFilterData>(
                 | IFilterData[K]
                 | ((prevState: IFilterData[K]) => IFilterData[K]),
         ) => {
+            const params = new URLSearchParams(window.location.search);
+
             const newValue =
-                value instanceof Function ? value(state[key]) : value;
+                value instanceof Function
+                    ? value(getStateFromParams(params)[key])
+                    : value;
 
             const isEmpty =
                 newValue === undefined ||
@@ -33,19 +38,15 @@ export const useFilterState = <K extends keyof IFilterData>(
                 newValue === '' ||
                 (Array.isArray(newValue) && newValue.length === 0);
 
-            setSearchParams((prevParams) => {
-                const newParams = new URLSearchParams(prevParams);
+            if (isEmpty) {
+                params.delete(key);
+            } else {
+                params.set(key, newValue.toString());
+            }
 
-                if (isEmpty) {
-                    newParams.delete(key);
-                } else {
-                    newParams.set(key, newValue.toString());
-                }
-
-                return newParams;
-            });
+            navigate('?' + params.toString());
         },
-        [key, state, setSearchParams],
+        [key, navigate],
     );
 
     return [state[key], setFilterState];
