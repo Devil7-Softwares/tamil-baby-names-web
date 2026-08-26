@@ -70,8 +70,8 @@ export const AutoLetters: React.FC<IProps> = ({ setStartsWith }) => {
             }
 
             gtag('event', 'astro', {
-                moonSign: moonSign.en,
-                lunarMansion: lunarMansion.en,
+                moonSign: enMoonSign,
+                lunarMansion: enLunarMansion,
             });
         }
     }, [dateTimeOfBirth, timezone]);
