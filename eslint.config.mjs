@@ -27,9 +27,6 @@ export default tseslint.config(
                 'warn',
                 { allowConstantExport: true },
             ],
-            // Pre-existing derived-state-in-effect patterns. Demoted to warnings
-            // so they surface without failing the build; tracked for refactor.
-            'react-hooks/set-state-in-effect': 'warn',
         },
     },
 
