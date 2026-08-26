@@ -38,6 +38,7 @@ export const Filters: React.FC = () => {
 
     const [tob, setTob] = useFilterState('tob');
     const [tz, setTz] = useFilterState('tz');
+    const [panjangam, setPanjangam] = useFilterState('panjangam');
 
     const onTwinNamesClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -86,6 +87,7 @@ export const Filters: React.FC = () => {
         if (value === 'auto') {
             setTob(tob);
             setTz(tz);
+            setPanjangam(panjangam);
         }
     };
 
@@ -113,6 +115,7 @@ export const Filters: React.FC = () => {
                         startsWithMode,
                         tob,
                         tz,
+                        panjangam,
                     },
                     { headers: { token } },
                 )

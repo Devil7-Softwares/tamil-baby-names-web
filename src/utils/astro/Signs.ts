@@ -1,3 +1,4 @@
+import { Panjangam } from '../../types';
 import { locales } from './Locales';
 import {
     calculateAyanamsa,
@@ -6,7 +7,7 @@ import {
     toJulianDate,
 } from './Utils';
 
-export function getLongitudeOfMoon(date: Date): number {
+function getLongitudeOfMoonThirukanitha(date: Date): number {
     const day = date.getDate();
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
@@ -89,12 +90,43 @@ export function getLongitudeOfMoon(date: Date): number {
     return longitude;
 }
 
-export function getMoonSignIndex(date: Date) {
-    return longitudeToZodiac(getLongitudeOfMoon(date));
+export const DEFAULT_PANJANGAM: Panjangam = 'thirukanitha';
+
+/**
+ * Both the moon sign and the lunar mansion are read off this one longitude, so
+ * a method is only ever a different way of computing it. Methods are registered
+ * as they are implemented; `getStateFromParams` only accepts the ones listed,
+ * so an unimplemented method cannot reach the calculation.
+ */
+const moonLongitudeByPanjangam: Partial<
+    Record<Panjangam, (date: Date) => number>
+> = {
+    thirukanitha: getLongitudeOfMoonThirukanitha,
+};
+
+export const implementedPanjangams = Object.keys(
+    moonLongitudeByPanjangam,
+) as Panjangam[];
+
+export const isImplementedPanjangam = (value: string): value is Panjangam =>
+    implementedPanjangams.includes(value as Panjangam);
+
+export function getLongitudeOfMoon(
+    date: Date,
+    panjangam: Panjangam = DEFAULT_PANJANGAM,
+): number {
+    const calculate =
+        moonLongitudeByPanjangam[panjangam] || getLongitudeOfMoonThirukanitha;
+
+    return calculate(date);
 }
 
-export function getLunarMansionIndex(date: Date) {
-    return Math.floor((getLongitudeOfMoon(date) * 60) / 800.0);
+export function getMoonSignIndex(date: Date, panjangam?: Panjangam) {
+    return longitudeToZodiac(getLongitudeOfMoon(date, panjangam));
+}
+
+export function getLunarMansionIndex(date: Date, panjangam?: Panjangam) {
+    return Math.floor((getLongitudeOfMoon(date, panjangam) * 60) / 800.0);
 }
 
 export function getMoonSign(

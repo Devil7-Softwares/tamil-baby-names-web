@@ -1,4 +1,4 @@
-import { Gender, Religion } from '../types';
+import { Gender, Panjangam, Religion } from '../types';
 
 type FilterDataBase = {
     gender?: Gender;
@@ -6,6 +6,7 @@ type FilterDataBase = {
     religion?: Religion;
     tob: string;
     tz: string;
+    panjangam: Panjangam;
 };
 
 // Every variant declares `startsWith` so that `keyof IFilterData` stays the full

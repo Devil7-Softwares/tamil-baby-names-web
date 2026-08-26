@@ -4,9 +4,11 @@ import utc from 'dayjs/plugin/utc';
 
 import { IFilterData } from '../interfaces';
 import {
+    DEFAULT_PANJANGAM,
     getLunarMansion,
     getLunarMansionIndex,
     getStartingLettersForName,
+    isImplementedPanjangam,
 } from './astro';
 import { getDefaultTimezone } from './Timezone';
 
@@ -49,7 +51,10 @@ export const getStartingLettersForFilter = (
         const date = getBirthDate(filter.tob, filter.tz);
 
         if (date) {
-            const lunarMansionIndex = getLunarMansionIndex(date);
+            const lunarMansionIndex = getLunarMansionIndex(
+                date,
+                filter.panjangam,
+            );
 
             return [
                 ...getStartingLettersForName(lunarMansionIndex, 'en'),
@@ -62,6 +67,8 @@ export const getStartingLettersForFilter = (
 };
 
 export const getStateFromParams = (params: URLSearchParams): IFilterData => {
+    const panjangam = params.get('panjangam');
+
     const base = {
         gender: (params.get('gender') as IFilterData['gender']) || undefined,
         twinNames: params.get('twinNames') === 'true',
@@ -69,6 +76,12 @@ export const getStateFromParams = (params: URLSearchParams): IFilterData => {
             (params.get('religion') as IFilterData['religion']) || undefined,
         tob: params.get('tob') || dayjs().format('YYYY-MM-DDTHH:mm'),
         tz: params.get('tz') || getDefaultTimezone(),
+        // Anything unknown (or not implemented yet) falls back to the default,
+        // so an unsupported method can never reach the calculation.
+        panjangam:
+            panjangam && isImplementedPanjangam(panjangam)
+                ? panjangam
+                : DEFAULT_PANJANGAM,
     };
 
     const startsWithMode =
@@ -133,7 +146,10 @@ export const getDocumentTitleByFilter = (filter: IFilterData) => {
         const date = getBirthDate(filter.tob, filter.tz);
 
         if (date) {
-            const lunarMansionIndex = getLunarMansionIndex(date);
+            const lunarMansionIndex = getLunarMansionIndex(
+                date,
+                filter.panjangam,
+            );
             const lunarMansion = getLunarMansion(lunarMansionIndex, 'en');
 
             documentTitle.push(`For ${lunarMansion} Nakshatra`);

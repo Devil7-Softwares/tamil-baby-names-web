@@ -3,12 +3,15 @@ import './AutoLetters.scss';
 import React, { useEffect, useMemo } from 'react';
 
 import Timezones from '../../assets/timezones.json';
+import { Panjangam } from '../../types';
 import {
     getLunarMansion,
     getLunarMansionIndex,
     getMoonSign,
     getMoonSignIndex,
     getStartingLettersForName,
+    implementedPanjangams,
+    locales,
     useFilterState,
 } from '../../utils';
 import { getBirthDate } from '../../utils/Common';
@@ -39,6 +42,7 @@ type T = Parameters<typeof getLunarMansion>[1];
 export const AutoLetters: React.FC = () => {
     const [dateTimeOfBirth, setDateTimeOfBirth] = useFilterState('tob');
     const [timezone, setTimezone] = useFilterState('tz');
+    const [panjangam, setPanjangam] = useFilterState('panjangam');
 
     const astro = useMemo(() => {
         const date = getBirthDate(dateTimeOfBirth, timezone);
@@ -47,8 +51,8 @@ export const AutoLetters: React.FC = () => {
             return null;
         }
 
-        const moonSignIndex = getMoonSignIndex(date);
-        const lunarMansionIndex = getLunarMansionIndex(date);
+        const moonSignIndex = getMoonSignIndex(date, panjangam);
+        const lunarMansionIndex = getLunarMansionIndex(date, panjangam);
 
         return {
             moonSign: {
@@ -64,7 +68,7 @@ export const AutoLetters: React.FC = () => {
                 ta: getStartingLettersForName(lunarMansionIndex, 'ta'),
             } as Record<T, string[]>,
         };
-    }, [dateTimeOfBirth, timezone]);
+    }, [dateTimeOfBirth, timezone, panjangam]);
 
     useEffect(() => {
         if (!astro) {
@@ -98,6 +102,25 @@ export const AutoLetters: React.FC = () => {
                         </option>
                     ))}
                 </select>
+
+                {implementedPanjangams.length > 1 && (
+                    <>
+                        <label>பஞ்சாங்கம் / Panjangam</label>
+                        <select
+                            value={panjangam}
+                            onChange={(e) =>
+                                setPanjangam(e.target.value as Panjangam)
+                            }
+                        >
+                            {implementedPanjangams.map((method) => (
+                                <option key={method} value={method}>
+                                    {locales.ta.panjangams[method]} /{' '}
+                                    {locales.en.panjangams[method]}
+                                </option>
+                            ))}
+                        </select>
+                    </>
+                )}
             </div>
             <div className='container output'>
                 <label>ராசி / Moon Sign</label>

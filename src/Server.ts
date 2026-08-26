@@ -449,8 +449,11 @@ app.get('/api/export', authMiddleware, async (req, res) => {
             const date = getBirthDate(filters.tob, filters.tz);
 
             if (date) {
-                const moonSignIndex = getMoonSignIndex(date);
-                const lunarMansionIndex = getLunarMansionIndex(date);
+                const moonSignIndex = getMoonSignIndex(date, filters.panjangam);
+                const lunarMansionIndex = getLunarMansionIndex(
+                    date,
+                    filters.panjangam,
+                );
 
                 const moonSignEN = getMoonSign(moonSignIndex, 'en');
                 const moonSignTA = getMoonSign(moonSignIndex, 'ta');

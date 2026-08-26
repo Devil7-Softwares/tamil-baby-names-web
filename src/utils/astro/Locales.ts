@@ -96,6 +96,10 @@ export const locales = {
             ['DHU', 'THA', 'SA', 'GHEE', 'DU', 'JHA', 'JNA'],
             ['DE', 'DO', 'CHAA', 'CHEE', 'CHA', 'CHI'],
         ],
+        panjangams: {
+            thirukanitha: 'Thirukanitha',
+            vakkiya: 'Vakkiya',
+        },
     },
     ta: {
         moonSigns: [
@@ -170,5 +174,9 @@ export const locales = {
             ['து', 'ச', 'ஸ்ரீ', 'ஞ', 'ஸ', 'த'],
             ['தே', 'தோ', 'ச', 'சி'],
         ],
+        panjangams: {
+            thirukanitha: 'திருக்கணிதம்',
+            vakkiya: 'வாக்கியம்',
+        },
     },
 };
