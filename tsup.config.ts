@@ -1,5 +1,6 @@
 import { copyFile, mkdir, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import { defineConfig } from 'tsup';
 
 const runtimeAssetDirs = ['fonts'];
