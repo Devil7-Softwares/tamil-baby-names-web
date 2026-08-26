@@ -1,40 +1,15 @@
-import React, {
+import {
     createContext,
     Dispatch,
-    PropsWithChildren,
     SetStateAction,
     useCallback,
     useContext,
-    useEffect,
-    useMemo,
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { IFilterData } from '../interfaces';
-import { getDocumentTitleByFilter, getStateFromParams } from './Common';
+import { IFilterData } from '../../interfaces';
 
-const FilterStateContext = createContext<IFilterData>({} as IFilterData);
-
-export const FilterStateProvider: React.FC<PropsWithChildren> = ({
-    children,
-}) => {
-    const [searchParams] = useSearchParams();
-
-    const state = useMemo<IFilterData>(
-        () => getStateFromParams(searchParams),
-        [searchParams],
-    );
-
-    useEffect(() => {
-        document.title = getDocumentTitleByFilter(state);
-    }, [state]);
-
-    return (
-        <FilterStateContext.Provider value={state}>
-            {children}
-        </FilterStateContext.Provider>
-    );
-};
+export const FilterStateContext = createContext<IFilterData>({} as IFilterData);
 
 export const useFilterState = <K extends keyof IFilterData>(
     key: K,
