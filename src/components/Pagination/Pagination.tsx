@@ -120,12 +120,18 @@ export const Pagination: React.FC<IProps> = ({
                     >
                         &lt;
                     </div>
-                    {pages.map((pageNumber) => {
+                    {pages.map((pageNumber, index) => {
                         if (pageNumber === DOTS) {
-                            return <div className='spacer'>&#8230;</div>;
+                            return (
+                                <div key={`dots-${index}`} className='spacer'>
+                                    &#8230;
+                                </div>
+                            );
                         }
 
-                        return <Page value={Number(pageNumber)} />;
+                        return (
+                            <Page key={pageNumber} value={Number(pageNumber)} />
+                        );
                     })}
                     <div
                         className={
