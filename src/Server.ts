@@ -221,7 +221,7 @@ app.post('/api/generate', async (req, res) => {
         }
     } catch (error) {
         console.error('Recaptcha verfication failed!', error);
-        res.status(400).send({
+        return res.status(400).send({
             success: false,
             message: 'CAPTCHA verification failed!',
         });
