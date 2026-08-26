@@ -106,9 +106,10 @@ describe('getStateFromParams', () => {
         expect(parse('').startsWithMode).toBe('none');
     });
 
-    it('rejects a panjangam that is not implemented', () => {
-        expect(parse('panjangam=vakkiya').panjangam).toBe('thirukanitha');
-        expect(parse('panjangam=nonsense').panjangam).toBe('thirukanitha');
+    it('keeps an implemented panjangam and rejects anything else', () => {
         expect(parse('panjangam=thirukanitha').panjangam).toBe('thirukanitha');
+        expect(parse('panjangam=vakkiya').panjangam).toBe('vakkiya');
+        expect(parse('panjangam=nonsense').panjangam).toBe('thirukanitha');
+        expect(parse('').panjangam).toBe('thirukanitha');
     });
 });

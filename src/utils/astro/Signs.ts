@@ -6,6 +6,7 @@ import {
     longitudeToZodiac,
     toJulianDate,
 } from './Utils';
+import { getLongitudeOfMoonVakkiya } from './Vakya';
 
 function getLongitudeOfMoonThirukanitha(date: Date): number {
     const day = date.getDate();
@@ -102,6 +103,7 @@ const moonLongitudeByPanjangam: Partial<
     Record<Panjangam, (date: Date) => number>
 > = {
     thirukanitha: getLongitudeOfMoonThirukanitha,
+    vakkiya: getLongitudeOfMoonVakkiya,
 };
 
 export const implementedPanjangams = Object.keys(
