@@ -7,6 +7,7 @@ import {
     getLunarMansionIndex,
     implementedPanjangams,
     isImplementedPanjangam,
+    locales,
 } from '../src/utils/astro';
 
 describe('candravakya table', () => {
@@ -104,5 +105,14 @@ describe('panjangam registration', () => {
         expect(implementedPanjangams).toEqual(['thirukanitha', 'vakkiya']);
         expect(isImplementedPanjangam('vakkiya')).toBe(true);
         expect(isImplementedPanjangam('nonsense')).toBe(false);
+    });
+
+    // The exported PDF prints these, so a missing one reaches the user as the
+    // word "undefined" rather than as an error.
+    it('names every method it offers, in both locales', () => {
+        for (const panjangam of implementedPanjangams) {
+            expect(locales.en.panjangams[panjangam]).toBeTruthy();
+            expect(locales.ta.panjangams[panjangam]).toBeTruthy();
+        }
     });
 });

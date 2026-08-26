@@ -13,10 +13,12 @@ import { parse } from 'url';
 
 import { IFilterData, IName, ITwinName } from './interfaces';
 import {
+    DEFAULT_PANJANGAM,
     getLunarMansion,
     getLunarMansionIndex,
     getMoonSign,
     getMoonSignIndex,
+    locales,
 } from './utils/astro';
 import {
     getBirthDate,
@@ -461,6 +463,42 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                 const lunarMansionTA = getLunarMansion(lunarMansionIndex, 'ta');
 
                 iconName = moonSignEN.toLowerCase();
+
+                // The two methods disagree for roughly one birth in eleven, so
+                // a sheet computed the non-default way has to say so.
+                if (filters.panjangam !== DEFAULT_PANJANGAM) {
+                    filterTable.push([
+                        {
+                            columns: [
+                                {
+                                    text: 'Panjangam / ',
+                                    font: 'Roboto',
+                                    preserveTrailingSpaces: true,
+                                },
+                                { text: 'பஞ்சாங்கம்', font: 'Barathi' },
+                            ],
+                        },
+                        ':',
+                        {
+                            stack: [
+                                {
+                                    text: locales.en.panjangams[
+                                        filters.panjangam
+                                    ],
+                                    font: 'Roboto',
+                                },
+                                {
+                                    text: locales.ta.panjangams[
+                                        filters.panjangam
+                                    ],
+                                    font: 'Barathi',
+                                },
+                            ],
+                        },
+                    ]);
+
+                    rowHeight += 15 * 2;
+                }
 
                 filterTable.push([
                     {
