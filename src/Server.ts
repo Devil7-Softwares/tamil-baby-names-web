@@ -638,20 +638,25 @@ app.post('/api/letters', async (req, res) => {
     const filters = (req.body || {}) as IFilterData;
 
     try {
-        const where = filters.gender
-            ? /*sqlFragment*/ `WHERE gender='${filters.gender}'`
-            : '';
+        const where = filters.gender ? 'WHERE gender = :gender' : '';
+        const replacements = filters.gender ? { gender: filters.gender } : {};
 
         const [letters] = await (filters.twinNames
-            ? sequalize.query(/*sql*/ `
+            ? sequalize.query(
+                  /*sql*/ `
                 SELECT DISTINCT left(name1, 1) firstLetter FROM twin_names ${where}
                 UNION
                 SELECT DISTINCT left(name2, 1) firstLetter FROM twin_names ${where}
                 ORDER BY firstLetter;
-            `)
-            : sequalize.query(/*sql*/ `
+            `,
+                  { replacements },
+              )
+            : sequalize.query(
+                  /*sql*/ `
                 SELECT DISTINCT left(name, 1) firstLetter FROM names ${where} ORDER BY firstLetter;
-            `));
+            `,
+                  { replacements },
+              ));
 
         res.send({
             success: true,
