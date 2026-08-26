@@ -271,16 +271,6 @@ async function getNamesForFilter(
                           gender: filters.gender,
                       }
                     : null,
-                filters.religion
-                    ? {
-                          religion:
-                              filters.religion === 'hindu'
-                                  ? 'இந்து'
-                                  : filters.religion === 'christian'
-                                    ? 'கிறிஸ்துவர்'
-                                    : 'முஸ்லிம்',
-                      }
-                    : null,
             ].filter((item) => item !== null),
         };
 
