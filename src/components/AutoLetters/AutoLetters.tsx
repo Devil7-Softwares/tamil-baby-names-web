@@ -72,7 +72,7 @@ export const AutoLetters: React.FC = () => {
                     onChange={(e) => setTimezone(e.target.value)}
                 >
                     {Timezones.map((timezone) => (
-                        <option key={timezone.value} value={timezone.utc[0]}>
+                        <option key={timezone.text} value={timezone.utc[0]}>
                             {timezone.text}
                         </option>
                     ))}
