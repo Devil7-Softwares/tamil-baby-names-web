@@ -25,10 +25,8 @@ export function toJulianDate(day: number, month: number, year: number): number {
 }
 
 /**
- * Calculate Ayanamsa using J2000 Epoch
- *
- * @param epoch J2000 epoch
- * @returns Ayanamsa
+ * Ayanamsa at a J2000 epoch. The constant is the Lahiri ayanamsa at J2000.0
+ * (23 deg 51' 26").
  */
 export function calculateAyanamsa(epoch: number): number {
     const ln = 125.044555 - 1934.1361849 * epoch + 0.0020762 * epoch * epoch;
@@ -37,7 +35,7 @@ export function calculateAyanamsa(epoch: number): number {
         17.23 * Math.sin(d2r * ln) +
         1.27 * Math.sin(d2r * off) -
         (5025.64 + 1.11 * epoch) * epoch;
-    off = (off - 80861.27) / 3600.0;
+    off = (off - 85886.27) / 3600.0;
     return off;
 }
 
