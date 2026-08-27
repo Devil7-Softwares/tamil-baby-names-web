@@ -11,7 +11,6 @@ import { Content, TableCell } from 'pdfmake/interfaces';
 import {
     col,
     DataTypes,
-    literal,
     Model,
     Op,
     ProjectionAlias,
@@ -381,7 +380,8 @@ async function ensureNumerologyColumns() {
 
 /**
  * `/api/generate` signs the request body as it stands, so these arrive from the
- * client and reach a raw SQL predicate below. Only 1-9 ever means anything.
+ * client. Sequelize escapes them, but only 1-9 ever means anything - and 0 is
+ * the "no value" marker, which must never be selectable.
  */
 const wantedNumbers = (filters: IFilterData): number[] =>
     (filters.nameNumbers || [])
@@ -445,15 +445,16 @@ const numbersOf = (item: IName | ITwinName) =>
 
 // Either name qualifies a twin pair; both numbers are printed, so which one
 // matched stays visible.
-const nameNumberWhere = (filters: IFilterData, wanted: number[]) =>
-    literal(
-        (filters.twinNames ? (['1', '2'] as const) : ([''] as const))
-            .map(
-                (suffix) =>
-                    `\`${numerologyColumn(filters.numerology, suffix)}\` IN (${wanted.join(',')})`,
-            )
-            .join(' OR '),
-    );
+const nameNumberWhere = (
+    filters: IFilterData,
+    wanted: number[],
+): WhereOptions => ({
+    [Op.or]: (filters.twinNames ? (['1', '2'] as const) : ([''] as const)).map(
+        (suffix) => ({
+            [numerologyColumn(filters.numerology, suffix)]: { [Op.in]: wanted },
+        }),
+    ),
+});
 
 /**
  * The fallback for when the columns are not ready: filter over the rows, which
