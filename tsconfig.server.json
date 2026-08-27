@@ -22,6 +22,7 @@
     "src/utils/Common.ts",
     "src/utils/Timezone.ts",
     "src/utils/astro",
+    "src/utils/numerology",
     "src/assets/timezones.json"
   ]
 }

@@ -22,11 +22,17 @@ import {
 } from './utils/astro';
 import {
     getBirthDate,
+    getBirthNumberFor,
     getDocumentTitleByFilter,
     getStartingLettersForFilter,
     getStateFromParams,
     sentenseCase,
 } from './utils/Common';
+import {
+    DEFAULT_NUMEROLOGY,
+    getNameNumber,
+    numerologyLocales,
+} from './utils/numerology';
 
 config({ quiet: true });
 
@@ -268,12 +274,54 @@ const startsWithLetter = (
           }
         : { [column]: { [Op.like]: `${letter}%` } };
 
+const hasNameNumberFilter = (filters: IFilterData) =>
+    Boolean(filters.nameNumbers && filters.nameNumbers.length);
+
+/**
+ * SQL cannot compute a name's number, so this filter runs over the rows and the
+ * query gives up its own LIMIT: the page has to be cut from the rows that
+ * survive the filter, not from the ones that reached it.
+ */
+function applyNameNumbers<T extends IName | ITwinName>(
+    filters: IFilterData,
+    rows: T[],
+    total: number,
+    page?: number,
+    limit?: number,
+): [T[], number] {
+    const wanted = filters.nameNumbers;
+
+    if (!wanted || !wanted.length) {
+        return [rows, total];
+    }
+
+    const filtered = rows.filter((item) => {
+        const names = 'name1' in item ? [item.name1, item.name2] : [item.name];
+
+        // Either name qualifies the pair; both numbers are printed, so which
+        // one matched stays visible.
+        return names.some((name) => {
+            const value = getNameNumber(name, filters.numerology);
+
+            return value !== null && wanted.includes(value.number);
+        });
+    });
+
+    return [
+        page && limit
+            ? filtered.slice((page - 1) * limit, page * limit)
+            : filtered,
+        filtered.length,
+    ];
+}
+
 async function getNamesForFilter(
     filters: IFilterData,
     page?: number,
     limit?: number,
 ): Promise<[IName[] | ITwinName[], number]> {
     const startsWith = getStartingLettersForFilter(filters);
+    const paged = hasNameNumberFilter(filters) ? undefined : { page, limit };
 
     if (filters.twinNames) {
         const where = {
@@ -316,11 +364,20 @@ async function getNamesForFilter(
 
         const { rows, count } = await TwinNames.findAndCountAll({
             where,
-            offset: page && limit ? (page - 1) * limit : undefined,
-            limit,
+            offset:
+                paged?.page && paged.limit
+                    ? (paged.page - 1) * paged.limit
+                    : undefined,
+            limit: paged?.limit,
         });
 
-        return [rows.map((item) => item.dataValues), count];
+        return applyNameNumbers(
+            filters,
+            rows.map((item) => item.dataValues),
+            count,
+            page,
+            limit,
+        );
     } else {
         const where = {
             [Op.and]: [
@@ -378,11 +435,20 @@ async function getNamesForFilter(
 
         const { rows, count } = await Names.findAndCountAll({
             where,
-            offset: page && limit ? (page - 1) * limit : undefined,
-            limit,
+            offset:
+                paged?.page && paged.limit
+                    ? (paged.page - 1) * paged.limit
+                    : undefined,
+            limit: paged?.limit,
         });
 
-        return [rows.map((item) => item.dataValues), count];
+        return applyNameNumbers(
+            filters,
+            rows.map((item) => item.dataValues),
+            count,
+            page,
+            limit,
+        );
     }
 }
 
@@ -402,6 +468,25 @@ function withFonts(rows: TableCell[][]): TableCell[][] {
         ),
     );
 }
+/**
+ * Sets its own font and refuses to wrap: the column is only as wide as its
+ * "No." heading, which would otherwise break "5 / 9" across two lines.
+ */
+const nameNumberCell = (
+    filters: IFilterData,
+    item: IName | ITwinName,
+): TableCell => ({
+    text: ('name1' in item ? [item.name1, item.name2] : [item.name])
+        .map(
+            (name) =>
+                getNameNumber(name, filters.numerology)?.number.toString() ??
+                '-',
+        )
+        .join(' / '),
+    font: 'Roboto',
+    noWrap: true,
+});
+
 app.get('/api/names', authMiddleware, async (req, res) => {
     const filters = (res.locals.filterOptions || {}) as IFilterData;
 
@@ -550,7 +635,87 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                 ]);
 
                 rowHeight += 15 * 4;
+
+                const birthNumber = getBirthNumberFor(
+                    filters.startsWithMode,
+                    filters.tob,
+                    filters.tz,
+                );
+
+                if (birthNumber !== null) {
+                    filterTable.push([
+                        {
+                            columns: [
+                                {
+                                    text: 'Birth Number / ',
+                                    font: 'Roboto',
+                                    preserveTrailingSpaces: true,
+                                },
+                                { text: 'பிறந்த எண்', font: 'Barathi' },
+                            ],
+                        },
+                        ':',
+                        { text: String(birthNumber), font: 'Roboto' },
+                    ]);
+
+                    rowHeight += 15;
+                }
             }
+        }
+
+        // Same reason the panjangam is named: the numbers in the sheet mean
+        // nothing without the method that produced them.
+        if (filters.numerology !== DEFAULT_NUMEROLOGY) {
+            filterTable.push([
+                {
+                    columns: [
+                        {
+                            text: 'Numerology / ',
+                            font: 'Roboto',
+                            preserveTrailingSpaces: true,
+                        },
+                        { text: 'எண்கணிதம்', font: 'Barathi' },
+                    ],
+                },
+                ':',
+                {
+                    stack: [
+                        {
+                            text: numerologyLocales.en.numerologies[
+                                filters.numerology
+                            ],
+                            font: 'Roboto',
+                        },
+                        {
+                            text: numerologyLocales.ta.numerologies[
+                                filters.numerology
+                            ],
+                            font: 'Barathi',
+                        },
+                    ],
+                },
+            ]);
+
+            rowHeight += 15 * 2;
+        }
+
+        if (filters.nameNumbers && filters.nameNumbers.length) {
+            filterTable.push([
+                {
+                    columns: [
+                        {
+                            text: 'Name Number / ',
+                            font: 'Roboto',
+                            preserveTrailingSpaces: true,
+                        },
+                        { text: 'பெயர் எண்', font: 'Barathi' },
+                    ],
+                },
+                ':',
+                { text: filters.nameNumbers.join(', '), font: 'Roboto' },
+            ]);
+
+            rowHeight += 15;
         }
 
         const startingLetters = getStartingLettersForFilter(filters);
@@ -649,6 +814,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                             ...(filters.twinNames
                                 ? ['auto', '*', 'auto', '*']
                                 : ['auto', '*']),
+                            'auto',
                             ...(!filters.gender ? ['auto'] : []),
                             ...(!filters.twinNames && !filters.religion
                                 ? ['auto']
@@ -666,6 +832,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                                           'Meaning 2',
                                       ]
                                     : ['Name', 'Meaning']),
+                                'No.',
                                 ...(!filters.gender ? ['Gender'] : []),
                                 ...(!filters.twinNames && !filters.religion
                                     ? ['Religion']
@@ -682,6 +849,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                                           item.meaning2,
                                       ]
                                     : [item.name, item.meaning]),
+                                nameNumberCell(filters, item),
                                 ...(!filters.gender
                                     ? [item.gender === 'boy' ? 'ஆண்' : 'பெண்']
                                     : []),

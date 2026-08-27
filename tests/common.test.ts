@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { IFilterData } from '../src/interfaces';
 import {
     getBirthDate,
+    getBirthNumberFor,
     getStartingLettersForFilter,
     getStateFromParams,
 } from '../src/utils/Common';
@@ -30,6 +31,7 @@ describe('getStartingLettersForFilter', () => {
         tob: '2026-08-27T06:00',
         tz: 'Asia/Kolkata',
         panjangam: 'thirukanitha',
+        numerology: 'enkanitham',
     } as const;
 
     it('passes manual letters straight through', () => {
@@ -111,5 +113,60 @@ describe('getStateFromParams', () => {
         expect(parse('panjangam=vakkiya').panjangam).toBe('vakkiya');
         expect(parse('panjangam=nonsense').panjangam).toBe('thirukanitha');
         expect(parse('').panjangam).toBe('thirukanitha');
+    });
+
+    it('keeps an implemented numerology and rejects anything else', () => {
+        expect(parse('numerology=enkanitham').numerology).toBe('enkanitham');
+        // Declared for later, but not registered, so it must not reach a name.
+        expect(parse('numerology=chaldean').numerology).toBe('enkanitham');
+        expect(parse('numerology=nonsense').numerology).toBe('enkanitham');
+        expect(parse('').numerology).toBe('enkanitham');
+    });
+
+    it('takes name numbers in range, sorted and deduplicated', () => {
+        expect(parse('nameNumbers=5,7,9').nameNumbers).toEqual([5, 7, 9]);
+        expect(parse('nameNumbers=9,5,5,7').nameNumbers).toEqual([5, 7, 9]);
+        expect(parse('nameNumbers= 5 , 7 ').nameNumbers).toEqual([5, 7]);
+    });
+
+    it('drops name numbers no name can carry', () => {
+        expect(parse('nameNumbers=0,10,-1,abc').nameNumbers).toBeUndefined();
+        expect(parse('nameNumbers=').nameNumbers).toBeUndefined();
+        expect(parse('').nameNumbers).toBeUndefined();
+        expect(parse('nameNumbers=3,99').nameNumbers).toEqual([3]);
+    });
+});
+
+describe('getBirthNumberFor', () => {
+    it('reduces the day of the month in the birth timezone', () => {
+        expect(getBirthNumberFor('auto', '2026-08-27T06:00', 'UTC')).toBe(9);
+        expect(
+            getBirthNumberFor('auto', '2026-01-16T06:00', 'Asia/Kolkata'),
+        ).toBe(7);
+    });
+
+    // A day boundary is where reading the date in the wrong zone shows up.
+    it('takes the day from the birth timezone, not the local one', () => {
+        expect(
+            getBirthNumberFor('auto', '2026-08-27T23:30', 'Asia/Kolkata'),
+        ).toBe(9);
+        expect(
+            getBirthNumberFor('auto', '2026-08-01T00:30', 'Pacific/Kiritimati'),
+        ).toBe(1);
+    });
+
+    it('gives no number without a date of birth the user chose', () => {
+        expect(getBirthNumberFor('none', '2026-08-27T06:00', 'UTC')).toBeNull();
+        expect(
+            getBirthNumberFor('manual', '2026-08-27T06:00', 'UTC'),
+        ).toBeNull();
+        expect(getBirthNumberFor('auto', undefined, 'UTC')).toBeNull();
+        expect(
+            getBirthNumberFor('auto', '2026-08-27T06:00', undefined),
+        ).toBeNull();
+        expect(getBirthNumberFor('auto', 'not a date', 'UTC')).toBeNull();
+        expect(
+            getBirthNumberFor('auto', '2026-08-27T06:00', 'Middle/Earth'),
+        ).toBeNull();
     });
 });

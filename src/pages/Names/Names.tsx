@@ -12,6 +12,7 @@ import {
     ITwinName,
 } from '../../interfaces';
 import { WithFilters } from '../../types';
+import { getNameNumber } from '../../utils';
 import { getDocumentTitleByFilter } from '../../utils/Common';
 
 interface ILoadedNames {
@@ -20,6 +21,16 @@ interface ILoadedNames {
     total: number;
     filters: IFilterData;
 }
+
+/** A twin pair carries a number per name; a name the method cannot read, none. */
+const nameNumbers = (item: IName | ITwinName, filters?: IFilterData): string =>
+    ('name1' in item ? [item.name1, item.name2] : [item.name])
+        .map(
+            (name) =>
+                getNameNumber(name, filters?.numerology)?.number.toString() ??
+                '-',
+        )
+        .join(' / ');
 
 export const Names: React.FC = () => {
     const navigate = useNavigate();
@@ -111,7 +122,7 @@ export const Names: React.FC = () => {
                                     filters?.twinNames
                                         ? 'auto 1fr auto 1fr'
                                         : 'auto 1fr'
-                                } ${!filters?.gender ? '100px' : ''} ${
+                                } auto ${!filters?.gender ? '100px' : ''} ${
                                     !filters?.twinNames && !filters?.religion
                                         ? '100px'
                                         : ''
@@ -133,6 +144,7 @@ export const Names: React.FC = () => {
                                             <th>Meaning</th>
                                         </>
                                     )}
+                                    <th>No.</th>
                                     {!filters?.gender && <th>Gender</th>}
                                     {!filters?.twinNames &&
                                         !filters?.religion && <th>Religion</th>}
@@ -155,6 +167,9 @@ export const Names: React.FC = () => {
                                                 <td>{item.meaning2}</td>
                                             </>
                                         )}
+                                        <td className='name-number'>
+                                            {nameNumbers(item, filters)}
+                                        </td>
                                         {!filters?.gender && (
                                             <td>
                                                 {item.gender === 'boy'

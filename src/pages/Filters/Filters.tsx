@@ -18,7 +18,13 @@ import Islam from '../../assets/islam.png';
 import Religion from '../../assets/religion.png';
 import Single from '../../assets/single.png';
 import Twins from '../../assets/twins.png';
-import { AutoLetters, Button, Card, ManualLetters } from '../../components';
+import {
+    AutoLetters,
+    Button,
+    Card,
+    ManualLetters,
+    Numerology,
+} from '../../components';
 import { IResponseData } from '../../interfaces';
 import { useFilterState } from '../../utils';
 
@@ -39,6 +45,8 @@ export const Filters: React.FC = () => {
     const [tob, setTob] = useFilterState('tob');
     const [tz, setTz] = useFilterState('tz');
     const [panjangam, setPanjangam] = useFilterState('panjangam');
+    const [numerology] = useFilterState('numerology');
+    const [nameNumbers] = useFilterState('nameNumbers');
 
     const onTwinNamesClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -100,6 +108,7 @@ export const Filters: React.FC = () => {
                     religion: religion || 'All',
                     startsWith,
                     startsWithMode,
+                    nameNumbers,
                 },
             });
 
@@ -116,6 +125,8 @@ export const Filters: React.FC = () => {
                         tob,
                         tz,
                         panjangam,
+                        numerology,
+                        nameNumbers,
                     },
                     { headers: { token } },
                 )
@@ -251,6 +262,9 @@ export const Filters: React.FC = () => {
                     setSelected={setStartsWith}
                 />
             ) : null}
+
+            <h2>Numerology</h2>
+            <Numerology />
 
             <div className='splitter'></div>
 

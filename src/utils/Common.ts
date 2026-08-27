@@ -10,6 +10,12 @@ import {
     getStartingLettersForName,
     isImplementedPanjangam,
 } from './astro';
+import {
+    DEFAULT_NUMEROLOGY,
+    getBirthNumber,
+    isImplementedNumerology,
+    NAME_NUMBERS,
+} from './numerology';
 import { getDefaultTimezone } from './Timezone';
 
 // Extended here rather than only in the entry points, since the astro helpers
@@ -66,8 +72,51 @@ export const getStartingLettersForFilter = (
     return undefined;
 };
 
+/**
+ * The day of the month has to be read in the timezone of birth, not wherever
+ * the server runs. Only auto mode asks for a date of birth; anywhere else
+ * `tob` is just today's date and the number would be confidently wrong.
+ */
+export const getBirthNumberFor = (
+    startsWithMode: IFilterData['startsWithMode'],
+    tob?: string,
+    tz?: string,
+): number | null => {
+    if (startsWithMode !== 'auto' || !tob || !tz) {
+        return null;
+    }
+
+    try {
+        const date = dayjs.tz(tob, tz);
+
+        return date.isValid() ? getBirthNumber(date.date()) : null;
+    } catch {
+        return null;
+    }
+};
+
+const parseNameNumbers = (value: string | null): number[] | undefined => {
+    if (!value) {
+        return undefined;
+    }
+
+    const numbers = [
+        ...new Set(
+            value
+                .split(',')
+                .map((item) => Number(item.trim()))
+                .filter((item) =>
+                    (NAME_NUMBERS as readonly number[]).includes(item),
+                ),
+        ),
+    ].sort((a, b) => a - b);
+
+    return numbers.length ? numbers : undefined;
+};
+
 export const getStateFromParams = (params: URLSearchParams): IFilterData => {
     const panjangam = params.get('panjangam');
+    const numerology = params.get('numerology');
 
     const base = {
         gender: (params.get('gender') as IFilterData['gender']) || undefined,
@@ -82,6 +131,11 @@ export const getStateFromParams = (params: URLSearchParams): IFilterData => {
             panjangam && isImplementedPanjangam(panjangam)
                 ? panjangam
                 : DEFAULT_PANJANGAM,
+        numerology:
+            numerology && isImplementedNumerology(numerology)
+                ? numerology
+                : DEFAULT_NUMEROLOGY,
+        nameNumbers: parseNameNumbers(params.get('nameNumbers')),
     };
 
     const startsWithMode =
