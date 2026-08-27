@@ -8,10 +8,20 @@ import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { join, resolve } from 'path';
 import pdfmake from 'pdfmake';
 import { Content, TableCell } from 'pdfmake/interfaces';
-import { DataTypes, Model, Op, Sequelize, WhereOptions } from 'sequelize';
+import {
+    col,
+    DataTypes,
+    literal,
+    Model,
+    Op,
+    ProjectionAlias,
+    Sequelize,
+    WhereOptions,
+} from 'sequelize';
 import { parse } from 'url';
 
 import { IFilterData, IName, ITwinName } from './interfaces';
+import { Numerology } from './types';
 import {
     DEFAULT_PANJANGAM,
     getLunarMansion,
@@ -31,6 +41,7 @@ import {
 import {
     DEFAULT_NUMEROLOGY,
     getNameNumber,
+    implementedNumerologies,
     numerologyLocales,
 } from './utils/numerology';
 
@@ -274,13 +285,180 @@ const startsWithLetter = (
           }
         : { [column]: { [Op.like]: `${letter}%` } };
 
-const hasNameNumberFilter = (filters: IFilterData) =>
-    Boolean(filters.nameNumbers && filters.nameNumbers.length);
+/**
+ * Set once the precomputed columns exist and hold no NULLs. Until then the
+ * numerology filter reads every matching row instead, so a database that
+ * refuses the ALTER costs performance rather than correctness.
+ */
+let numerologyColumnsReady = false;
 
 /**
- * SQL cannot compute a name's number, so this filter runs over the rows and the
- * query gives up its own LIMIT: the page has to be cut from the rows that
- * survive the filter, not from the ones that reached it.
+ * 0 records "this method gives the name no value", which keeps it distinct from
+ * NULL, "not computed yet" - so the backfill can resume on IS NULL alone.
+ */
+const NUMEROLOGY_TABLES = [
+    { table: 'names', columns: [{ name: 'name', suffix: '' }] },
+    {
+        table: 'twin_names',
+        columns: [
+            { name: 'name1', suffix: '1' },
+            { name: 'name2', suffix: '2' },
+        ],
+    },
+] as const;
+
+const BACKFILL_CHUNK = 1000;
+
+async function backfillNumerology(
+    table: string,
+    nameColumn: string,
+    target: string,
+    numerology: Numerology,
+): Promise<number> {
+    let written = 0;
+
+    for (;;) {
+        const [rows] = (await sequalize.query(
+            `SELECT \`id\`, \`${nameColumn}\` AS \`name\` FROM \`${table}\`
+             WHERE \`${target}\` IS NULL LIMIT ${BACKFILL_CHUNK}`,
+            { logging: false },
+        )) as [Array<{ id: number; name: string }>, unknown];
+
+        if (!rows.length) {
+            return written;
+        }
+
+        const ids = new Map<number, number[]>();
+
+        for (const row of rows) {
+            const value = getNameNumber(row.name, numerology)?.number ?? 0;
+
+            ids.set(value, [...(ids.get(value) || []), row.id]);
+        }
+
+        // One statement per distinct number rather than per row: at most ten,
+        // whatever the chunk size.
+        for (const [value, rowIds] of ids) {
+            await sequalize.query(
+                `UPDATE \`${table}\` SET \`${target}\` = ${value}
+                 WHERE \`id\` IN (${rowIds.join(',')})`,
+                { logging: false },
+            );
+        }
+
+        written += rows.length;
+    }
+}
+
+async function ensureNumerologyColumns() {
+    for (const numerology of implementedNumerologies) {
+        for (const { table, columns } of NUMEROLOGY_TABLES) {
+            for (const { name, suffix } of columns) {
+                const target = numerologyColumn(numerology, suffix);
+
+                await sequalize.query(
+                    `ALTER TABLE \`${table}\`
+                     ADD COLUMN IF NOT EXISTS \`${target}\` TINYINT NULL`,
+                    { logging: false },
+                );
+
+                const written = await backfillNumerology(
+                    table,
+                    name,
+                    target,
+                    numerology,
+                );
+
+                if (written) {
+                    console.log(
+                        `Backfilled ${table}.${target} for ${written} rows.`,
+                    );
+                }
+            }
+        }
+    }
+}
+
+/**
+ * `/api/generate` signs the request body as it stands, so these arrive from the
+ * client and reach a raw SQL predicate below. Only 1-9 ever means anything.
+ */
+const wantedNumbers = (filters: IFilterData): number[] =>
+    (filters.nameNumbers || [])
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value >= 1 && value <= 9);
+
+/**
+ * The precomputed column for a method, derived from its name so that
+ * registering one needs no mapping here.
+ */
+const numerologyColumn = (numerology: Numerology, suffix: '' | '1' | '2') => {
+    if (!/^[a-z]+$/.test(numerology)) {
+        throw new Error(`Unsafe numerology name: ${numerology}`);
+    }
+
+    return `${numerology}_number${suffix}`;
+};
+
+/**
+ * Reads the stored column, so the number shown and the number filtered on are
+ * the same value. A row inserted since the last backfill has none yet, and is
+ * computed rather than reported as unvalued.
+ */
+const resolveNameNumber = (
+    filters: IFilterData,
+    name: string,
+    stored: number | null | undefined,
+): number | null => {
+    if (stored === null || stored === undefined) {
+        return getNameNumber(name, filters.numerology)?.number ?? null;
+    }
+
+    return stored === 0 ? null : stored;
+};
+
+const nameNumberAttributes = (
+    filters: IFilterData,
+): { include: ProjectionAlias[] } | undefined => {
+    if (!numerologyColumnsReady) {
+        return undefined;
+    }
+
+    const aliases: ReadonlyArray<readonly ['' | '1' | '2', string]> =
+        filters.twinNames
+            ? [
+                  ['1', 'nameNumber1'],
+                  ['2', 'nameNumber2'],
+              ]
+            : [['', 'nameNumber']];
+
+    return {
+        include: aliases.map(([suffix, alias]) => [
+            col(numerologyColumn(filters.numerology, suffix)),
+            alias,
+        ]),
+    };
+};
+
+const numbersOf = (item: IName | ITwinName) =>
+    'name1' in item ? [item.nameNumber1, item.nameNumber2] : [item.nameNumber];
+
+// Either name qualifies a twin pair; both numbers are printed, so which one
+// matched stays visible.
+const nameNumberWhere = (filters: IFilterData, wanted: number[]) =>
+    literal(
+        (filters.twinNames ? (['1', '2'] as const) : ([''] as const))
+            .map(
+                (suffix) =>
+                    `\`${numerologyColumn(filters.numerology, suffix)}\` IN (${wanted.join(',')})`,
+            )
+            .join(' OR '),
+    );
+
+/**
+ * The fallback for when the columns are not ready: filter over the rows, which
+ * costs the query its own LIMIT, since the page has to be cut from the rows
+ * that survive the filter rather than the ones that reached it.
  */
 function applyNameNumbers<T extends IName | ITwinName>(
     filters: IFilterData,
@@ -289,23 +467,18 @@ function applyNameNumbers<T extends IName | ITwinName>(
     page?: number,
     limit?: number,
 ): [T[], number] {
-    const wanted = filters.nameNumbers;
+    const wanted = wantedNumbers(filters);
 
-    if (!wanted || !wanted.length) {
+    if (!wanted.length) {
         return [rows, total];
     }
 
-    const filtered = rows.filter((item) => {
-        const names = 'name1' in item ? [item.name1, item.name2] : [item.name];
-
-        // Either name qualifies the pair; both numbers are printed, so which
-        // one matched stays visible.
-        return names.some((name) => {
-            const value = getNameNumber(name, filters.numerology);
-
-            return value !== null && wanted.includes(value.number);
-        });
-    });
+    const filtered = rows.filter((item) =>
+        numbersOf(item).some(
+            (value) =>
+                value !== null && value !== undefined && wanted.includes(value),
+        ),
+    );
 
     return [
         page && limit
@@ -321,7 +494,15 @@ async function getNamesForFilter(
     limit?: number,
 ): Promise<[IName[] | ITwinName[], number]> {
     const startsWith = getStartingLettersForFilter(filters);
-    const paged = hasNameNumberFilter(filters) ? undefined : { page, limit };
+    const wanted = wantedNumbers(filters);
+
+    // With the columns in place the filter is just another predicate, so the
+    // query keeps its own LIMIT; without them it has to read every match.
+    const inSql = wanted.length > 0 && numerologyColumnsReady;
+    const inMemory = wanted.length > 0 && !numerologyColumnsReady;
+
+    const nameNumbers = inSql ? nameNumberWhere(filters, wanted) : null;
+    const paged = inMemory ? undefined : { page, limit };
 
     if (filters.twinNames) {
         const where = {
@@ -359,11 +540,13 @@ async function getNamesForFilter(
                           gender: filters.gender,
                       }
                     : null,
+                nameNumbers,
             ].filter((item) => item !== null),
         };
 
         const { rows, count } = await TwinNames.findAndCountAll({
             where,
+            attributes: nameNumberAttributes(filters),
             offset:
                 paged?.page && paged.limit
                     ? (paged.page - 1) * paged.limit
@@ -371,13 +554,15 @@ async function getNamesForFilter(
             limit: paged?.limit,
         });
 
-        return applyNameNumbers(
-            filters,
-            rows.map((item) => item.dataValues),
-            count,
-            page,
-            limit,
-        );
+        const values = rows.map(({ dataValues: row }) => ({
+            ...row,
+            nameNumber1: resolveNameNumber(filters, row.name1, row.nameNumber1),
+            nameNumber2: resolveNameNumber(filters, row.name2, row.nameNumber2),
+        }));
+
+        return inMemory
+            ? applyNameNumbers(filters, values, count, page, limit)
+            : [values, count];
     } else {
         const where = {
             [Op.and]: [
@@ -430,11 +615,13 @@ async function getNamesForFilter(
                                     : 'முஸ்லிம்',
                       }
                     : null,
+                nameNumbers,
             ].filter((item) => item !== null),
         };
 
         const { rows, count } = await Names.findAndCountAll({
             where,
+            attributes: nameNumberAttributes(filters),
             offset:
                 paged?.page && paged.limit
                     ? (paged.page - 1) * paged.limit
@@ -442,13 +629,14 @@ async function getNamesForFilter(
             limit: paged?.limit,
         });
 
-        return applyNameNumbers(
-            filters,
-            rows.map((item) => item.dataValues),
-            count,
-            page,
-            limit,
-        );
+        const values = rows.map(({ dataValues: row }) => ({
+            ...row,
+            nameNumber: resolveNameNumber(filters, row.name, row.nameNumber),
+        }));
+
+        return inMemory
+            ? applyNameNumbers(filters, values, count, page, limit)
+            : [values, count];
     }
 }
 
@@ -472,16 +660,9 @@ function withFonts(rows: TableCell[][]): TableCell[][] {
  * Sets its own font and refuses to wrap: the column is only as wide as its
  * "No." heading, which would otherwise break "5 / 9" across two lines.
  */
-const nameNumberCell = (
-    filters: IFilterData,
-    item: IName | ITwinName,
-): TableCell => ({
-    text: ('name1' in item ? [item.name1, item.name2] : [item.name])
-        .map(
-            (name) =>
-                getNameNumber(name, filters.numerology)?.number.toString() ??
-                '-',
-        )
+const nameNumberCell = (item: IName | ITwinName): TableCell => ({
+    text: numbersOf(item)
+        .map((value) => value?.toString() ?? '-')
         .join(' / '),
     font: 'Roboto',
     noWrap: true,
@@ -849,7 +1030,7 @@ app.get('/api/export', authMiddleware, async (req, res) => {
                                           item.meaning2,
                                       ]
                                     : [item.name, item.meaning]),
-                                nameNumberCell(filters, item),
+                                nameNumberCell(item),
                                 ...(!filters.gender
                                     ? [item.gender === 'boy' ? 'ஆண்' : 'பெண்']
                                     : []),
@@ -950,6 +1131,13 @@ sequalize
             await TwinNames.sync();
         } catch (error) {
             console.log('Failed to syncronise tables!', error);
+        }
+
+        try {
+            await ensureNumerologyColumns();
+            numerologyColumnsReady = true;
+        } catch (error) {
+            console.log('Failed to prepare numerology columns!', error);
         }
     })
     .catch((error) => {

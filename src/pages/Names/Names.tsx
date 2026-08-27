@@ -12,7 +12,6 @@ import {
     ITwinName,
 } from '../../interfaces';
 import { WithFilters } from '../../types';
-import { getNameNumber } from '../../utils';
 import { getDocumentTitleByFilter } from '../../utils/Common';
 
 interface ILoadedNames {
@@ -23,13 +22,9 @@ interface ILoadedNames {
 }
 
 /** A twin pair carries a number per name; a name the method cannot read, none. */
-const nameNumbers = (item: IName | ITwinName, filters?: IFilterData): string =>
-    ('name1' in item ? [item.name1, item.name2] : [item.name])
-        .map(
-            (name) =>
-                getNameNumber(name, filters?.numerology)?.number.toString() ??
-                '-',
-        )
+const nameNumbers = (item: IName | ITwinName): string =>
+    ('name1' in item ? [item.nameNumber1, item.nameNumber2] : [item.nameNumber])
+        .map((value) => value?.toString() ?? '-')
         .join(' / ');
 
 export const Names: React.FC = () => {
@@ -168,7 +163,7 @@ export const Names: React.FC = () => {
                                             </>
                                         )}
                                         <td className='name-number'>
-                                            {nameNumbers(item, filters)}
+                                            {nameNumbers(item)}
                                         </td>
                                         {!filters?.gender && (
                                             <td>
