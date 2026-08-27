@@ -63,6 +63,51 @@ describe('enkanitham name values', () => {
     });
 });
 
+describe('chaldean name values', () => {
+    // The worked example printed in the source.
+    it('scores MUTHUKAMALAM as 41', () => {
+        expect(getNameNumber('MUTHUKAMALAM', 'chaldean')).toEqual({
+            total: 41,
+            number: 5,
+        });
+    });
+
+    it('reads every letter, either case', () => {
+        expect(getNameNumber('Muthukamalam', 'chaldean')?.total).toBe(41);
+        // A-Z once: 5(1) + 3(2) + 4(3) + 3(4) + 4(5) + 3(6) + 2(7) + 2(8)
+        expect(
+            getNameNumber('abcdefghijklmnopqrstuvwxyz', 'chaldean')?.total,
+        ).toBe(5 * 1 + 3 * 2 + 4 * 3 + 3 * 4 + 4 * 5 + 3 * 6 + 2 * 7 + 2 * 8);
+    });
+
+    it('ignores spacing and punctuation', () => {
+        expect(getNameNumber("Mary-Anne O'Neil", 'chaldean')).toEqual(
+            getNameNumber('MaryAnneONeil', 'chaldean'),
+        );
+    });
+
+    // Scoring a transliteration scores the English spelling's sounds, not the
+    // name's - the objection the Enkanitham source raises. The two methods read
+    // one script each and cover complementary halves of the catalogue.
+    it('leaves Tamil-script names to enkanitham', () => {
+        expect(getNameNumber('முத்துக்கமலம்', 'chaldean')).toBeNull();
+        expect(getNameNumber('ஶ்ரீமதி', 'chaldean')).toBeNull();
+        expect(getNameNumber('', 'chaldean')).toBeNull();
+        expect(getNameNumber('123', 'chaldean')).toBeNull();
+    });
+
+    // Enkanitham cannot read a Latin name and chaldean cannot read a Tamil one,
+    // so between them every name is valued exactly once.
+    it('picks up where enkanitham stops', () => {
+        expect(getNameNumber('Amiya', 'enkanitham')).toBeNull();
+        // A+M+I+Y+A = 1+4+1+1+1
+        expect(getNameNumber('Amiya', 'chaldean')).toEqual({
+            total: 8,
+            number: 8,
+        });
+    });
+});
+
 describe('reduction', () => {
     it('sums digits until one is left', () => {
         expect(reduceToSingleDigit(53)).toBe(8);
@@ -87,16 +132,25 @@ describe('birth number', () => {
 });
 
 describe('numerology registration', () => {
-    it('offers enkanitham by default', () => {
+    it('offers both methods, enkanitham by default', () => {
         expect(DEFAULT_NUMEROLOGY).toBe('enkanitham');
-        expect(implementedNumerologies).toEqual(['enkanitham']);
+        expect(implementedNumerologies).toEqual(['enkanitham', 'chaldean']);
         expect(isImplementedNumerology('enkanitham')).toBe(true);
-        expect(isImplementedNumerology('chaldean')).toBe(false);
+        expect(isImplementedNumerology('chaldean')).toBe(true);
         expect(isImplementedNumerology('nonsense')).toBe(false);
     });
 
     it('returns nothing for a method that is not implemented yet', () => {
-        expect(getNameNumber('முத்துக்கமலம்', 'chaldean')).toBeNull();
+        expect(isImplementedNumerology('pythagorean')).toBe(false);
+        expect(getNameNumber('Amiya', 'pythagorean')).toBeNull();
+    });
+
+    // The precomputed DB column is named after the method, so a name SQL cannot
+    // quote would break the migration rather than be rejected.
+    it('names every method safely for a column name', () => {
+        for (const numerology of implementedNumerologies) {
+            expect(numerology).toMatch(/^[a-z]+$/);
+        }
     });
 
     // The exported PDF prints these, so a missing one reaches the user as the

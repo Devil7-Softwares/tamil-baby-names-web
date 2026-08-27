@@ -117,8 +117,9 @@ describe('getStateFromParams', () => {
 
     it('keeps an implemented numerology and rejects anything else', () => {
         expect(parse('numerology=enkanitham').numerology).toBe('enkanitham');
+        expect(parse('numerology=chaldean').numerology).toBe('chaldean');
         // Declared for later, but not registered, so it must not reach a name.
-        expect(parse('numerology=chaldean').numerology).toBe('enkanitham');
+        expect(parse('numerology=pythagorean').numerology).toBe('enkanitham');
         expect(parse('numerology=nonsense').numerology).toBe('enkanitham');
         expect(parse('').numerology).toBe('enkanitham');
     });
