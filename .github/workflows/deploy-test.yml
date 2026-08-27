@@ -4,11 +4,7 @@ on:
   push:
     branches:
       - master
-  pull_request:
 
-# An FTP upload is not atomic, so a second run starting mid-upload would
-# interleave files. Queue instead of cancelling: a cancelled deploy would leave
-# the server half-updated.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -48,9 +44,6 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-      # Pinned to the commit `master` already resolved to, rather than the
-      # branch: this action is handed the deploy SSH key, and `master` is
-      # whatever the author pushes next.
       - name: Install node modules, build & restart apps via cloudlinux
         if: github.event_name == 'push'
         uses: fifsky/ssh-action@5a841de87115730aff750ac127773e3b2b3f56dd
