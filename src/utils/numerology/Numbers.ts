@@ -1,6 +1,7 @@
 import { Numerology } from '../../types';
 import { getNameNumberChaldean } from './Chaldean';
 import { getNameNumberEnkanitham } from './Enkanitham';
+import { getNameNumberPythagorean } from './Pythagorean';
 
 export const DEFAULT_NUMEROLOGY: Numerology = 'enkanitham';
 
@@ -13,6 +14,7 @@ const nameValueByNumerology: Partial<
 > = {
     enkanitham: getNameNumberEnkanitham,
     chaldean: getNameNumberChaldean,
+    pythagorean: getNameNumberPythagorean,
 };
 
 export const implementedNumerologies = Object.keys(
@@ -47,7 +49,8 @@ export interface INameNumber {
 
 /**
  * Null when the method assigns the name no value. Each method reads one script -
- * Enkanitham Tamil, Chaldean Latin - so which names are valued depends on it.
+ * Enkanitham Tamil, the other two Latin - so which names are valued depends on
+ * the method as much as on the name.
  */
 export function getNameNumber(
     name: string,

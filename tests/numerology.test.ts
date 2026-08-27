@@ -108,6 +108,44 @@ describe('chaldean name values', () => {
     });
 });
 
+describe('pythagorean name values', () => {
+    const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    // The table is positional, so it can be checked rather than trusted: each
+    // letter is worth its place in the alphabet reduced to 1-9. A transcription
+    // slip in the table would break this.
+    it('gives every letter its alphabet position reduced', () => {
+        for (const [index, letter] of [...LETTERS].entries()) {
+            expect(getNameNumber(letter, 'pythagorean')?.total).toBe(
+                (index % 9) + 1,
+            );
+        }
+    });
+
+    it('sums the letters of a name', () => {
+        // M=4 A=1 R=9 Y=7
+        expect(getNameNumber('Mary', 'pythagorean')).toEqual({
+            total: 21,
+            number: 3,
+        });
+        expect(getNameNumber('mary', 'pythagorean')?.total).toBe(21);
+    });
+
+    // Chaldean assigns no letter 9 and holds a different table, so the two
+    // Latin systems disagree on most names.
+    it('reads the same name differently from chaldean', () => {
+        expect(getNameNumber('MUTHUKAMALAM', 'chaldean')?.total).toBe(41);
+        expect(getNameNumber('MUTHUKAMALAM', 'pythagorean')?.total).not.toBe(
+            41,
+        );
+    });
+
+    it('leaves Tamil-script names to enkanitham', () => {
+        expect(getNameNumber('முத்துக்கமலம்', 'pythagorean')).toBeNull();
+        expect(getNameNumber('', 'pythagorean')).toBeNull();
+    });
+});
+
 describe('reduction', () => {
     it('sums digits until one is left', () => {
         expect(reduceToSingleDigit(53)).toBe(8);
@@ -132,17 +170,23 @@ describe('birth number', () => {
 });
 
 describe('numerology registration', () => {
-    it('offers both methods, enkanitham by default', () => {
+    it('offers every method, enkanitham by default', () => {
         expect(DEFAULT_NUMEROLOGY).toBe('enkanitham');
-        expect(implementedNumerologies).toEqual(['enkanitham', 'chaldean']);
-        expect(isImplementedNumerology('enkanitham')).toBe(true);
-        expect(isImplementedNumerology('chaldean')).toBe(true);
+        expect(implementedNumerologies).toEqual([
+            'enkanitham',
+            'chaldean',
+            'pythagorean',
+        ]);
         expect(isImplementedNumerology('nonsense')).toBe(false);
     });
 
-    it('returns nothing for a method that is not implemented yet', () => {
-        expect(isImplementedNumerology('pythagorean')).toBe(false);
-        expect(getNameNumber('Amiya', 'pythagorean')).toBeNull();
+    it('returns nothing for a method it does not know', () => {
+        expect(
+            getNameNumber(
+                'Amiya',
+                'kabbalah' as (typeof implementedNumerologies)[number],
+            ),
+        ).toBeNull();
     });
 
     // The precomputed DB column is named after the method, so a name SQL cannot
