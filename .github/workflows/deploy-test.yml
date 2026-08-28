@@ -38,6 +38,8 @@ jobs:
           RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
       - name: Copy package.json
         run: cp package.json dist/package.json
+      - name: Force restart post upload
+        run: mkdir -p dist/tmp && echo $EPOCHSECONDS > dist/tmp/restart.txt
       - name: Uploading files to server
         if: github.event_name == 'push'
         uses: SamKirkland/FTP-Deploy-Action@4.0.0
@@ -46,14 +48,3 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-      - name: Install node modules, build & restart apps via cloudlinux
-        if: github.event_name == 'push'
-        uses: fifsky/ssh-action@5a841de87115730aff750ac127773e3b2b3f56dd
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          user: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command: |
-            export DEPLOY_PATH=/home/${{ secrets.SSH_USERNAME }}/${{ secrets.DEPLOY_DIRECTORY }}
-            cloudlinux-selector install-modules --json --interpreter nodejs --user $USER --app-root $DEPLOY_PATH
-            cloudlinux-selector restart --json --interpreter nodejs --user $USER --app-root $DEPLOY_PATH
