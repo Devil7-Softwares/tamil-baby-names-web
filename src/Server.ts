@@ -11,8 +11,10 @@ import { Content, TableCell } from 'pdfmake/interfaces';
 import {
     col,
     DataTypes,
+    literal,
     Model,
     Op,
+    Order,
     ProjectionAlias,
     Sequelize,
     WhereOptions,
@@ -489,6 +491,37 @@ function applyNameNumbers<T extends IName | ITwinName>(
     ];
 }
 
+/**
+ * The column's own `utf8mb4_unicode_ci` (UCA 4.0.0) orders Tamil by code point,
+ * which misplaces ன, ற, ல, ள, ழ and வ. 5.2.0 knows the alphabet's order, and
+ * unlike `utf8mb4_uca1400_ai_ci` it exists on the 10.11 the host runs; an empty
+ * string leaves the column collation in place should a server not carry it.
+ */
+let sortCollation = '';
+
+async function resolveSortCollation() {
+    const [rows] = await sequalize.query(
+        "SHOW COLLATION LIKE 'utf8mb4_unicode_520_ci'",
+        { logging: false },
+    );
+
+    sortCollation = rows.length ? ' COLLATE utf8mb4_unicode_520_ci' : '';
+}
+
+/**
+ * Unicode sorts the whole Latin block ahead of the whole Tamil one, so leaving
+ * it at that buries every Tamil name pages deep behind the English spellings.
+ * Ordering on the script first keeps each block whole, Tamil first. `id` breaks
+ * ties, without which two rows sharing a name could swap places between pages.
+ */
+const nameOrder = (columns: string[]): Order => [
+    ...columns.flatMap((column) => [
+        literal(`\`${column}\` REGEXP '^[A-Za-z]'`),
+        literal(`\`${column}\`${sortCollation}`),
+    ]),
+    'id',
+];
+
 async function getNamesForFilter(
     filters: IFilterData,
     page?: number,
@@ -548,6 +581,7 @@ async function getNamesForFilter(
         const { rows, count } = await TwinNames.findAndCountAll({
             where,
             attributes: nameNumberAttributes(filters),
+            order: nameOrder(['name1', 'name2']),
             offset:
                 paged?.page && paged.limit
                     ? (paged.page - 1) * paged.limit
@@ -623,6 +657,7 @@ async function getNamesForFilter(
         const { rows, count } = await Names.findAndCountAll({
             where,
             attributes: nameNumberAttributes(filters),
+            order: nameOrder(['name']),
             offset:
                 paged?.page && paged.limit
                     ? (paged.page - 1) * paged.limit
@@ -1139,6 +1174,12 @@ sequalize
             numerologyColumnsReady = true;
         } catch (error) {
             console.log('Failed to prepare numerology columns!', error);
+        }
+
+        try {
+            await resolveSortCollation();
+        } catch (error) {
+            console.log('Failed to resolve the sort collation!', error);
         }
     })
     .catch((error) => {
