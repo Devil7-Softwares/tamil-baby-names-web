@@ -36,6 +36,8 @@ jobs:
         run: yarn build
         env:
           RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+      - name: Copy package.json
+        run: cp package.json dist/package.json
       - name: Uploading files to server
         if: github.event_name == 'push'
         uses: SamKirkland/FTP-Deploy-Action@4.0.0
