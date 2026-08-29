@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
+    "declaration": true,
+    "declarationMap": true,
+    "lib": ["ES2023"],
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "sourceMap": true,
+    "target": "ES2023"
+  },
+  "include": ["src"]
+}

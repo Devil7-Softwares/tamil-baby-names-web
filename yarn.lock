@@ -2161,6 +2161,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@tbn/shared@workspace:packages/shared":
+  version: 0.0.0-use.local
+  resolution: "@tbn/shared@workspace:packages/shared"
+  dependencies:
+    "@eslint/js": "npm:^10.0.1"
+    eslint: "npm:^10.9.1"
+    eslint-plugin-import-x: "npm:^4.17.1"
+    eslint-plugin-simple-import-sort: "npm:^14.0.0"
+    prettier: "npm:^3.9.6"
+    typescript: "npm:^5.9.3"
+    typescript-eslint: "npm:^8.68.0"
+  languageName: unknown
+  linkType: soft
+
 "@tbn/web@workspace:apps/web":
   version: 0.0.0-use.local
   resolution: "@tbn/web@workspace:apps/web"
