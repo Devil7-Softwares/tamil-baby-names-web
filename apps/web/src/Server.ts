@@ -1,11 +1,16 @@
 import {
     DEFAULT_NUMEROLOGY,
     DEFAULT_PANJANGAM,
+    getBirthDate,
+    getBirthNumberFor,
+    getDocumentTitleByFilter,
     getLunarMansion,
     getLunarMansionIndex,
     getMoonSign,
     getMoonSignIndex,
     getNameNumber,
+    getStartingLettersForFilter,
+    getStateFromParams,
     IFilterData,
     implementedNumerologies,
     IName,
@@ -13,6 +18,7 @@ import {
     locales,
     Numerology,
     numerologyLocales,
+    sentenseCase,
 } from '@tbn/shared';
 import axios from 'axios';
 import cookieParser from 'cookie-parser';
@@ -36,15 +42,6 @@ import {
     WhereOptions,
 } from 'sequelize';
 import { parse } from 'url';
-
-import {
-    getBirthDate,
-    getBirthNumberFor,
-    getDocumentTitleByFilter,
-    getStartingLettersForFilter,
-    getStateFromParams,
-    sentenseCase,
-} from './utils/Common';
 
 config({ quiet: true });
 

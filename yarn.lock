@@ -2166,6 +2166,7 @@ __metadata:
   resolution: "@tbn/shared@workspace:packages/shared"
   dependencies:
     "@eslint/js": "npm:^10.0.1"
+    dayjs: "npm:^1.11.23"
     eslint: "npm:^10.9.1"
     eslint-plugin-import-x: "npm:^4.17.1"
     eslint-plugin-simple-import-sort: "npm:^14.0.0"
@@ -2225,7 +2226,6 @@ __metadata:
     typescript-eslint: "npm:^8.68.0"
     vite: "npm:^8.2.2"
     vite-plugin-compression2: "npm:^2.5.3"
-    vitest: "npm:^4.1.11"
   languageName: unknown
   linkType: soft
 

@@ -16,8 +16,6 @@
     "build:server": "tsup",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write ."
@@ -69,7 +67,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.68.0",
     "vite": "^8.2.2",
-    "vite-plugin-compression2": "^2.5.3",
-    "vitest": "^4.1.11"
+    "vite-plugin-compression2": "^2.5.3"
   }
 }

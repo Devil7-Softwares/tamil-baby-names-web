@@ -1,6 +1,7 @@
 import './AutoLetters.scss';
 
 import {
+    getBirthDate,
     getLunarMansion,
     getLunarMansionIndex,
     getMoonSign,
@@ -14,7 +15,6 @@ import {
 import React, { useEffect, useMemo } from 'react';
 
 import { useFilterState } from '../../utils';
-import { getBirthDate } from '../../utils/Common';
 
 const timezoneOptions = Object.values(
     timezones.reduce<Record<string, (typeof timezones)[number]>>(

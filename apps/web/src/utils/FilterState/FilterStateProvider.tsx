@@ -1,8 +1,11 @@
-import { IFilterData } from '@tbn/shared';
+import {
+    getDocumentTitleByFilter,
+    getStateFromParams,
+    IFilterData,
+} from '@tbn/shared';
 import React, { PropsWithChildren, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { getDocumentTitleByFilter, getStateFromParams } from '../Common';
 import { FilterStateContext } from './FilterStateContext';
 
 export const FilterStateProvider: React.FC<PropsWithChildren> = ({

@@ -1,4 +1,3 @@
-import { IFilterData } from '@tbn/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -6,7 +5,8 @@ import {
     getBirthNumberFor,
     getStartingLettersForFilter,
     getStateFromParams,
-} from '../src/utils/Common';
+} from '../src/common';
+import { IFilterData } from '../src/interfaces';
 
 describe('getBirthDate', () => {
     it('reads the wall clock time in the given timezone', () => {

@@ -12,5 +12,5 @@
     "target": "ES2022",
     "types": ["node"]
   },
-  "include": ["src/Server.ts", "src/utils/Common.ts"]
+  "include": ["src/Server.ts"]
 }

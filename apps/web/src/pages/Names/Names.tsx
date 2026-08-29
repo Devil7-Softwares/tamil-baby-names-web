@@ -1,6 +1,7 @@
 import './Names.scss';
 
 import {
+    getDocumentTitleByFilter,
     IFilterData,
     IName,
     IPaginatedResponseData,
@@ -12,7 +13,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { Button, Card, Pagination } from '../../components';
-import { getDocumentTitleByFilter } from '../../utils/Common';
 
 interface ILoadedNames {
     key: string;

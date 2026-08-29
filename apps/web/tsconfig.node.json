@@ -10,5 +10,5 @@
     "target": "ES2022",
     "types": ["node"]
   },
-  "include": ["vite.config.mts", "vitest.config.mts", "tsup.config.ts"]
+  "include": ["vite.config.mts", "tsup.config.ts"]
 }

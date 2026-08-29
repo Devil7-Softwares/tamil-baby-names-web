@@ -1,6 +1,7 @@
 import './Numerology.scss';
 
 import {
+    getBirthNumberFor,
     implementedNumerologies,
     NAME_NUMBERS,
     Numerology as NumerologyMethod,
@@ -9,7 +10,6 @@ import {
 import React, { useEffect } from 'react';
 
 import { useFilterState } from '../../utils';
-import { getBirthNumberFor } from '../../utils/Common';
 import { Button } from '../Button';
 
 export const Numerology: React.FC = () => {
