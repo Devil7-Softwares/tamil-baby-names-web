@@ -7,6 +7,7 @@ export default defineConfig({
     plugins: [swc.vite({ module: { type: 'es6' } })],
     test: {
         environment: 'node',
+        env: { JWT_SECRET: 'test-secret' },
         include: ['test/**/*.spec.ts', 'src/**/*.spec.ts'],
     },
 });
