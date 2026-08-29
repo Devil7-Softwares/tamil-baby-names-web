@@ -1,0 +1,4 @@
+{
+  "apps/web/**/*.{ts,tsx,mts}": "yarn workspace @tbn/web exec eslint --fix",
+  "*": "prettier --ignore-unknown --write"
+}
