@@ -7,7 +7,7 @@
       "name": "Debug",
       "cwd": "${workspaceRoot}",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["dev:server"]
+      "runtimeArgs": ["workspace", "@tbn/web", "dev:server"]
     }
   ]
 }

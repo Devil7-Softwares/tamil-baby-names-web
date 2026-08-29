@@ -29,7 +29,7 @@ jobs:
       - name: Linting
         run: yarn lint
       - name: Checking formatting
-        run: yarn prettier --check src tests
+        run: yarn prettier --check apps/web/src apps/web/tests
       - name: Running tests
         run: yarn test
       - name: Building server & client
@@ -37,9 +37,9 @@ jobs:
         env:
           RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
       - name: Copy package.json
-        run: cp package.json dist/package.json
+        run: cp apps/web/package.json apps/web/dist/package.json
       - name: Force restart post upload
-        run: mkdir -p dist/tmp && echo $EPOCHSECONDS > dist/tmp/restart.txt
+        run: mkdir -p apps/web/dist/tmp && echo $EPOCHSECONDS > apps/web/dist/tmp/restart.txt
       - name: Uploading files to server
         if: github.event_name == 'push'
         uses: SamKirkland/FTP-Deploy-Action@4.0.0
@@ -47,4 +47,4 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
+          local-dir: ./apps/web/dist/
