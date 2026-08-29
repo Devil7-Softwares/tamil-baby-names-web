@@ -12,16 +12,17 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "yarn workspace @tbn/web dev",
-    "build": "yarn workspace @tbn/web build",
+    "dev": "turbo dev",
+    "build": "turbo build",
     "preview": "yarn workspace @tbn/web preview",
-    "typecheck": "yarn workspaces foreach --all --topological-dev run typecheck",
-    "test": "yarn workspaces foreach --all --topological-dev run test",
-    "lint": "yarn workspaces foreach --all --topological-dev run lint",
-    "lint:fix": "yarn workspaces foreach --all --topological-dev run lint:fix",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "turbo": "^2.10.12"
   }
 }
