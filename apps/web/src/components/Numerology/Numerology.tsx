@@ -1,14 +1,14 @@
 import './Numerology.scss';
 
-import { Numerology as NumerologyMethod } from '@tbn/shared';
-import React, { useEffect } from 'react';
-
 import {
     implementedNumerologies,
     NAME_NUMBERS,
+    Numerology as NumerologyMethod,
     numerologyLocales,
-    useFilterState,
-} from '../../utils';
+} from '@tbn/shared';
+import React, { useEffect } from 'react';
+
+import { useFilterState } from '../../utils';
 import { getBirthNumberFor } from '../../utils/Common';
 import { Button } from '../Button';
 

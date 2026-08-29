@@ -6,10 +6,9 @@
     "lib": ["ES2023"],
     "module": "CommonJS",
     "moduleResolution": "node",
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "noEmit": true,
     "sourceMap": true,
     "target": "ES2023"
   },
-  "include": ["src"]
+  "include": ["src", "tests", "vitest.config.mts"]
 }

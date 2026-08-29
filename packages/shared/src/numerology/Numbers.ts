@@ -1,5 +1,4 @@
-import { Numerology } from '@tbn/shared';
-
+import { Numerology } from '../types';
 import { getNameNumberChaldean } from './Chaldean';
 import { getNameNumberEnkanitham } from './Enkanitham';
 import { getNameNumberPythagorean } from './Pythagorean';

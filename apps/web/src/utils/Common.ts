@@ -1,4 +1,10 @@
-import { IFilterData } from '@tbn/shared';
+import {
+    DEFAULT_NUMEROLOGY,
+    getBirthNumber,
+    IFilterData,
+    isImplementedNumerology,
+    NAME_NUMBERS,
+} from '@tbn/shared';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -10,12 +16,6 @@ import {
     getStartingLettersForName,
     isImplementedPanjangam,
 } from './astro';
-import {
-    DEFAULT_NUMEROLOGY,
-    getBirthNumber,
-    isImplementedNumerology,
-    NAME_NUMBERS,
-} from './numerology';
 import { getDefaultTimezone } from './Timezone';
 
 // Extended here rather than only in the entry points, since the astro helpers

@@ -8,7 +8,7 @@ import {
     isImplementedNumerology,
     numerologyLocales,
     reduceToSingleDigit,
-} from '../src/utils/numerology';
+} from '../src/numerology';
 
 describe('enkanitham name values', () => {
     // Every worked example printed in the source, which pins the letter values

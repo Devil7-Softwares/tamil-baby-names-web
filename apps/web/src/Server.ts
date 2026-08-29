@@ -1,4 +1,13 @@
-import { IFilterData, IName, ITwinName, Numerology } from '@tbn/shared';
+import {
+    DEFAULT_NUMEROLOGY,
+    getNameNumber,
+    IFilterData,
+    implementedNumerologies,
+    IName,
+    ITwinName,
+    Numerology,
+    numerologyLocales,
+} from '@tbn/shared';
 import axios from 'axios';
 import cookieParser from 'cookie-parser';
 import { config } from 'dotenv';
@@ -38,12 +47,6 @@ import {
     getStateFromParams,
     sentenseCase,
 } from './utils/Common';
-import {
-    DEFAULT_NUMEROLOGY,
-    getNameNumber,
-    implementedNumerologies,
-    numerologyLocales,
-} from './utils/numerology';
 
 config({ quiet: true });
 

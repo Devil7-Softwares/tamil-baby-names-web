@@ -2172,6 +2172,7 @@ __metadata:
     prettier: "npm:^3.9.6"
     typescript: "npm:^5.9.3"
     typescript-eslint: "npm:^8.68.0"
+    vitest: "npm:^4.1.11"
   languageName: unknown
   linkType: soft
 
