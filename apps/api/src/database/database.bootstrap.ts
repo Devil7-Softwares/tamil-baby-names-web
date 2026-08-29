@@ -12,6 +12,11 @@ import { NamesModel, TwinNamesModel } from './models';
 @Injectable()
 export class DatabaseBootstrap implements OnApplicationBootstrap {
     private readonly logger = new Logger(DatabaseBootstrap.name);
+    private connected!: (value: boolean) => void;
+
+    readonly ready = new Promise<boolean>((resolve) => {
+        this.connected = resolve;
+    });
 
     constructor(
         @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
@@ -28,6 +33,7 @@ export class DatabaseBootstrap implements OnApplicationBootstrap {
             await this.sequelize.authenticate();
         } catch (error) {
             this.logger.error('Failed to authenticate to database!', error);
+            this.connected(false);
             return;
         }
 
@@ -39,5 +45,7 @@ export class DatabaseBootstrap implements OnApplicationBootstrap {
         } catch (error) {
             this.logger.error('Failed to syncronise tables!', error);
         }
+
+        this.connected(true);
     }
 }

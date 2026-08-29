@@ -29,6 +29,6 @@ import { defineNames, defineTwinNames } from './models';
         },
         DatabaseBootstrap,
     ],
-    exports: [SEQUELIZE, NAMES_MODEL, TWIN_NAMES_MODEL],
+    exports: [SEQUELIZE, NAMES_MODEL, TWIN_NAMES_MODEL, DatabaseBootstrap],
 })
 export class DatabaseModule {}

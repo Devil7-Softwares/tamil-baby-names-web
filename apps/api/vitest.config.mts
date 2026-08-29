@@ -9,5 +9,6 @@ export default defineConfig({
         environment: 'node',
         env: { JWT_SECRET: 'test-secret' },
         include: ['test/**/*.spec.ts', 'src/**/*.spec.ts'],
+        setupFiles: ['test/setup.ts'],
     },
 });
