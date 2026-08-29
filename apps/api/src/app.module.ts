@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { validateEnv } from './config/env';
 import { DatabaseModule } from './database/database.module';
+import { ExportModule } from './export/export.module';
 import { HealthModule } from './health/health.module';
 import { NamesModule } from './names/names.module';
 
@@ -16,6 +17,7 @@ import { NamesModule } from './names/names.module';
         }),
         AuthModule,
         DatabaseModule,
+        ExportModule,
         HealthModule,
         NamesModule,
     ],

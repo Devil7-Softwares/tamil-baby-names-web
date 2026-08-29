@@ -34,6 +34,9 @@ export default tseslint.config(
 
     {
         rules: {
+            // /[^\u0000-\u00ff]/ is used deliberately to detect Tamil text and
+            // switch the PDF font accordingly.
+            'no-control-regex': 'off',
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
