@@ -1,10 +1,16 @@
 import {
     DEFAULT_NUMEROLOGY,
+    DEFAULT_PANJANGAM,
+    getLunarMansion,
+    getLunarMansionIndex,
+    getMoonSign,
+    getMoonSignIndex,
     getNameNumber,
     IFilterData,
     implementedNumerologies,
     IName,
     ITwinName,
+    locales,
     Numerology,
     numerologyLocales,
 } from '@tbn/shared';
@@ -31,14 +37,6 @@ import {
 } from 'sequelize';
 import { parse } from 'url';
 
-import {
-    DEFAULT_PANJANGAM,
-    getLunarMansion,
-    getLunarMansionIndex,
-    getMoonSign,
-    getMoonSignIndex,
-    locales,
-} from './utils/astro';
 import {
     getBirthDate,
     getBirthNumberFor,

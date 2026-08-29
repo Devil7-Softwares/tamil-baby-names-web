@@ -6,7 +6,7 @@ import {
     getMoonSign,
     getMoonSignIndex,
     getStartingLettersForName,
-} from '../src/utils/astro';
+} from '../src/astro';
 
 /**
  * Instants at which the moon leaves a lunar mansion, as published by Drik

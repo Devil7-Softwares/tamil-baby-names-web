@@ -1,9 +1,5 @@
 import './AutoLetters.scss';
 
-import { Panjangam } from '@tbn/shared';
-import React, { useEffect, useMemo } from 'react';
-
-import Timezones from '../../assets/timezones.json';
 import {
     getLunarMansion,
     getLunarMansionIndex,
@@ -12,8 +8,12 @@ import {
     getStartingLettersForName,
     implementedPanjangams,
     locales,
-    useFilterState,
-} from '../../utils';
+    Panjangam,
+} from '@tbn/shared';
+import React, { useEffect, useMemo } from 'react';
+
+import Timezones from '../../assets/timezones.json';
+import { useFilterState } from '../../utils';
 import { getBirthDate } from '../../utils/Common';
 
 const timezoneOptions = Object.values(

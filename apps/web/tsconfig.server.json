@@ -16,7 +16,6 @@
     "src/Server.ts",
     "src/utils/Common.ts",
     "src/utils/Timezone.ts",
-    "src/utils/astro",
     "src/assets/timezones.json"
   ]
 }
