@@ -25,6 +25,7 @@
     "@tbn/shared": "workspace:*",
     "axios": "^1.20.0",
     "cookie-parser": "^1.4.7",
+    "express-static-gzip": "^3.0.1",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.24.2",
     "pdfmake": "^0.3.11",

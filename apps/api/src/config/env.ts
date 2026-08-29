@@ -2,6 +2,7 @@ export interface Env {
     PORT: number;
     JWT_SECRET: string;
     RECAPTCHA_SECRET_KEY?: string;
+    PUBLIC_DIR?: string;
     MYSQL_HOST?: string;
     MYSQL_DATABASE?: string;
     MYSQL_USER?: string;
@@ -25,6 +26,7 @@ export function validateEnv(raw: Record<string, unknown>): Env {
         PORT: port,
         JWT_SECRET: jwtSecret,
         RECAPTCHA_SECRET_KEY: raw.RECAPTCHA_SECRET_KEY as string | undefined,
+        PUBLIC_DIR: raw.PUBLIC_DIR as string | undefined,
         MYSQL_HOST: raw.MYSQL_HOST as string | undefined,
         MYSQL_DATABASE: raw.MYSQL_DATABASE as string | undefined,
         MYSQL_USER: raw.MYSQL_USER as string | undefined,

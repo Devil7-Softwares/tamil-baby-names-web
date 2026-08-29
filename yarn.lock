@@ -2155,6 +2155,7 @@ __metadata:
     eslint: "npm:^10.9.1"
     eslint-plugin-import-x: "npm:^4.17.1"
     eslint-plugin-simple-import-sort: "npm:^14.0.0"
+    express-static-gzip: "npm:^3.0.1"
     globals: "npm:^17.11.0"
     jsonwebtoken: "npm:^9.0.3"
     mysql2: "npm:^3.24.2"
