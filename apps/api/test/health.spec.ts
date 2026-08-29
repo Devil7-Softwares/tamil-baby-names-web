@@ -4,6 +4,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../src/app.module';
+import { DatabaseBootstrap } from '../src/database/database.bootstrap';
 import { configureApp } from '../src/setup';
 
 describe('health', () => {
@@ -12,7 +13,10 @@ describe('health', () => {
     beforeAll(async () => {
         const module = await Test.createTestingModule({
             imports: [AppModule],
-        }).compile();
+        })
+            .overrideProvider(DatabaseBootstrap)
+            .useValue({ onApplicationBootstrap: () => undefined })
+            .compile();
 
         app = configureApp(module.createNestApplication());
 
