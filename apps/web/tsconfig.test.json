@@ -14,8 +14,6 @@
   },
   "include": [
     "tests",
-    "src/interfaces",
-    "src/types",
     "src/utils/Common.ts",
     "src/utils/Timezone.ts",
     "src/utils/astro",

@@ -14,8 +14,6 @@
   },
   "include": [
     "src/Server.ts",
-    "src/interfaces",
-    "src/types",
     "src/utils/Common.ts",
     "src/utils/Timezone.ts",
     "src/utils/astro",

@@ -1,7 +1,7 @@
+import { IFilterData } from '@tbn/shared';
 import React, { PropsWithChildren, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { IFilterData } from '../../interfaces';
 import { getDocumentTitleByFilter, getStateFromParams } from '../Common';
 import { FilterStateContext } from './FilterStateContext';
 

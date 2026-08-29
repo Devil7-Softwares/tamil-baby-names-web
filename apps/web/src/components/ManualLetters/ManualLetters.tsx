@@ -1,10 +1,9 @@
 import './ManualLetters.scss';
 
+import { Gender, IArrayResponseData } from '@tbn/shared';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 
-import { IArrayResponseData } from '../../interfaces';
-import { Gender } from '../../types';
 import { Button } from '../Button';
 
 interface IProps {

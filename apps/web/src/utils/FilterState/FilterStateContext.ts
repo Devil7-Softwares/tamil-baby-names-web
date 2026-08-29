@@ -1,3 +1,4 @@
+import { IFilterData } from '@tbn/shared';
 import {
     createContext,
     Dispatch,
@@ -7,7 +8,6 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { IFilterData } from '../../interfaces';
 import { getStateFromParams } from '../Common';
 
 export const FilterStateContext = createContext<IFilterData>({} as IFilterData);

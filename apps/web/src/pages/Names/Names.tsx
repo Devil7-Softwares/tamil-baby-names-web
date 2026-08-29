@@ -1,17 +1,17 @@
 import './Names.scss';
 
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-
-import { Button, Card, Pagination } from '../../components';
 import {
     IFilterData,
     IName,
     IPaginatedResponseData,
     ITwinName,
-} from '../../interfaces';
-import { WithFilters } from '../../types';
+    WithFilters,
+} from '@tbn/shared';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
+import { Button, Card, Pagination } from '../../components';
 import { getDocumentTitleByFilter } from '../../utils/Common';
 
 interface ILoadedNames {

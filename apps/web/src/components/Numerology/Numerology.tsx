@@ -1,8 +1,8 @@
 import './Numerology.scss';
 
+import { Numerology as NumerologyMethod } from '@tbn/shared';
 import React, { useEffect } from 'react';
 
-import { Numerology as NumerologyMethod } from '../../types';
 import {
     implementedNumerologies,
     NAME_NUMBERS,

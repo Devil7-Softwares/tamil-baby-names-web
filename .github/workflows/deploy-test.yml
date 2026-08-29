@@ -37,7 +37,19 @@ jobs:
         env:
           RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
       - name: Copy package.json
-        run: cp apps/web/package.json apps/web/dist/package.json
+        run: |
+          node -e '
+            const pkg = require("./apps/web/package.json");
+            for (const field of ["dependencies", "devDependencies"]) {
+              for (const [name, range] of Object.entries(pkg[field] ?? {})) {
+                if (range.startsWith("workspace:")) delete pkg[field][name];
+              }
+            }
+            require("fs").writeFileSync(
+              "apps/web/dist/package.json",
+              JSON.stringify(pkg, null, 2) + "\n",
+            );
+          '
       - name: Force restart post upload
         run: mkdir -p apps/web/dist/tmp && echo $EPOCHSECONDS > apps/web/dist/tmp/restart.txt
       - name: Uploading files to server

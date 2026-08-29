@@ -1,6 +1,6 @@
+import { IFilterData } from '@tbn/shared';
 import { describe, expect, it } from 'vitest';
 
-import { IFilterData } from '../src/interfaces';
 import {
     getBirthDate,
     getBirthNumberFor,

@@ -1,8 +1,8 @@
+import { IFilterData } from '@tbn/shared';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
-import { IFilterData } from '../interfaces';
 import {
     DEFAULT_PANJANGAM,
     getLunarMansion,

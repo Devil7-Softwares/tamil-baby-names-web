@@ -1,4 +1,5 @@
-import { Panjangam } from '../../types';
+import { Panjangam } from '@tbn/shared';
+
 import { locales } from './Locales';
 import {
     calculateAyanamsa,

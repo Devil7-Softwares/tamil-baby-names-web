@@ -1,5 +1,6 @@
 import './Filters.scss';
 
+import { IResponseData } from '@tbn/shared';
 import axios from 'axios';
 import React, { useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -25,7 +26,6 @@ import {
     ManualLetters,
     Numerology,
 } from '../../components';
-import { IResponseData } from '../../interfaces';
 import { useFilterState } from '../../utils';
 
 export const Filters: React.FC = () => {

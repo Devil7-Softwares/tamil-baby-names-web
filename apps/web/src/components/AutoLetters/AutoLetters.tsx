@@ -1,9 +1,9 @@
 import './AutoLetters.scss';
 
+import { Panjangam } from '@tbn/shared';
 import React, { useEffect, useMemo } from 'react';
 
 import Timezones from '../../assets/timezones.json';
-import { Panjangam } from '../../types';
 import {
     getLunarMansion,
     getLunarMansionIndex,

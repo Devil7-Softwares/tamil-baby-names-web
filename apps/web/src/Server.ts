@@ -1,3 +1,4 @@
+import { IFilterData, IName, ITwinName, Numerology } from '@tbn/shared';
 import axios from 'axios';
 import cookieParser from 'cookie-parser';
 import { config } from 'dotenv';
@@ -21,8 +22,6 @@ import {
 } from 'sequelize';
 import { parse } from 'url';
 
-import { IFilterData, IName, ITwinName } from './interfaces';
-import { Numerology } from './types';
 import {
     DEFAULT_PANJANGAM,
     getLunarMansion,
