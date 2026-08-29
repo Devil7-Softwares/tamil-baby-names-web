@@ -12,10 +12,5 @@
     "target": "ES2022",
     "types": ["node"]
   },
-  "include": [
-    "tests",
-    "src/utils/Common.ts",
-    "src/utils/Timezone.ts",
-    "src/assets/timezones.json"
-  ]
+  "include": ["tests", "src/utils/Common.ts"]
 }

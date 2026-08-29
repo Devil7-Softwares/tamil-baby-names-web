@@ -1,4 +1,5 @@
 export * from './astro';
 export * from './interfaces';
 export * from './numerology';
+export * from './timezones';
 export * from './types';

@@ -9,15 +9,15 @@ import {
     implementedPanjangams,
     locales,
     Panjangam,
+    timezones,
 } from '@tbn/shared';
 import React, { useEffect, useMemo } from 'react';
 
-import Timezones from '../../assets/timezones.json';
 import { useFilterState } from '../../utils';
 import { getBirthDate } from '../../utils/Common';
 
 const timezoneOptions = Object.values(
-    Timezones.reduce<Record<string, (typeof Timezones)[number]>>(
+    timezones.reduce<Record<string, (typeof timezones)[number]>>(
         (acc, timezone) => {
             const zone = timezone.utc[0];
 

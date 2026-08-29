@@ -2,6 +2,7 @@ import {
     DEFAULT_NUMEROLOGY,
     DEFAULT_PANJANGAM,
     getBirthNumber,
+    getDefaultTimezone,
     getLunarMansion,
     getLunarMansionIndex,
     getStartingLettersForName,
@@ -13,8 +14,6 @@ import {
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-
-import { getDefaultTimezone } from './Timezone';
 
 // Extended here rather than only in the entry points, since the astro helpers
 // below are shared by the browser bundle and the server bundle.
