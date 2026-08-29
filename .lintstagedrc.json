@@ -1,4 +1,5 @@
 {
+  "apps/api/**/*.{ts,mts}": "yarn workspace @tbn/api exec eslint --fix",
   "apps/web/**/*.{ts,tsx,mts}": "yarn workspace @tbn/web exec eslint --fix",
   "*": "prettier --ignore-unknown --write"
 }
