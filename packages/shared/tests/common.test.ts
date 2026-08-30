@@ -123,6 +123,11 @@ describe('getStateFromParams', () => {
         expect(parse('').numerology).toBe('enkanitham');
     });
 
+    it('drops the religion for twin names, which have no such column', () => {
+        expect(parse('religion=hindu').religion).toBe('hindu');
+        expect(parse('religion=hindu&twinNames=true').religion).toBeUndefined();
+    });
+
     it('takes name numbers in range, sorted and deduplicated', () => {
         expect(parse('nameNumbers=5,7,9').nameNumbers).toEqual([5, 7, 9]);
         expect(parse('nameNumbers=9,5,5,7').nameNumbers).toEqual([5, 7, 9]);

@@ -193,38 +193,42 @@ export const Filters: React.FC = () => {
                 Girl
             </Button>
 
-            <h2>Religion</h2>
-            <Button
-                image={Religion}
-                checked={!religion}
-                onCheckedChange={onReligionClick}
-            >
-                All
-            </Button>
-            <Button
-                name='hindu'
-                image={Hindu}
-                checked={religion === 'hindu'}
-                onCheckedChange={onReligionClick}
-            >
-                Hindu
-            </Button>
-            <Button
-                name='muslim'
-                image={Islam}
-                checked={religion === 'muslim'}
-                onCheckedChange={onReligionClick}
-            >
-                Muslim
-            </Button>
-            <Button
-                name='christian'
-                image={Christian}
-                checked={religion === 'christian'}
-                onCheckedChange={onReligionClick}
-            >
-                Christian
-            </Button>
+            {!twinNames && (
+                <>
+                    <h2>Religion</h2>
+                    <Button
+                        image={Religion}
+                        checked={!religion}
+                        onCheckedChange={onReligionClick}
+                    >
+                        All
+                    </Button>
+                    <Button
+                        name='hindu'
+                        image={Hindu}
+                        checked={religion === 'hindu'}
+                        onCheckedChange={onReligionClick}
+                    >
+                        Hindu
+                    </Button>
+                    <Button
+                        name='muslim'
+                        image={Islam}
+                        checked={religion === 'muslim'}
+                        onCheckedChange={onReligionClick}
+                    >
+                        Muslim
+                    </Button>
+                    <Button
+                        name='christian'
+                        image={Christian}
+                        checked={religion === 'christian'}
+                        onCheckedChange={onReligionClick}
+                    >
+                        Christian
+                    </Button>
+                </>
+            )}
 
             <h2>Starting Letter</h2>
             <Button

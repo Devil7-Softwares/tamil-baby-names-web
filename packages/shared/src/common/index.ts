@@ -118,11 +118,17 @@ export const getStateFromParams = (params: URLSearchParams): IFilterData => {
     const panjangam = params.get('panjangam');
     const numerology = params.get('numerology');
 
+    const twinNames = params.get('twinNames') === 'true';
+
     const base = {
         gender: (params.get('gender') as IFilterData['gender']) || undefined,
-        twinNames: params.get('twinNames') === 'true',
-        religion:
-            (params.get('religion') as IFilterData['religion']) || undefined,
+        twinNames,
+        // `twin_names` has no religion column, so the filter cannot be applied
+        // to a twin search. Dropping it here keeps the title, the access token
+        // and the PDF header from claiming a religion the query never used.
+        religion: twinNames
+            ? undefined
+            : (params.get('religion') as IFilterData['religion']) || undefined,
         tob: params.get('tob') || dayjs().format('YYYY-MM-DDTHH:mm'),
         tz: params.get('tz') || getDefaultTimezone(),
         // Anything unknown (or not implemented yet) falls back to the default,
