@@ -9,7 +9,8 @@
   "packageManager": "yarn@4.18.0",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "tools/*"
   ],
   "scripts": {
     "postinstall": "husky",

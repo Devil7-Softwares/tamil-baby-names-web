@@ -1,0 +1,16 @@
+{
+  "name": "@tbn/dev-proxy",
+  "version": "1.0.0",
+  "description": "Local development gateway putting the api and both clients on one origin",
+  "repository": "https://github.com/Devil7-Softwares/tamil-baby-names-web",
+  "author": "Dineshkumar T (Devil7DK)",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "httpxy": "^0.5.5"
+  }
+}
