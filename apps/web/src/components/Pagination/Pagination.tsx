@@ -74,6 +74,11 @@ const getPagination = (
         const middleRange = range(leftSiblingIndex, rightSiblingIndex);
         return [firstPageIndex, DOTS, ...middleRange, DOTS, lastPageIndex];
     }
+
+    // Unreachable: neither side needing dots means the whole range fits, which
+    // the count check above already returned. Listing every page is the safe
+    // answer if that ever stops holding.
+    return range(1, totalPageCount);
 };
 
 interface IPageProps {
@@ -113,7 +118,7 @@ export const Pagination: React.FC<IProps> = ({
 
     return (
         <div className='pagination-container'>
-            {pages && !!pages.length && (
+            {!!pages.length && (
                 <div className='pagination'>
                     <div
                         className={currentPage == 1 ? 'disabled' : ''}
