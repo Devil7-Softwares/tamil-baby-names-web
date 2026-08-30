@@ -4,6 +4,7 @@ export interface Env {
     JWT_SECRET: string;
     RECAPTCHA_SECRET_KEY?: string;
     PUBLIC_DIR?: string;
+    ADMIN_PUBLIC_DIR?: string;
     MYSQL_HOST?: string;
     MYSQL_DATABASE?: string;
     MYSQL_USER?: string;
@@ -36,6 +37,7 @@ export function validateEnv(raw: Record<string, unknown>): Env {
         JWT_SECRET: jwtSecret,
         RECAPTCHA_SECRET_KEY: optional('RECAPTCHA_SECRET_KEY'),
         PUBLIC_DIR: optional('PUBLIC_DIR'),
+        ADMIN_PUBLIC_DIR: optional('ADMIN_PUBLIC_DIR'),
         MYSQL_HOST: optional('MYSQL_HOST'),
         MYSQL_DATABASE: optional('MYSQL_DATABASE'),
         MYSQL_USER: optional('MYSQL_USER'),

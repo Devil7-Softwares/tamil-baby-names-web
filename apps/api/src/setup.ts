@@ -28,16 +28,25 @@ export function configureApp(app: INestApplication): INestApplication {
             : next(),
     );
 
-    const publicDir = findPublicDir(
-        app.get(ConfigService).get<string>('PUBLIC_DIR'),
+    const config = app.get(ConfigService);
+    const publicDir = findPublicDir(config.get<string>('PUBLIC_DIR'));
+    const adminDir = findPublicDir(
+        config.get<string>('ADMIN_PUBLIC_DIR'),
+        'public-admin',
     );
 
     if (publicDir) {
         Logger.log(`Using public dir: ${publicDir}`, 'Spa');
+        Logger.log(
+            adminDir
+                ? `Using admin dir: ${adminDir}`
+                : 'No admin dir found, so /admin is not served.',
+            'Spa',
+        );
         // On the express instance rather than through a module: a middleware
         // route is given the global prefix, which would put the client under
         // /api.
-        app.use(spaHandler(publicDir));
+        app.use(spaHandler(publicDir, adminDir));
     } else {
         Logger.log('No public dir found!', 'Spa');
     }

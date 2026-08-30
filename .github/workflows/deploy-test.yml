@@ -32,7 +32,7 @@ jobs:
         run: yarn prettier --check .
       - name: Running tests
         run: yarn test
-      - name: Building the api and the client
+      - name: Building the api and the clients
         run: yarn build
         env:
           RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
@@ -41,6 +41,7 @@ jobs:
           mkdir -p deploy
           cp -r apps/api/dist/. deploy/
           cp -r apps/web/dist/public deploy/public
+          cp -r apps/admin/dist/public deploy/public-admin
           mkdir -p deploy/vendor/shared
           cp packages/shared/package.json deploy/vendor/shared/
           cp -r packages/shared/dist deploy/vendor/shared/dist
