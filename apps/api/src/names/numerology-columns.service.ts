@@ -6,8 +6,8 @@ import {
 } from '@tbn/shared';
 import { Sequelize } from 'sequelize';
 
-import { SEQUELIZE } from '../database/database.constants';
-import { numerologyColumn, NumerologySuffix } from './numerology-column';
+import { SEQUELIZE } from '../database/database.constants.js';
+import { numerologyColumn, NumerologySuffix } from './numerology-column.js';
 
 const NUMEROLOGY_TABLES: ReadonlyArray<{
     table: string;

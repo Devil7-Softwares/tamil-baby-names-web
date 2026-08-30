@@ -10,7 +10,7 @@ import {
     startsWithLetter,
     twinNamesWhere,
     wantedNumbers,
-} from '../src/names/names.query';
+} from '../src/names/names.query.js';
 
 const base: IFilterData = {
     startsWithMode: 'none',

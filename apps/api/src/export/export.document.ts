@@ -15,9 +15,13 @@ import {
     numerologyLocales,
     sentenseCase,
 } from '@tbn/shared';
-import { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
+import {
+    Content,
+    TableCell,
+    TDocumentDefinitions,
+} from 'pdfmake/interfaces.js';
 
-import { numbersOf } from '../names/names.query';
+import { numbersOf } from '../names/names.query.js';
 
 export interface DocumentOrigin {
     host: string;

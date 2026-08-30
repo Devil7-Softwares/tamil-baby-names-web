@@ -19,9 +19,9 @@ import {
     WithFilters,
 } from '@tbn/shared';
 
-import { AccessTokenGuard } from '../auth/access-token.guard';
-import { Filters } from '../auth/filters.decorator';
-import { NamesService } from './names.service';
+import { AccessTokenGuard } from '../auth/access-token.guard.js';
+import { Filters } from '../auth/filters.decorator.js';
+import { NamesService } from './names.service.js';
 
 @Controller()
 export class NamesController {

@@ -6,8 +6,12 @@ import {
 } from '@nestjs/common';
 import { Sequelize } from 'sequelize';
 
-import { NAMES_MODEL, SEQUELIZE, TWIN_NAMES_MODEL } from './database.constants';
-import { NamesModel, TwinNamesModel } from './models';
+import {
+    NAMES_MODEL,
+    SEQUELIZE,
+    TWIN_NAMES_MODEL,
+} from './database.constants.js';
+import { NamesModel, TwinNamesModel } from './models.js';
 
 @Injectable()
 export class DatabaseBootstrap implements OnApplicationBootstrap {

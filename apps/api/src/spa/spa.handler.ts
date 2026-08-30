@@ -3,12 +3,14 @@ import { RequestHandler } from 'express';
 import expressStaticGzip from 'express-static-gzip';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { parse } from 'url';
+import { fileURLToPath, parse } from 'url';
+
+const moduleDir = fileURLToPath(new URL('.', import.meta.url));
 
 export function findPublicDir(configured?: string): string | null {
     const candidates = configured
         ? [configured]
-        : [join(__dirname, '..', 'public'), join(process.cwd(), 'public')];
+        : [join(moduleDir, '..', 'public'), join(process.cwd(), 'public')];
 
     return (
         candidates.find((path) => existsSync(join(path, 'index.html'))) ?? null

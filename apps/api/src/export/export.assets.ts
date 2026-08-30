@@ -2,11 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { existsSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
 import pdfmake from 'pdfmake';
+import { fileURLToPath } from 'url';
+
+const moduleDir = fileURLToPath(new URL('.', import.meta.url));
 
 @Injectable()
 export class ExportAssets {
     private readonly assetsDir =
-        [join(__dirname, '..', 'assets'), join(process.cwd(), 'assets')].find(
+        [join(moduleDir, '..', 'assets'), join(process.cwd(), 'assets')].find(
             (path) => existsSync(path),
         ) || './assets';
 

@@ -2,8 +2,8 @@ import { getNameNumber, implementedNumerologies } from '@tbn/shared';
 import { Sequelize } from 'sequelize';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { numerologyColumn } from '../src/names/numerology-column';
-import { NumerologyColumnsService } from '../src/names/numerology-columns.service';
+import { numerologyColumn } from '../src/names/numerology-column.js';
+import { NumerologyColumnsService } from '../src/names/numerology-columns.service.js';
 
 class FakeSequelize {
     readonly statements: string[] = [];

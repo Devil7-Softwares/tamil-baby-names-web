@@ -1,4 +1,4 @@
-import { Gender, Numerology, Panjangam, Religion } from '../types';
+import { Gender, Numerology, Panjangam, Religion } from '../types/index.js';
 
 type FilterDataBase = {
     gender?: Gender;

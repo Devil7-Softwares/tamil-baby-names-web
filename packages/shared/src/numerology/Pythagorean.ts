@@ -1,4 +1,4 @@
-import { latinLetterValuer } from './Latin';
+import { latinLetterValuer } from './Latin.js';
 
 /**
  * The Western system, which tamildailycalendar.com carries beside the Chaldean

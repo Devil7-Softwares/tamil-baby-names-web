@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import { AuthModule } from './auth/auth.module';
-import { validateEnv } from './config/env';
-import { DatabaseModule } from './database/database.module';
-import { ExportModule } from './export/export.module';
-import { HealthModule } from './health/health.module';
-import { NamesModule } from './names/names.module';
+import { AuthModule } from './auth/auth.module.js';
+import { validateEnv } from './config/env.js';
+import { DatabaseModule } from './database/database.module.js';
+import { ExportModule } from './export/export.module.js';
+import { HealthModule } from './health/health.module.js';
+import { NamesModule } from './names/names.module.js';
 
 @Module({
     imports: [

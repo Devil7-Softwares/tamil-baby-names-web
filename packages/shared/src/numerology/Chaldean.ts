@@ -1,4 +1,4 @@
-import { latinLetterValuer } from './Latin';
+import { latinLetterValuer } from './Latin.js';
 
 /**
  * Chaldean values, the system Tamil Nadu numerology applies to a name's English

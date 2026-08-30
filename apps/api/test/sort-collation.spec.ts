@@ -1,8 +1,8 @@
 import { Sequelize } from 'sequelize';
-import { Literal } from 'sequelize/types/utils';
+import { Literal } from 'sequelize/lib/utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SortCollationService } from '../src/names/sort-collation.service';
+import { SortCollationService } from '../src/names/sort-collation.service.js';
 
 const query = vi.fn();
 

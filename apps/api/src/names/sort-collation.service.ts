@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { literal, Order, Sequelize } from 'sequelize';
 
-import { SEQUELIZE } from '../database/database.constants';
+import { SEQUELIZE } from '../database/database.constants.js';
 
 @Injectable()
 export class SortCollationService {

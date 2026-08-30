@@ -5,8 +5,8 @@ import {
     getBirthNumberFor,
     getStartingLettersForFilter,
     getStateFromParams,
-} from '../src/common';
-import { IFilterData } from '../src/interfaces';
+} from '../src/common/index.js';
+import { IFilterData } from '../src/interfaces/index.js';
 
 describe('getBirthDate', () => {
     it('reads the wall clock time in the given timezone', () => {

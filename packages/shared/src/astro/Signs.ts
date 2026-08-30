@@ -1,12 +1,12 @@
-import { Panjangam } from '../types';
-import { locales } from './Locales';
+import { Panjangam } from '../types/index.js';
+import { locales } from './Locales.js';
 import {
     calculateAyanamsa,
     d2r,
     longitudeToZodiac,
     toJulianDate,
-} from './Utils';
-import { getLongitudeOfMoonVakkiya } from './Vakya';
+} from './Utils.js';
+import { getLongitudeOfMoonVakkiya } from './Vakya.js';
 
 function getLongitudeOfMoonThirukanitha(date: Date): number {
     const day = date.getDate();

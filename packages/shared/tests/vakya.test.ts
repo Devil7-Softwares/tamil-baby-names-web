@@ -8,7 +8,7 @@ import {
     implementedPanjangams,
     isImplementedPanjangam,
     locales,
-} from '../src/astro';
+} from '../src/astro/index.js';
 
 describe('candravakya table', () => {
     const V = (n: number) => CANDRAVAKYAS[n];

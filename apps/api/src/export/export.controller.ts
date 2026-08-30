@@ -11,9 +11,9 @@ import {
 import { IFilterData } from '@tbn/shared';
 import { Request } from 'express';
 
-import { AccessTokenGuard } from '../auth/access-token.guard';
-import { Filters } from '../auth/filters.decorator';
-import { ExportService } from './export.service';
+import { AccessTokenGuard } from '../auth/access-token.guard.js';
+import { Filters } from '../auth/filters.decorator.js';
+import { ExportService } from './export.service.js';
 
 @Controller('export')
 export class ExportController {

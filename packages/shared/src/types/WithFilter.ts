@@ -1,4 +1,4 @@
-import { IFilterData } from '../interfaces';
+import { IFilterData } from '../interfaces/index.js';
 
 export type WithFilters<T> = T & {
     filters: IFilterData;

@@ -1,7 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { IFilterData } from '@tbn/shared';
 
-import { FilteredRequest } from './filtered-request';
+import { FilteredRequest } from './filtered-request.js';
 
 export const Filters = createParamDecorator(
     (_data: unknown, context: ExecutionContext): IFilterData => {

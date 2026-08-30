@@ -1,4 +1,4 @@
-import { Gender } from '../types';
+import { Gender } from '../types/index.js';
 
 export interface ITwinName {
     id: number;

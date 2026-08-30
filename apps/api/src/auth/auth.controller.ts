@@ -11,7 +11,7 @@ import {
 import { IFilterData, IResponseData } from '@tbn/shared';
 import { Response } from 'express';
 
-import { AuthService } from './auth.service';
+import { AuthService } from './auth.service.js';
 
 @Controller('generate')
 export class AuthController {

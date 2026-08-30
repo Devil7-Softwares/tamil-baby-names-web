@@ -6,14 +6,18 @@ import {
     IName,
     ITwinName,
 } from '@tbn/shared';
-import { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces';
+import {
+    Content,
+    TableCell,
+    TDocumentDefinitions,
+} from 'pdfmake/interfaces.js';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
     buildDocument,
     DocumentOrigin,
     withFonts,
-} from '../src/export/export.document';
+} from '../src/export/export.document.js';
 
 const origin: DocumentOrigin = {
     host: 'tamil-baby-names.test',

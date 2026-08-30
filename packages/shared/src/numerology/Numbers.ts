@@ -1,7 +1,7 @@
-import { Numerology } from '../types';
-import { getNameNumberChaldean } from './Chaldean';
-import { getNameNumberEnkanitham } from './Enkanitham';
-import { getNameNumberPythagorean } from './Pythagorean';
+import { Numerology } from '../types/index.js';
+import { getNameNumberChaldean } from './Chaldean.js';
+import { getNameNumberEnkanitham } from './Enkanitham.js';
+import { getNameNumberPythagorean } from './Pythagorean.js';
 
 export const DEFAULT_NUMEROLOGY: Numerology = 'enkanitham';
 

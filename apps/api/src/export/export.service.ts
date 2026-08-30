@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { IFilterData } from '@tbn/shared';
 import pdfmake from 'pdfmake';
 
-import { NamesService } from '../names/names.service';
-import { ExportAssets } from './export.assets';
-import { buildDocument, DocumentOrigin } from './export.document';
+import { NamesService } from '../names/names.service.js';
+import { ExportAssets } from './export.assets.js';
+import { buildDocument, DocumentOrigin } from './export.document.js';
 
 @Injectable()
 export class ExportService {

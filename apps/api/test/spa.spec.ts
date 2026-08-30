@@ -8,9 +8,9 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { brotliCompressSync } from 'zlib';
 
-import { AppModule } from '../src/app.module';
-import { DatabaseBootstrap } from '../src/database/database.bootstrap';
-import { configureApp } from '../src/setup';
+import { AppModule } from '../src/app.module.js';
+import { DatabaseBootstrap } from '../src/database/database.bootstrap.js';
+import { configureApp } from '../src/setup.js';
 
 const publicDir = mkdtempSync(join(tmpdir(), 'tbn-public-'));
 

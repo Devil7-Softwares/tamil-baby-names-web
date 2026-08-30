@@ -14,11 +14,11 @@ import {
     vi,
 } from 'vitest';
 
-import { AuthModule } from '../src/auth/auth.module';
-import { validateEnv } from '../src/config/env';
-import { NamesController } from '../src/names/names.controller';
-import { NamesService } from '../src/names/names.service';
-import { configureApp } from '../src/setup';
+import { AuthModule } from '../src/auth/auth.module.js';
+import { validateEnv } from '../src/config/env.js';
+import { NamesController } from '../src/names/names.controller.js';
+import { NamesService } from '../src/names/names.service.js';
+import { configureApp } from '../src/setup.js';
 
 const SECRET = 'test-secret';
 

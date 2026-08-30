@@ -2,7 +2,7 @@ import { INestApplication, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
 
-import { findPublicDir, spaHandler } from './spa/spa.handler';
+import { findPublicDir, spaHandler } from './spa/spa.handler.js';
 
 // Shared by main and the tests so they cannot disagree about the routes the
 // service actually answers on.

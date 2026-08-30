@@ -2,9 +2,13 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Sequelize } from 'sequelize';
 
-import { DatabaseBootstrap } from './database.bootstrap';
-import { NAMES_MODEL, SEQUELIZE, TWIN_NAMES_MODEL } from './database.constants';
-import { defineNames, defineTwinNames } from './models';
+import { DatabaseBootstrap } from './database.bootstrap.js';
+import {
+    NAMES_MODEL,
+    SEQUELIZE,
+    TWIN_NAMES_MODEL,
+} from './database.constants.js';
+import { defineNames, defineTwinNames } from './models.js';
 
 @Global()
 @Module({

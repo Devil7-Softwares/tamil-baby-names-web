@@ -7,7 +7,7 @@ import {
 } from '@tbn/shared';
 import { col, Op, ProjectionAlias, WhereOptions } from 'sequelize';
 
-import { numerologyColumn, NumerologySuffix } from './numerology-column';
+import { numerologyColumn, NumerologySuffix } from './numerology-column.js';
 
 const TAMIL_VOWEL_SIGN = /[\u0BBE-\u0BCD]/;
 

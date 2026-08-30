@@ -1,4 +1,4 @@
-import data from './timezones.json';
+import data from './timezones.json' with { type: 'json' };
 
 export interface Timezone {
     value: string;

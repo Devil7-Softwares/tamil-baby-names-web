@@ -15,11 +15,11 @@ import {
     vi,
 } from 'vitest';
 
-import { AccessTokenGuard } from '../src/auth/access-token.guard';
-import { AuthModule } from '../src/auth/auth.module';
-import { Filters } from '../src/auth/filters.decorator';
-import { validateEnv } from '../src/config/env';
-import { configureApp } from '../src/setup';
+import { AccessTokenGuard } from '../src/auth/access-token.guard.js';
+import { AuthModule } from '../src/auth/auth.module.js';
+import { Filters } from '../src/auth/filters.decorator.js';
+import { validateEnv } from '../src/config/env.js';
+import { configureApp } from '../src/setup.js';
 
 vi.mock('axios', () => ({ default: { post: vi.fn() } }));
 

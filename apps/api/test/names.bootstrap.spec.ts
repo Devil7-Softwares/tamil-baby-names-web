@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { DatabaseBootstrap } from '../src/database/database.bootstrap';
-import { NamesBootstrap } from '../src/names/names.bootstrap';
-import { NumerologyColumnsService } from '../src/names/numerology-columns.service';
-import { SortCollationService } from '../src/names/sort-collation.service';
+import { DatabaseBootstrap } from '../src/database/database.bootstrap.js';
+import { NamesBootstrap } from '../src/names/names.bootstrap.js';
+import { NumerologyColumnsService } from '../src/names/numerology-columns.service.js';
+import { SortCollationService } from '../src/names/sort-collation.service.js';
 
 const bootstrapWith = (connected: boolean) => {
     const prepare = vi.fn().mockResolvedValue(undefined);

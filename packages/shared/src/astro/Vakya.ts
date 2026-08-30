@@ -1,4 +1,4 @@
-import { CANDRAVAKYAS } from './Candravakyas';
+import { CANDRAVAKYAS } from './Candravakyas.js';
 
 /** rasi, degree, arcminute, arcsecond -> degrees */
 const rdms = (rasi: number, degree: number, minute: number, second = 0) =>

@@ -2,7 +2,11 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IFilterData } from '@tbn/shared';
 import axios from 'axios';
-import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
+
+// jsonwebtoken is CommonJS and its named exports are not statically
+// detectable, so ESM can only reach them through the default export.
+const { TokenExpiredError } = jwt;
 
 @Injectable()
 export class AuthService {

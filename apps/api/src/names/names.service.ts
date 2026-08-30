@@ -11,8 +11,8 @@ import {
     NAMES_MODEL,
     SEQUELIZE,
     TWIN_NAMES_MODEL,
-} from '../database/database.constants';
-import { NamesModel, TwinNamesModel } from '../database/models';
+} from '../database/database.constants.js';
+import { NamesModel, TwinNamesModel } from '../database/models.js';
 import {
     applyNameNumbers,
     nameNumberAttributes,
@@ -21,9 +21,9 @@ import {
     resolveNameNumber,
     twinNamesWhere,
     wantedNumbers,
-} from './names.query';
-import { NumerologyColumnsService } from './numerology-columns.service';
-import { SortCollationService } from './sort-collation.service';
+} from './names.query.js';
+import { NumerologyColumnsService } from './numerology-columns.service.js';
+import { SortCollationService } from './sort-collation.service.js';
 
 @Injectable()
 export class NamesService {

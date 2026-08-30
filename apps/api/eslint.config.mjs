@@ -11,16 +11,11 @@ export default tseslint.config(
     tseslint.configs.recommended,
 
     {
-        files: ['**/*.ts', '**/*.cjs'],
+        files: ['**/*.ts', '**/*.js'],
         languageOptions: {
             ecmaVersion: 2023,
             globals: globals.node,
         },
-    },
-
-    {
-        files: ['**/*.cjs'],
-        rules: { '@typescript-eslint/no-require-imports': 'off' },
     },
 
     {

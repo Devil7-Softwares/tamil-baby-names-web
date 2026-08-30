@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize';
 import { describe, expect, it } from 'vitest';
 
-import { defineNames, defineTwinNames } from '../src/database/models';
+import { defineNames, defineTwinNames } from '../src/database/models.js';
 
 const sequelize = new Sequelize({ dialect: 'mysql' });
 const names = defineNames(sequelize);
