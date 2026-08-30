@@ -18,8 +18,6 @@ export type TwinNamesModel = ModelStatic<Model<ITwinName>>;
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
 const table = {
-    charset: 'utf8mb4',
-    collate: 'utf8mb4_unicode_ci',
     timestamps: false,
 };
 

@@ -12,7 +12,7 @@ class FakeSequelize {
     query = vi.fn(async (sql: string) => {
         this.statements.push(sql);
 
-        const target = /WHERE `(\w+)` IS NULL/.exec(sql)?.[1];
+        const target = /WHERE "(\w+)" IS NULL/.exec(sql)?.[1];
 
         if (!target) {
             return [[], undefined];
@@ -68,17 +68,15 @@ describe('NumerologyColumnsService', () => {
             expect(
                 altered.some(
                     (sql) =>
-                        sql.includes('`names`') &&
-                        sql.includes(`\`${numerologyColumn(numerology, '')}\``),
+                        sql.includes('"names"') &&
+                        sql.includes(`"${numerologyColumn(numerology, '')}"`),
                 ),
             ).toBe(true);
             expect(
                 altered.some(
                     (sql) =>
-                        sql.includes('`twin_names`') &&
-                        sql.includes(
-                            `\`${numerologyColumn(numerology, '2')}\``,
-                        ),
+                        sql.includes('"twin_names"') &&
+                        sql.includes(`"${numerologyColumn(numerology, '2')}"`),
                 ),
             ).toBe(true);
         }
@@ -124,7 +122,7 @@ describe('NumerologyColumnsService', () => {
         await serviceOn(sequelize).prepare();
 
         const reads = statementsOfType(sequelize, 'SELECT').filter((sql) =>
-            sql.includes(`\`${target}\` IS NULL`),
+            sql.includes(`"${target}" IS NULL`),
         );
 
         expect(reads).toHaveLength(2);

@@ -108,19 +108,29 @@ export class NamesService {
         const where = filters.gender ? 'WHERE gender = :gender' : '';
         const replacements = filters.gender ? { gender: filters.gender } : {};
 
+        // The alias is quoted because postgres folds unquoted identifiers to
+        // lower case, which would return the column as `firstletter`. The
+        // ordering takes the same collation as the name lists rather than the
+        // database default, so the picker follows the Tamil alphabet.
+        const collate = this.sortCollation.clause;
+        // The distinct set is wrapped because a COLLATE makes the ORDER BY an
+        // expression, and an expression cannot reference an output alias.
         const [letters] = await (filters.twinNames
             ? this.sequelize.query(
                   /*sql*/ `
-                SELECT DISTINCT left(name1, 1) firstLetter FROM twin_names ${where}
-                UNION
-                SELECT DISTINCT left(name2, 1) firstLetter FROM twin_names ${where}
-                ORDER BY firstLetter;
+                SELECT "firstLetter" FROM (
+                    SELECT DISTINCT left(name1, 1) AS "firstLetter" FROM twin_names ${where}
+                    UNION
+                    SELECT DISTINCT left(name2, 1) AS "firstLetter" FROM twin_names ${where}
+                ) letters ORDER BY "firstLetter"${collate};
             `,
                   { replacements },
               )
             : this.sequelize.query(
                   /*sql*/ `
-                SELECT DISTINCT left(name, 1) firstLetter FROM names ${where} ORDER BY firstLetter;
+                SELECT "firstLetter" FROM (
+                    SELECT DISTINCT left(name, 1) AS "firstLetter" FROM names ${where}
+                ) letters ORDER BY "firstLetter"${collate};
             `,
                   { replacements },
               ));

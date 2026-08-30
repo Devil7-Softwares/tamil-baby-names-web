@@ -20,6 +20,8 @@ const RELIGIONS: Record<Religion, string> = {
 const isBareTamilLetter = (letter: string) =>
     /[\u0B80-\u0BFF]/.test(letter) && !TAMIL_VOWEL_SIGN.test(letter.slice(-1));
 
+// iLike, not like: postgres LIKE is case-sensitive where the MySQL column's
+// utf8mb4_unicode_ci was not, and the Latin spellings relied on that.
 export const startsWithLetter = (
     column: 'name1' | 'name2',
     letter: string,
@@ -28,15 +30,15 @@ export const startsWithLetter = (
     exactSyllable && isBareTamilLetter(letter)
         ? {
               [Op.and]: [
-                  { [column]: { [Op.like]: `${letter}%` } },
+                  { [column]: { [Op.iLike]: `${letter}%` } },
                   {
                       [column]: {
-                          [Op.notRegexp]: `^${letter}[\\x{0BBE}-\\x{0BCD}]`,
+                          [Op.notRegexp]: `^${letter}[\u0BBE-\u0BCD]`,
                       },
                   },
               ],
           }
-        : { [column]: { [Op.like]: `${letter}%` } };
+        : { [column]: { [Op.iLike]: `${letter}%` } };
 
 /**
  * `/api/generate` signs the request body as it stands, so these arrive from the
@@ -168,8 +170,8 @@ export const namesWhere = (
                       // so `க` must reach `கா`) and the name itself for Latin
                       // spellings.
                       [Op.or]: startsWith.flatMap((char) => [
-                          { firstLetter: { [Op.like]: `${char}%` } },
-                          { name: { [Op.like]: `${char}%` } },
+                          { firstLetter: { [Op.iLike]: `${char}%` } },
+                          { name: { [Op.iLike]: `${char}%` } },
                       ]),
                   }
                 : {

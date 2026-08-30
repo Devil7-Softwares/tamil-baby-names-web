@@ -27,14 +27,14 @@ describe('SortCollationService', () => {
         await collation.resolve();
 
         expect(values(collation.order(['name']) as unknown[])).toEqual([
-            "`name` REGEXP '^[A-Za-z]'",
-            '`name`',
+            `"name" ~ '^[A-Za-z]'`,
+            '"name"',
             'id',
         ]);
     });
 
     it('applies the collation when the server carries it', async () => {
-        query.mockResolvedValue([[{ Collation: 'utf8mb4_unicode_520_ci' }]]);
+        query.mockResolvedValue([[{ '?column?': 1 }]]);
 
         const collation = service();
 
@@ -43,10 +43,10 @@ describe('SortCollationService', () => {
         expect(
             values(collation.order(['name1', 'name2']) as unknown[]),
         ).toEqual([
-            "`name1` REGEXP '^[A-Za-z]'",
-            '`name1` COLLATE utf8mb4_unicode_520_ci',
-            "`name2` REGEXP '^[A-Za-z]'",
-            '`name2` COLLATE utf8mb4_unicode_520_ci',
+            `"name1" ~ '^[A-Za-z]'`,
+            '"name1" COLLATE "und-x-icu"',
+            `"name2" ~ '^[A-Za-z]'`,
+            '"name2" COLLATE "und-x-icu"',
             'id',
         ]);
     });
@@ -59,8 +59,8 @@ describe('SortCollationService', () => {
         await collation.resolve();
 
         expect(values(collation.order(['name']) as unknown[])).toEqual([
-            "`name` REGEXP '^[A-Za-z]'",
-            '`name`',
+            `"name" ~ '^[A-Za-z]'`,
+            '"name"',
             'id',
         ]);
     });

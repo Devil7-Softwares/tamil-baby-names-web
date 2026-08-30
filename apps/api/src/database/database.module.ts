@@ -18,11 +18,12 @@ import { defineAdminUsers, defineNames, defineTwinNames } from './models.js';
             provide: SEQUELIZE,
             useFactory: (config: ConfigService) =>
                 new Sequelize({
-                    host: config.get<string>('MYSQL_HOST'),
-                    database: config.get<string>('MYSQL_DATABASE'),
-                    username: config.get<string>('MYSQL_USER'),
-                    password: config.get<string>('MYSQL_PASSWORD'),
-                    dialect: 'mysql',
+                    host: config.get<string>('POSTGRES_HOST'),
+                    port: config.get<number>('POSTGRES_PORT'),
+                    database: config.get<string>('POSTGRES_DATABASE'),
+                    username: config.get<string>('POSTGRES_USER'),
+                    password: config.get<string>('POSTGRES_PASSWORD'),
+                    dialect: 'postgres',
                 }),
             inject: [ConfigService],
         },

@@ -1,22 +1,28 @@
 services:
-  mariadb:
-    image: mariadb:11
+  postgres:
+    image: postgres:17
     container_name: tamil-baby-names-db
     restart: unless-stopped
     environment:
-      MARIADB_DATABASE: ${MYSQL_DATABASE:-tamil-baby-names_db}
-      MARIADB_ROOT_PASSWORD: ${MYSQL_PASSWORD:-devpass}
+      POSTGRES_DB: ${POSTGRES_DATABASE:-tamil-baby-names_db}
+      POSTGRES_USER: ${POSTGRES_USER:-tbn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
     ports:
-      - '${MYSQL_PORT:-3306}:3306'
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
-      - mariadb-data:/var/lib/mysql
-      # Drop the DB dump in as docker/initdb/seed.sql.
+      - postgres-data:/var/lib/postgresql/data
+      # Drop the dump in as docker/initdb/seed.sql; *.sql here runs once, on an
+      # empty data directory.
       - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-tbn} -d ${POSTGRES_DATABASE:-tamil-baby-names_db}',
+        ]
       interval: 5s
       timeout: 5s
       retries: 12
 
 volumes:
-  mariadb-data:
+  postgres-data:

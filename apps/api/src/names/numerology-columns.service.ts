@@ -71,8 +71,8 @@ export class NumerologyColumnsService {
         const target = numerologyColumn(numerology, suffix);
 
         await this.sequelize.query(
-            `ALTER TABLE \`${table}\`
-             ADD COLUMN IF NOT EXISTS \`${target}\` TINYINT NULL`,
+            `ALTER TABLE "${table}"
+             ADD COLUMN IF NOT EXISTS "${target}" SMALLINT NULL`,
             { logging: false },
         );
 
@@ -104,8 +104,8 @@ export class NumerologyColumnsService {
 
         for (;;) {
             const [rows] = (await this.sequelize.query(
-                `SELECT \`id\`, \`${nameColumn}\` AS \`name\` FROM \`${table}\`
-                 WHERE \`${target}\` IS NULL LIMIT ${BACKFILL_CHUNK}`,
+                `SELECT "id", "${nameColumn}" AS "name" FROM "${table}"
+                 WHERE "${target}" IS NULL LIMIT ${BACKFILL_CHUNK}`,
                 { logging: false },
             )) as [Array<{ id: number; name: string }>, unknown];
 
@@ -125,8 +125,8 @@ export class NumerologyColumnsService {
             // ten, whatever the chunk size.
             for (const [value, rowIds] of ids) {
                 await this.sequelize.query(
-                    `UPDATE \`${table}\` SET \`${target}\` = ${value}
-                     WHERE \`id\` IN (${rowIds.join(',')})`,
+                    `UPDATE "${table}" SET "${target}" = ${value}
+                     WHERE "id" IN (${rowIds.join(',')})`,
                     { logging: false },
                 );
             }

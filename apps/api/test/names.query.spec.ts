@@ -31,10 +31,8 @@ describe('startsWithLetter', () => {
         >;
 
         expect(where[Op.and]).toHaveLength(2);
-        expect(where[Op.and][0].name1[Op.like]).toBe('க%');
-        expect(where[Op.and][1].name1[Op.notRegexp]).toBe(
-            '^க[\\x{0BBE}-\\x{0BCD}]',
-        );
+        expect(where[Op.and][0].name1[Op.iLike]).toBe('க%');
+        expect(where[Op.and][1].name1[Op.notRegexp]).toBe('^க[\u0BBE-\u0BCD]');
     });
 
     it('prefix matches a letter that already carries a vowel sign', () => {
@@ -43,7 +41,7 @@ describe('startsWithLetter', () => {
             Record<symbol, string>
         >;
 
-        expect(where.name1[Op.like]).toBe('கா%');
+        expect(where.name1[Op.iLike]).toBe('கா%');
     });
 
     it('prefix matches a latin letter', () => {
@@ -52,7 +50,7 @@ describe('startsWithLetter', () => {
             Record<symbol, string>
         >;
 
-        expect(where.name2[Op.like]).toBe('A%');
+        expect(where.name2[Op.iLike]).toBe('A%');
     });
 
     it('prefix matches when the syllable need not be exact', () => {
@@ -61,7 +59,7 @@ describe('startsWithLetter', () => {
             Record<symbol, string>
         >;
 
-        expect(where.name1[Op.like]).toBe('க%');
+        expect(where.name1[Op.iLike]).toBe('க%');
     });
 });
 
@@ -153,8 +151,8 @@ describe('namesWhere', () => {
         const [first] = clauses(where) as Array<Record<symbol, unknown[]>>;
 
         expect(first[Op.or]).toEqual([
-            { firstLetter: { [Op.like]: 'க%' } },
-            { name: { [Op.like]: 'க%' } },
+            { firstLetter: { [Op.iLike]: 'க%' } },
+            { name: { [Op.iLike]: 'க%' } },
         ]);
     });
 
@@ -187,8 +185,8 @@ describe('twinNamesWhere', () => {
         >;
 
         expect(first[Op.or]).toHaveLength(2);
-        expect(first[Op.or][0].name1[Op.like]).toBe('க%');
-        expect(first[Op.or][1].name2[Op.like]).toBe('க%');
+        expect(first[Op.or][0].name1[Op.iLike]).toBe('க%');
+        expect(first[Op.or][1].name2[Op.iLike]).toBe('க%');
     });
 });
 

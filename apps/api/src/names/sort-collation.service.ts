@@ -3,16 +3,20 @@ import { literal, Order, Sequelize } from 'sequelize';
 
 import { SEQUELIZE } from '../database/database.constants.js';
 
+// Root ICU, not `ta-x-icu`: the Tamil tailoring orders a pure consonant
+// (க், consonant + pulli) before the consonant's vowel forms, where the
+// traditional alphabet puts it last — க கா கி … கோ க். Root agrees with the
+// alphabet, and with the utf8mb4_unicode_520_ci this replaced.
+const COLLATION = 'und-x-icu';
+
 @Injectable()
 export class SortCollationService {
     private readonly logger = new Logger(SortCollationService.name);
 
     /**
-     * The column's own `utf8mb4_unicode_ci` (UCA 4.0.0) orders Tamil by code
-     * point, which misplaces ன, ற, ல, ள, ழ and வ. 5.2.0 knows the alphabet's
-     * order, and unlike `utf8mb4_uca1400_ai_ci` it exists on the 10.11 the host
-     * runs; an empty string leaves the column collation in place should a
-     * server not carry it.
+     * The database default orders Tamil by code point, which misplaces ன, ற,
+     * ல, ள, ழ and வ. ICU knows the alphabet's order. An empty string leaves the
+     * column collation in place should a server be built without ICU support.
      */
     private collation = '';
 
@@ -21,16 +25,19 @@ export class SortCollationService {
     async resolve(): Promise<void> {
         try {
             const [rows] = await this.sequelize.query(
-                "SHOW COLLATION LIKE 'utf8mb4_unicode_520_ci'",
+                `SELECT 1 FROM pg_collation WHERE collname = '${COLLATION}'`,
                 { logging: false },
             );
 
-            this.collation = rows.length
-                ? ' COLLATE utf8mb4_unicode_520_ci'
-                : '';
+            this.collation = rows.length ? ` COLLATE "${COLLATION}"` : '';
         } catch (error) {
             this.logger.error('Failed to resolve the sort collation!', error);
         }
+    }
+
+    /** The COLLATE clause for a raw ORDER BY; empty when ICU is unavailable. */
+    get clause(): string {
+        return this.collation;
     }
 
     /**
@@ -43,8 +50,8 @@ export class SortCollationService {
     order(columns: string[]): Order {
         return [
             ...columns.flatMap((column) => [
-                literal(`\`${column}\` REGEXP '^[A-Za-z]'`),
-                literal(`\`${column}\`${this.collation}`),
+                literal(`"${column}" ~ '^[A-Za-z]'`),
+                literal(`"${column}"${this.collation}`),
             ]),
             'id',
         ];
