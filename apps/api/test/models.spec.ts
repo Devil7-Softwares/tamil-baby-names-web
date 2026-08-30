@@ -38,6 +38,7 @@ describe('models', () => {
             'name',
             'numerology',
             'religion',
+            'sourceId',
         ]);
         expect(Object.keys(twinNames.getAttributes()).sort()).toEqual([
             'gender',
@@ -49,6 +50,7 @@ describe('models', () => {
             'name2',
             'numerology1',
             'numerology2',
+            'sourceId',
         ]);
     });
 });

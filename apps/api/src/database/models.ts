@@ -26,11 +26,13 @@ export type AdminUserDraft = Omit<IAdminUser, 'id' | 'createdAt' | 'updatedAt'>;
  */
 export interface NamesRow extends IName {
     numerology: NameNumerology | null;
+    sourceId: number | null;
 }
 
 export interface TwinNamesRow extends ITwinName {
     numerology1: NameNumerology | null;
     numerology2: NameNumerology | null;
+    sourceId: number | null;
 }
 
 export type NamesModel = ModelStatic<Model<NamesRow>>;
@@ -59,6 +61,7 @@ export const defineNames = (sequelize: Sequelize): NamesModel =>
             name: DataTypes.STRING,
             meaning: DataTypes.STRING,
             numerology: DataTypes.JSONB,
+            sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
         },
         { ...table, tableName: 'names' },
     );
@@ -76,6 +79,7 @@ export const defineTwinNames = (sequelize: Sequelize): TwinNamesModel =>
             meaning2: DataTypes.STRING,
             numerology1: DataTypes.JSONB,
             numerology2: DataTypes.JSONB,
+            sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
         },
         { ...table, tableName: 'twin_names' },
     );

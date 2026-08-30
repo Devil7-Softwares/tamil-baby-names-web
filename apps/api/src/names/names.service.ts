@@ -54,9 +54,17 @@ export class NamesService {
             });
 
             // `numerology1`/`numerology2` carry every method; the client is
-            // sent only the number for the one it asked about.
+            // sent only the number for the one it asked about. `sourceId` is
+            // provenance, which the public response has no business carrying.
             const values = rows.map(
-                ({ dataValues: { numerology1, numerology2, ...row } }) => ({
+                ({
+                    dataValues: {
+                        numerology1,
+                        numerology2,
+                        sourceId: _sourceId,
+                        ...row
+                    },
+                }) => ({
                     ...row,
                     nameNumber1: resolveNameNumber(
                         filters,
@@ -81,10 +89,12 @@ export class NamesService {
             limit,
         });
 
-        const values = rows.map(({ dataValues: { numerology, ...row } }) => ({
-            ...row,
-            nameNumber: resolveNameNumber(filters, row.name, numerology),
-        }));
+        const values = rows.map(
+            ({ dataValues: { numerology, sourceId: _sourceId, ...row } }) => ({
+                ...row,
+                nameNumber: resolveNameNumber(filters, row.name, numerology),
+            }),
+        );
 
         return [values, count];
     }
