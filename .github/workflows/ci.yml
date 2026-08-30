@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checking-out latest source
+        uses: actions/checkout@v4
+      - name: Setting up nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Enabling corepack
+        run: corepack enable
+      - name: Installing node modules
+        run: yarn install --immutable
+      - name: Checking types
+        run: yarn typecheck
+      - name: Linting
+        run: yarn lint
+      - name: Checking formatting
+        run: yarn prettier --check .
+      - name: Running tests
+        run: yarn test
+      - name: Building the api and the clients
+        run: yarn build
+        env:
+          RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+
+  # Coolify builds and deploys this image itself. Building it here only proves
+  # the Dockerfile still works, before a deploy is the thing that finds out.
+  image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checking-out latest source
+        uses: actions/checkout@v4
+      - name: Building the container image
+        run: docker build -t tamil-baby-names:ci .

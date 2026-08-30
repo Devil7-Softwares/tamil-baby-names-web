@@ -1,0 +1,17 @@
+.git
+.github
+.husky
+.turbo
+.vscode
+.yarn/install-state.gz
+**/node_modules
+**/dist
+**/.turbo
+**/.vite
+**/*.log
+.env
+**/.env
+docker/
+*.zip
+PROJECT_OVERVIEW.md
+TASKS.md
