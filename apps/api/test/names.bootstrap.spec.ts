@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { DatabaseBootstrap } from '../src/database/database.bootstrap.js';
+import { SortCollationService } from '../src/database/sort-collation.service.js';
 import { NamesBootstrap } from '../src/names/names.bootstrap.js';
 import { NumerologyBackfillService } from '../src/names/numerology-backfill.service.js';
-import { SortCollationService } from '../src/names/sort-collation.service.js';
 
 const bootstrapWith = (ready: Promise<void>) => {
     const run = vi.fn().mockResolvedValue(undefined);

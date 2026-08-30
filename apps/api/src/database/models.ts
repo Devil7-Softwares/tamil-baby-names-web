@@ -61,9 +61,37 @@ export type MeaningDraft = Pick<IMeaning, 'text'> &
         Pick<IMeaning, 'nameId' | 'twinNameId' | 'slot' | 'sourceId' | 'status'>
     >;
 
+export interface ISource {
+    id: number;
+    slug: string;
+    kind: string;
+    title: string | null;
+    version: string | null;
+    checksum: string | null;
+    trust: number;
+    scannedAt: Date | null;
+    metadata: Record<string, unknown> | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type SourceDraft = Pick<ISource, 'slug' | 'kind'> &
+    Partial<
+        Pick<
+            ISource,
+            | 'title'
+            | 'version'
+            | 'checksum'
+            | 'trust'
+            | 'scannedAt'
+            | 'metadata'
+        >
+    >;
+
 export type NamesModel = ModelStatic<Model<NamesRow>>;
 export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
 export type MeaningsModel = ModelStatic<Model<IMeaning, MeaningDraft>>;
+export type SourcesModel = ModelStatic<Model<ISource, SourceDraft>>;
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
 const table = {
@@ -137,6 +165,34 @@ export const defineMeanings = (sequelize: Sequelize): MeaningsModel =>
         {
             ...table,
             tableName: 'meanings',
+            timestamps: true,
+            underscored: true,
+        },
+    );
+
+export const defineSources = (sequelize: Sequelize): SourcesModel =>
+    sequelize.define<Model<ISource, SourceDraft>>(
+        'Sources',
+        {
+            id,
+            slug: { type: DataTypes.STRING, allowNull: false, unique: true },
+            kind: { type: DataTypes.STRING, allowNull: false },
+            title: DataTypes.STRING,
+            version: DataTypes.STRING,
+            checksum: DataTypes.CHAR(64),
+            trust: {
+                type: DataTypes.SMALLINT,
+                allowNull: false,
+                defaultValue: 50,
+            },
+            scannedAt: { type: DataTypes.DATE, field: 'scanned_at' },
+            metadata: DataTypes.JSONB,
+            createdAt: DataTypes.DATE,
+            updatedAt: DataTypes.DATE,
+        },
+        {
+            ...table,
+            tableName: 'sources',
             timestamps: true,
             underscored: true,
         },

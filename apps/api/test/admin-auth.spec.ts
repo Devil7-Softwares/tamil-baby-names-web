@@ -8,8 +8,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AdminModule } from '../src/admin/admin.module.js';
 import { AdminBootstrapService } from '../src/admin/users/admin-bootstrap.service.js';
 import { validateEnv } from '../src/config/env.js';
-import { ADMIN_USERS_MODEL } from '../src/database/database.constants.js';
+import {
+    ADMIN_USERS_MODEL,
+    MEANINGS_MODEL,
+    NAMES_MODEL,
+    SOURCES_MODEL,
+} from '../src/database/database.constants.js';
 import { IAdminUser } from '../src/database/models.js';
+import { SortCollationService } from '../src/database/sort-collation.service.js';
 import { appOptions, configureApp } from '../src/setup.js';
 
 const PASSWORD = 'correct horse battery staple';
@@ -34,10 +40,18 @@ const usersModel = (row: IAdminUser | null) => ({
 const build = async (env: Record<string, string>, row: IAdminUser | null) => {
     // Stands in for the real DatabaseModule, which is global and is what
     // AdminModule resolves the model from.
+    // The catalogue tokens are unused by these tests but are what the admin
+    // module's other controllers are built from.
+    const catalogue = [NAMES_MODEL, MEANINGS_MODEL, SOURCES_MODEL];
+
     @Global()
     @Module({
-        providers: [{ provide: ADMIN_USERS_MODEL, useValue: usersModel(row) }],
-        exports: [ADMIN_USERS_MODEL],
+        providers: [
+            { provide: ADMIN_USERS_MODEL, useValue: usersModel(row) },
+            ...catalogue.map((token) => ({ provide: token, useValue: {} })),
+            { provide: SortCollationService, useValue: { order: () => [] } },
+        ],
+        exports: [ADMIN_USERS_MODEL, ...catalogue, SortCollationService],
     })
     class StubDatabaseModule {}
 
@@ -143,6 +157,14 @@ describe('admin auth', () => {
         expect(response.status).toBe(401);
     });
 
+    it('rejects the catalogue without a session', async () => {
+        const response = await request(app.getHttpServer()).get(
+            '/api/admin/names',
+        );
+
+        expect(response.status).toBe(401);
+    });
+
     it('resolves /me from the session cookie', async () => {
         const agent = request.agent(app.getHttpServer());
 
@@ -187,6 +209,14 @@ describe('admin auth', () => {
         it('refuses /me', async () => {
             const response = await request(offline.getHttpServer()).get(
                 '/api/admin/auth/me',
+            );
+
+            expect(response.status).toBe(503);
+        });
+
+        it('refuses the catalogue', async () => {
+            const response = await request(offline.getHttpServer()).get(
+                '/api/admin/names',
             );
 
             expect(response.status).toBe(503);

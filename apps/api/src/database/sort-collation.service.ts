@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { literal, Order, Sequelize } from 'sequelize';
 
-import { SEQUELIZE } from '../database/database.constants.js';
+import { SEQUELIZE } from './database.constants.js';
 
 // Root ICU, not `ta-x-icu`: the Tamil tailoring orders a pure consonant
 // (க், consonant + pulli) before the consonant's vowel forms, where the

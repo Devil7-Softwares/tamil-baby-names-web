@@ -1,4 +1,5 @@
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import SortByAlphaOutlinedIcon from '@mui/icons-material/SortByAlphaOutlined';
 import { ReactNode } from 'react';
 
 export interface NavItem {
@@ -15,4 +16,5 @@ export interface NavItem {
  */
 export const NavItems: NavItem[] = [
     { label: 'Dashboard', path: '/', icon: <DashboardOutlinedIcon /> },
+    { label: 'Names', path: '/names', icon: <SortByAlphaOutlinedIcon /> },
 ];

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
     defineMeanings,
     defineNames,
+    defineSources,
     defineTwinNames,
 } from '../src/database/models.js';
 
@@ -11,6 +12,7 @@ const sequelize = new Sequelize({ dialect: 'postgres' });
 const names = defineNames(sequelize);
 const twinNames = defineTwinNames(sequelize);
 const meanings = defineMeanings(sequelize);
+const sources = defineSources(sequelize);
 
 describe('models', () => {
     it('reads the tables the catalogue already uses', () => {
@@ -83,5 +85,11 @@ describe('models', () => {
 
     it('proposes a meaning rather than publishing it', () => {
         expect(meanings.getAttributes().status.defaultValue).toBe('candidate');
+    });
+
+    it('reads the source each row was imported from', () => {
+        expect(sources.tableName).toBe('sources');
+        expect(sources.getAttributes().scannedAt.field).toBe('scanned_at');
+        expect(sources.getAttributes().trust.defaultValue).toBe(50);
     });
 });

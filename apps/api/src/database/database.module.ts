@@ -8,14 +8,17 @@ import {
     MEANINGS_MODEL,
     NAMES_MODEL,
     SEQUELIZE,
+    SOURCES_MODEL,
     TWIN_NAMES_MODEL,
 } from './database.constants.js';
 import {
     defineAdminUsers,
     defineMeanings,
     defineNames,
+    defineSources,
     defineTwinNames,
 } from './models.js';
+import { SortCollationService } from './sort-collation.service.js';
 
 @Global()
 @Module({
@@ -45,19 +48,27 @@ import {
             inject: [SEQUELIZE],
         },
         {
+            provide: SOURCES_MODEL,
+            useFactory: defineSources,
+            inject: [SEQUELIZE],
+        },
+        {
             provide: ADMIN_USERS_MODEL,
             useFactory: defineAdminUsers,
             inject: [SEQUELIZE],
         },
         DatabaseBootstrap,
+        SortCollationService,
     ],
     exports: [
         SEQUELIZE,
         NAMES_MODEL,
         TWIN_NAMES_MODEL,
         MEANINGS_MODEL,
+        SOURCES_MODEL,
         ADMIN_USERS_MODEL,
         DatabaseBootstrap,
+        SortCollationService,
     ],
 })
 export class DatabaseModule {}

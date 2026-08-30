@@ -1,8 +1,8 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 
 import { DatabaseBootstrap } from '../database/database.bootstrap.js';
+import { SortCollationService } from '../database/sort-collation.service.js';
 import { NumerologyBackfillService } from './numerology-backfill.service.js';
-import { SortCollationService } from './sort-collation.service.js';
 
 @Injectable()
 export class NamesBootstrap implements OnApplicationBootstrap {

@@ -19,6 +19,7 @@ import {
     NamesModel,
     TwinNamesModel,
 } from '../database/models.js';
+import { SortCollationService } from '../database/sort-collation.service.js';
 import {
     nameNumberWhere,
     namesWhere,
@@ -26,7 +27,6 @@ import {
     twinNamesWhere,
     wantedNumbers,
 } from './names.query.js';
-import { SortCollationService } from './sort-collation.service.js';
 
 @Injectable()
 export class NamesService {

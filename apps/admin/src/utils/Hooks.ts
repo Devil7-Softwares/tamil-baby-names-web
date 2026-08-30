@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /**
  * useState backed by localStorage. Reads and writes are guarded because a
@@ -30,4 +30,20 @@ export const usePersistedState = <T extends string>(
     );
 
     return [value, persist];
+};
+
+/**
+ * Trails `value` by `delay`, so typing in a filter does not put a request on
+ * the wire for every keystroke.
+ */
+export const useDebounced = <T>(value: T, delay = 300): T => {
+    const [debounced, setDebounced] = useState(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebounced(value), delay);
+
+        return () => clearTimeout(timer);
+    }, [value, delay]);
+
+    return debounced;
 };
