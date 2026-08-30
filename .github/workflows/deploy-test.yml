@@ -44,17 +44,21 @@ jobs:
           mkdir -p deploy/vendor/shared
           cp packages/shared/package.json deploy/vendor/shared/
           cp -r packages/shared/dist deploy/vendor/shared/dist
-          echo "require('./main.js');" > deploy/index.js
+          cp apps/api/deploy-entry.cjs deploy/index.js
           node -e '
             const pkg = require("./apps/api/package.json");
+            const shared = require("./packages/shared/package.json");
             delete pkg.devDependencies;
             pkg.main = "index.js";
             pkg.scripts = { start: "node index.js" };
             for (const [name, range] of Object.entries(pkg.dependencies)) {
-              if (range.startsWith("workspace:")) {
-                pkg.dependencies[name] = "file:./vendor/shared";
-              }
+              if (range.startsWith("workspace:")) delete pkg.dependencies[name];
             }
+            pkg.dependencies = Object.fromEntries(
+              Object.entries({ ...pkg.dependencies, ...shared.dependencies }).sort(
+                ([a], [b]) => a.localeCompare(b),
+              ),
+            );
             require("fs").writeFileSync(
               "deploy/package.json",
               JSON.stringify(pkg, null, 2) + "\n",
