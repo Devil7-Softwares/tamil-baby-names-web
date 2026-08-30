@@ -1,11 +1,16 @@
 import { Sequelize } from 'sequelize';
 import { describe, expect, it } from 'vitest';
 
-import { defineNames, defineTwinNames } from '../src/database/models.js';
+import {
+    defineMeanings,
+    defineNames,
+    defineTwinNames,
+} from '../src/database/models.js';
 
 const sequelize = new Sequelize({ dialect: 'postgres' });
 const names = defineNames(sequelize);
 const twinNames = defineTwinNames(sequelize);
+const meanings = defineMeanings(sequelize);
 
 describe('models', () => {
     it('reads the tables the catalogue already uses', () => {
@@ -34,7 +39,6 @@ describe('models', () => {
             'gender',
             'id',
             'language',
-            'meaning',
             'name',
             'numerology',
             'religion',
@@ -45,8 +49,6 @@ describe('models', () => {
             'gender',
             'id',
             'language',
-            'meaning1',
-            'meaning2',
             'name1',
             'name2',
             'numerology1',
@@ -54,5 +56,32 @@ describe('models', () => {
             'sourceId',
             'status',
         ]);
+    });
+
+    it('keeps meanings out of the catalogue rows, where one had to win', () => {
+        expect(Object.keys(names.getAttributes())).not.toContain('meaning');
+        expect(Object.keys(twinNames.getAttributes())).not.toContain(
+            'meaning1',
+        );
+    });
+
+    it('points a meaning at a single name or one side of a twin pair', () => {
+        expect(meanings.tableName).toBe('meanings');
+        expect(Object.keys(meanings.getAttributes()).sort()).toEqual([
+            'createdAt',
+            'id',
+            'nameId',
+            'slot',
+            'sourceId',
+            'status',
+            'text',
+            'twinNameId',
+            'updatedAt',
+        ]);
+        expect(meanings.getAttributes().twinNameId.field).toBe('twin_name_id');
+    });
+
+    it('proposes a meaning rather than publishing it', () => {
+        expect(meanings.getAttributes().status.defaultValue).toBe('candidate');
     });
 });

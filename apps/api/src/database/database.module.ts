@@ -5,11 +5,17 @@ import { Sequelize } from 'sequelize';
 import { DatabaseBootstrap } from './database.bootstrap.js';
 import {
     ADMIN_USERS_MODEL,
+    MEANINGS_MODEL,
     NAMES_MODEL,
     SEQUELIZE,
     TWIN_NAMES_MODEL,
 } from './database.constants.js';
-import { defineAdminUsers, defineNames, defineTwinNames } from './models.js';
+import {
+    defineAdminUsers,
+    defineMeanings,
+    defineNames,
+    defineTwinNames,
+} from './models.js';
 
 @Global()
 @Module({
@@ -34,6 +40,11 @@ import { defineAdminUsers, defineNames, defineTwinNames } from './models.js';
             inject: [SEQUELIZE],
         },
         {
+            provide: MEANINGS_MODEL,
+            useFactory: defineMeanings,
+            inject: [SEQUELIZE],
+        },
+        {
             provide: ADMIN_USERS_MODEL,
             useFactory: defineAdminUsers,
             inject: [SEQUELIZE],
@@ -44,6 +55,7 @@ import { defineAdminUsers, defineNames, defineTwinNames } from './models.js';
         SEQUELIZE,
         NAMES_MODEL,
         TWIN_NAMES_MODEL,
+        MEANINGS_MODEL,
         ADMIN_USERS_MODEL,
         DatabaseBootstrap,
     ],

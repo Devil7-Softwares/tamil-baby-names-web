@@ -26,21 +26,44 @@ export type AdminUserDraft = Omit<IAdminUser, 'id' | 'createdAt' | 'updatedAt'>;
  * per-method columns were added at runtime and never declared here, so
  * typescript could not see the columns the queries sorted on.
  */
-export interface NamesRow extends IName {
+export interface NamesRow extends Omit<IName, 'meaning'> {
     numerology: NameNumerology | null;
     sourceId: number | null;
     status: NameStatus;
 }
 
-export interface TwinNamesRow extends ITwinName {
+export interface TwinNamesRow extends Omit<ITwinName, 'meaning1' | 'meaning2'> {
     numerology1: NameNumerology | null;
     numerology2: NameNumerology | null;
     sourceId: number | null;
     status: NameStatus;
 }
 
+/**
+ * One reading of one name, from one source. `nameId` and `twinNameId` are an
+ * exclusive arc: exactly one is set, and `slot` says which side of a twin pair
+ * the reading belongs to.
+ */
+export interface IMeaning {
+    id: number;
+    nameId: number | null;
+    twinNameId: number | null;
+    slot: number;
+    text: string;
+    sourceId: number | null;
+    status: NameStatus;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type MeaningDraft = Pick<IMeaning, 'text'> &
+    Partial<
+        Pick<IMeaning, 'nameId' | 'twinNameId' | 'slot' | 'sourceId' | 'status'>
+    >;
+
 export type NamesModel = ModelStatic<Model<NamesRow>>;
 export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
+export type MeaningsModel = ModelStatic<Model<IMeaning, MeaningDraft>>;
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
 const table = {
@@ -69,7 +92,6 @@ export const defineNames = (sequelize: Sequelize): NamesModel =>
             firstLetter: { type: DataTypes.STRING, field: 'first_letter' },
             language: DataTypes.STRING,
             name: DataTypes.STRING,
-            meaning: DataTypes.STRING,
             numerology: DataTypes.JSONB,
             sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
             status,
@@ -85,9 +107,7 @@ export const defineTwinNames = (sequelize: Sequelize): TwinNamesModel =>
             gender: DataTypes.STRING,
             language: DataTypes.STRING,
             name1: DataTypes.STRING,
-            meaning1: DataTypes.STRING,
             name2: DataTypes.STRING,
-            meaning2: DataTypes.STRING,
             numerology1: DataTypes.JSONB,
             numerology2: DataTypes.JSONB,
             sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
@@ -96,8 +116,32 @@ export const defineTwinNames = (sequelize: Sequelize): TwinNamesModel =>
         { ...table, tableName: 'twin_names' },
     );
 
-// The only table this project owns outright, so unlike `names` it carries the
-// timestamps Sequelize manages.
+export const defineMeanings = (sequelize: Sequelize): MeaningsModel =>
+    sequelize.define<Model<IMeaning, MeaningDraft>>(
+        'Meanings',
+        {
+            id,
+            nameId: { type: DataTypes.INTEGER, field: 'name_id' },
+            twinNameId: { type: DataTypes.INTEGER, field: 'twin_name_id' },
+            slot: {
+                type: DataTypes.SMALLINT,
+                allowNull: false,
+                defaultValue: 1,
+            },
+            text: { type: DataTypes.TEXT, allowNull: false },
+            sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
+            status,
+            createdAt: DataTypes.DATE,
+            updatedAt: DataTypes.DATE,
+        },
+        {
+            ...table,
+            tableName: 'meanings',
+            timestamps: true,
+            underscored: true,
+        },
+    );
+
 export const defineAdminUsers = (sequelize: Sequelize): AdminUsersModel =>
     sequelize.define<Model<IAdminUser, AdminUserDraft>>(
         'AdminUsers',

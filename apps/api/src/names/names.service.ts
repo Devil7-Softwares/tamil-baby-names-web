@@ -6,14 +6,19 @@ import {
     ITwinName,
     PUBLISHED,
 } from '@tbn/shared';
-import { Sequelize } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 
 import {
+    MEANINGS_MODEL,
     NAMES_MODEL,
     SEQUELIZE,
     TWIN_NAMES_MODEL,
 } from '../database/database.constants.js';
-import { NamesModel, TwinNamesModel } from '../database/models.js';
+import {
+    MeaningsModel,
+    NamesModel,
+    TwinNamesModel,
+} from '../database/models.js';
 import {
     nameNumberWhere,
     namesWhere,
@@ -29,8 +34,35 @@ export class NamesService {
         @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
         @Inject(NAMES_MODEL) private readonly names: NamesModel,
         @Inject(TWIN_NAMES_MODEL) private readonly twinNames: TwinNamesModel,
+        @Inject(MEANINGS_MODEL) private readonly meanings: MeaningsModel,
         private readonly sortCollation: SortCollationService,
     ) {}
+
+    /**
+     * The published meaning of every row on the page, keyed by subject and
+     * slot. A second query rather than a join, because the name lists are
+     * ordered by a collation Sequelize cannot express inside an include.
+     */
+    private async publishedMeanings(
+        column: 'nameId' | 'twinNameId',
+        ids: number[],
+    ): Promise<Map<string, string>> {
+        if (!ids.length) {
+            return new Map();
+        }
+
+        const rows = await this.meanings.findAll({
+            where: { [column]: { [Op.in]: ids }, status: PUBLISHED },
+            attributes: [column, 'slot', 'text'],
+        });
+
+        return new Map(
+            rows.map(({ dataValues }) => [
+                `${dataValues[column]}:${dataValues.slot}`,
+                dataValues.text,
+            ]),
+        );
+    }
 
     async getNamesForFilter(
         filters: IFilterData,
@@ -54,6 +86,11 @@ export class NamesService {
                 limit,
             });
 
+            const meanings = await this.publishedMeanings(
+                'twinNameId',
+                rows.map(({ dataValues }) => dataValues.id),
+            );
+
             // `numerology1`/`numerology2` carry every method; the client is
             // sent only the number for the one it asked about. `sourceId` and
             // `status` are curation state, not the client's business.
@@ -64,20 +101,22 @@ export class NamesService {
                         numerology2,
                         sourceId: _sourceId,
                         status: _status,
+                        // Lifted out of the spread so each name still comes
+                        // before its meaning, as it did when both were columns.
+                        name2,
                         ...row
                     },
                 }) => ({
                     ...row,
+                    meaning1: meanings.get(`${row.id}:1`) ?? '',
+                    name2,
+                    meaning2: meanings.get(`${row.id}:2`) ?? '',
                     nameNumber1: resolveNameNumber(
                         filters,
                         row.name1,
                         numerology1,
                     ),
-                    nameNumber2: resolveNameNumber(
-                        filters,
-                        row.name2,
-                        numerology2,
-                    ),
+                    nameNumber2: resolveNameNumber(filters, name2, numerology2),
                 }),
             );
 
@@ -91,6 +130,11 @@ export class NamesService {
             limit,
         });
 
+        const meanings = await this.publishedMeanings(
+            'nameId',
+            rows.map(({ dataValues }) => dataValues.id),
+        );
+
         const values = rows.map(
             ({
                 dataValues: {
@@ -101,6 +145,7 @@ export class NamesService {
                 },
             }) => ({
                 ...row,
+                meaning: meanings.get(`${row.id}:1`) ?? '',
                 nameNumber: resolveNameNumber(filters, row.name, numerology),
             }),
         );

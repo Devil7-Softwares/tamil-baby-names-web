@@ -1,4 +1,5 @@
 export const SEQUELIZE = 'SEQUELIZE';
 export const NAMES_MODEL = 'NAMES_MODEL';
 export const TWIN_NAMES_MODEL = 'TWIN_NAMES_MODEL';
+export const MEANINGS_MODEL = 'MEANINGS_MODEL';
 export const ADMIN_USERS_MODEL = 'ADMIN_USERS_MODEL';
