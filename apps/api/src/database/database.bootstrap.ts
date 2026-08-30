@@ -6,13 +6,8 @@ import {
 } from '@nestjs/common';
 import { Sequelize } from 'sequelize';
 
-import {
-    ADMIN_USERS_MODEL,
-    NAMES_MODEL,
-    SEQUELIZE,
-    TWIN_NAMES_MODEL,
-} from './database.constants.js';
-import { AdminUsersModel, NamesModel, TwinNamesModel } from './models.js';
+import { SEQUELIZE } from './database.constants.js';
+import { createMigrator } from './migrator.js';
 
 const FIRST_RETRY_MS = 1_000;
 const MAX_RETRY_MS = 30_000;
@@ -25,18 +20,12 @@ export class DatabaseBootstrap implements OnApplicationBootstrap {
     private connected!: () => void;
     private established = false;
 
-    /** Resolves once the tables are in place. Pending until then, never rejected. */
+    /** Resolves once the schema is migrated. Pending until then, never rejected. */
     readonly ready = new Promise<void>((resolve) => {
         this.connected = resolve;
     });
 
-    constructor(
-        @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
-        @Inject(NAMES_MODEL) private readonly names: NamesModel,
-        @Inject(TWIN_NAMES_MODEL) private readonly twinNames: TwinNamesModel,
-        @Inject(ADMIN_USERS_MODEL)
-        private readonly adminUsers: AdminUsersModel,
-    ) {}
+    constructor(@Inject(SEQUELIZE) private readonly sequelize: Sequelize) {}
 
     get isConnected(): boolean {
         return this.established;
@@ -74,11 +63,9 @@ export class DatabaseBootstrap implements OnApplicationBootstrap {
         this.logger.log('Database authentication successful!');
 
         try {
-            await this.names.sync();
-            await this.twinNames.sync();
-            await this.adminUsers.sync();
+            await createMigrator(this.sequelize).up();
         } catch (error) {
-            this.logger.error('Failed to syncronise tables!', error);
+            this.logger.error('Failed to migrate the schema!', error);
         }
 
         this.established = true;
