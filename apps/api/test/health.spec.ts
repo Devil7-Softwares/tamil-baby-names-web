@@ -15,7 +15,10 @@ describe('health', () => {
             imports: [AppModule],
         })
             .overrideProvider(DatabaseBootstrap)
-            .useValue({ onApplicationBootstrap: () => undefined })
+            .useValue({
+                onApplicationBootstrap: () => undefined,
+                isConnected: false,
+            })
             .compile();
 
         app = configureApp(module.createNestApplication(appOptions));
@@ -31,7 +34,7 @@ describe('health', () => {
         const response = await request(app.getHttpServer()).get('/api/health');
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({ status: 'ok' });
+        expect(response.body).toEqual({ status: 'ok', database: 'down' });
     });
 
     it('does not answer without the prefix', async () => {

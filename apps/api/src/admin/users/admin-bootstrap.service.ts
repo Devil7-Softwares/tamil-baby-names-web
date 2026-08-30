@@ -27,9 +27,11 @@ export class AdminBootstrapService implements OnApplicationBootstrap {
         const email = this.config.get<string>('BOOTSTRAP_ADMIN_EMAIL');
         const password = this.config.get<string>('BOOTSTRAP_ADMIN_PASSWORD');
 
-        if (!email || !password || !(await this.database.ready)) {
+        if (!email || !password) {
             return;
         }
+
+        await this.database.ready;
 
         try {
             if ((await this.users.count()) > 0) {

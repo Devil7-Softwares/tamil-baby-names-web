@@ -17,9 +17,7 @@ export class NamesBootstrap implements OnApplicationBootstrap {
     }
 
     private async prepare(): Promise<void> {
-        if (!(await this.database.ready)) {
-            return;
-        }
+        await this.database.ready;
 
         await this.numerologyColumns.prepare();
         await this.sortCollation.resolve();

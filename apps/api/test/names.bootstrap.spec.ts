@@ -5,12 +5,12 @@ import { NamesBootstrap } from '../src/names/names.bootstrap.js';
 import { NumerologyColumnsService } from '../src/names/numerology-columns.service.js';
 import { SortCollationService } from '../src/names/sort-collation.service.js';
 
-const bootstrapWith = (connected: boolean) => {
+const bootstrapWith = (ready: Promise<void>) => {
     const prepare = vi.fn().mockResolvedValue(undefined);
     const resolve = vi.fn().mockResolvedValue(undefined);
 
     const bootstrap = new NamesBootstrap(
-        { ready: Promise.resolve(connected) } as DatabaseBootstrap,
+        { ready } as DatabaseBootstrap,
         { prepare } as unknown as NumerologyColumnsService,
         { resolve } as unknown as SortCollationService,
     );
@@ -20,7 +20,9 @@ const bootstrapWith = (connected: boolean) => {
 
 describe('NamesBootstrap', () => {
     it('prepares the schema once the database answers', async () => {
-        const { bootstrap, prepare, resolve } = bootstrapWith(true);
+        const { bootstrap, prepare, resolve } = bootstrapWith(
+            Promise.resolve(),
+        );
 
         bootstrap.onApplicationBootstrap();
 
@@ -29,8 +31,13 @@ describe('NamesBootstrap', () => {
         expect(prepare).toHaveBeenCalled();
     });
 
-    it('prepares nothing when the database never came up', async () => {
-        const { bootstrap, prepare, resolve } = bootstrapWith(false);
+    it('waits rather than giving up while the database is unreachable', async () => {
+        let connect!: () => void;
+        const { bootstrap, prepare, resolve } = bootstrapWith(
+            new Promise<void>((r) => {
+                connect = r;
+            }),
+        );
 
         bootstrap.onApplicationBootstrap();
 
@@ -38,6 +45,12 @@ describe('NamesBootstrap', () => {
         await Promise.resolve();
 
         expect(prepare).not.toHaveBeenCalled();
-        expect(resolve).not.toHaveBeenCalled();
+
+        // The database turning up later is the case that used to be lost.
+        connect();
+
+        await vi.waitFor(() => expect(resolve).toHaveBeenCalled());
+
+        expect(prepare).toHaveBeenCalled();
     });
 });

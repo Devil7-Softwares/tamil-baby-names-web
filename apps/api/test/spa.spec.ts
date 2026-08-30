@@ -49,7 +49,10 @@ describe('the single page app', () => {
             imports: [AppModule],
         })
             .overrideProvider(DatabaseBootstrap)
-            .useValue({ onApplicationBootstrap: () => undefined })
+            .useValue({
+                onApplicationBootstrap: () => undefined,
+                isConnected: false,
+            })
             .compile();
 
         app = configureApp(
@@ -118,7 +121,7 @@ describe('the single page app', () => {
         const response = await request(app.getHttpServer()).get('/api/health');
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({ status: 'ok' });
+        expect(response.body.status).toBe('ok');
     });
 
     it('does not answer an unknown api route with the page', async () => {
