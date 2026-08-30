@@ -6,6 +6,7 @@ import { compression } from 'vite-plugin-compression2';
 configDotenv({ quiet: true });
 
 export default defineConfig({
+    clearScreen: false,
     // The api serves the dashboard under /admin, beside the public client.
     base: '/admin/',
     plugins: [
@@ -26,6 +27,8 @@ export default defineConfig({
     },
     server: {
         host: process.env.VITE_HOST || 'localhost',
+        port: 5174,
+        strictPort: true,
         proxy: {
             '/api': {
                 target: 'http://localhost:3001',

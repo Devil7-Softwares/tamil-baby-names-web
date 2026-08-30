@@ -6,6 +6,7 @@ import { compression } from 'vite-plugin-compression2';
 configDotenv({ quiet: true });
 
 export default defineConfig({
+    clearScreen: false,
     plugins: [
         react(),
         compression({
@@ -22,6 +23,8 @@ export default defineConfig({
     },
     server: {
         host: process.env.VITE_HOST || 'localhost',
+        port: 5173,
+        strictPort: true,
         proxy: {
             '/api': {
                 target: 'http://localhost:3001',
