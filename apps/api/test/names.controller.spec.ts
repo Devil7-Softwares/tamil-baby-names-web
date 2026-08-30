@@ -18,7 +18,7 @@ import { AuthModule } from '../src/auth/auth.module.js';
 import { validateEnv } from '../src/config/env.js';
 import { NamesController } from '../src/names/names.controller.js';
 import { NamesService } from '../src/names/names.service.js';
-import { configureApp } from '../src/setup.js';
+import { appOptions, configureApp } from '../src/setup.js';
 
 const SECRET = 'test-secret';
 
@@ -60,7 +60,9 @@ describe('names', () => {
             ],
         }).compile();
 
-        app = configureApp(module.createNestApplication({ logger: false }));
+        app = configureApp(
+            module.createNestApplication({ ...appOptions, logger: false }),
+        );
 
         await app.init();
     });

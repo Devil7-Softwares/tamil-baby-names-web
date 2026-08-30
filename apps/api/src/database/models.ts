@@ -1,8 +1,21 @@
-import { IName, ITwinName } from '@tbn/shared';
+import { IName, ITwinName, USER_ROLES, UserRole } from '@tbn/shared';
 import { DataTypes, Model, ModelStatic, Sequelize } from 'sequelize';
+
+export interface IAdminUser {
+    id: number;
+    email: string;
+    passwordHash: string;
+    name: string;
+    role: UserRole;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type AdminUserDraft = Omit<IAdminUser, 'id' | 'createdAt' | 'updatedAt'>;
 
 export type NamesModel = ModelStatic<Model<IName>>;
 export type TwinNamesModel = ModelStatic<Model<ITwinName>>;
+export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
 const table = {
     charset: 'utf8mb4',
@@ -44,4 +57,34 @@ export const defineTwinNames = (sequelize: Sequelize): TwinNamesModel =>
             meaning2: DataTypes.STRING,
         },
         { ...table, tableName: 'twin_names' },
+    );
+
+// The only table this project owns outright, so unlike `names` it carries the
+// timestamps Sequelize manages.
+export const defineAdminUsers = (sequelize: Sequelize): AdminUsersModel =>
+    sequelize.define<Model<IAdminUser, AdminUserDraft>>(
+        'AdminUsers',
+        {
+            id,
+            email: { type: DataTypes.STRING, allowNull: false, unique: true },
+            passwordHash: {
+                type: DataTypes.STRING,
+                field: 'password_hash',
+                allowNull: false,
+            },
+            name: { type: DataTypes.STRING, allowNull: false },
+            role: {
+                type: DataTypes.ENUM(...USER_ROLES),
+                allowNull: false,
+                defaultValue: 'reviewer',
+            },
+            createdAt: DataTypes.DATE,
+            updatedAt: DataTypes.DATE,
+        },
+        {
+            ...table,
+            tableName: 'admin_users',
+            timestamps: true,
+            underscored: true,
+        },
     );

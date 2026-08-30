@@ -10,7 +10,7 @@ import { brotliCompressSync } from 'zlib';
 
 import { AppModule } from '../src/app.module.js';
 import { DatabaseBootstrap } from '../src/database/database.bootstrap.js';
-import { configureApp } from '../src/setup.js';
+import { appOptions, configureApp } from '../src/setup.js';
 
 const publicDir = mkdtempSync(join(tmpdir(), 'tbn-public-'));
 
@@ -40,7 +40,9 @@ describe('the single page app', () => {
             .useValue({ onApplicationBootstrap: () => undefined })
             .compile();
 
-        app = configureApp(module.createNestApplication({ logger: false }));
+        app = configureApp(
+            module.createNestApplication({ ...appOptions, logger: false }),
+        );
 
         await app.init();
     });

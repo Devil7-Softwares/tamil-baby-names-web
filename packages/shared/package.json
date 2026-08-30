@@ -39,6 +39,8 @@
     "vitest": "^4.1.11"
   },
   "dependencies": {
-    "dayjs": "^1.11.23"
+    "@orpc/contract": "^1.15.0",
+    "dayjs": "^1.11.23",
+    "zod": "^4.5.4"
   }
 }

@@ -19,7 +19,7 @@ import { AccessTokenGuard } from '../src/auth/access-token.guard.js';
 import { AuthModule } from '../src/auth/auth.module.js';
 import { Filters } from '../src/auth/filters.decorator.js';
 import { validateEnv } from '../src/config/env.js';
-import { configureApp } from '../src/setup.js';
+import { appOptions, configureApp } from '../src/setup.js';
 
 vi.mock('axios', () => ({ default: { post: vi.fn() } }));
 
@@ -58,7 +58,9 @@ describe('auth', () => {
             controllers: [ProbeController],
         }).compile();
 
-        app = configureApp(module.createNestApplication({ logger: false }));
+        app = configureApp(
+            module.createNestApplication({ ...appOptions, logger: false }),
+        );
 
         await app.init();
     });

@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../src/app.module.js';
 import { DatabaseBootstrap } from '../src/database/database.bootstrap.js';
-import { configureApp } from '../src/setup.js';
+import { appOptions, configureApp } from '../src/setup.js';
 
 describe('health', () => {
     let app: INestApplication;
@@ -18,7 +18,7 @@ describe('health', () => {
             .useValue({ onApplicationBootstrap: () => undefined })
             .compile();
 
-        app = configureApp(module.createNestApplication());
+        app = configureApp(module.createNestApplication(appOptions));
 
         await app.init();
     });

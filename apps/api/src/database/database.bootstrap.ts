@@ -7,11 +7,12 @@ import {
 import { Sequelize } from 'sequelize';
 
 import {
+    ADMIN_USERS_MODEL,
     NAMES_MODEL,
     SEQUELIZE,
     TWIN_NAMES_MODEL,
 } from './database.constants.js';
-import { NamesModel, TwinNamesModel } from './models.js';
+import { AdminUsersModel, NamesModel, TwinNamesModel } from './models.js';
 
 @Injectable()
 export class DatabaseBootstrap implements OnApplicationBootstrap {
@@ -26,6 +27,8 @@ export class DatabaseBootstrap implements OnApplicationBootstrap {
         @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
         @Inject(NAMES_MODEL) private readonly names: NamesModel,
         @Inject(TWIN_NAMES_MODEL) private readonly twinNames: TwinNamesModel,
+        @Inject(ADMIN_USERS_MODEL)
+        private readonly adminUsers: AdminUsersModel,
     ) {}
 
     onApplicationBootstrap(): void {
@@ -46,6 +49,7 @@ export class DatabaseBootstrap implements OnApplicationBootstrap {
         try {
             await this.names.sync();
             await this.twinNames.sync();
+            await this.adminUsers.sync();
         } catch (error) {
             this.logger.error('Failed to syncronise tables!', error);
         }

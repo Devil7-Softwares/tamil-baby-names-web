@@ -4,11 +4,12 @@ import { Sequelize } from 'sequelize';
 
 import { DatabaseBootstrap } from './database.bootstrap.js';
 import {
+    ADMIN_USERS_MODEL,
     NAMES_MODEL,
     SEQUELIZE,
     TWIN_NAMES_MODEL,
 } from './database.constants.js';
-import { defineNames, defineTwinNames } from './models.js';
+import { defineAdminUsers, defineNames, defineTwinNames } from './models.js';
 
 @Global()
 @Module({
@@ -31,8 +32,19 @@ import { defineNames, defineTwinNames } from './models.js';
             useFactory: defineTwinNames,
             inject: [SEQUELIZE],
         },
+        {
+            provide: ADMIN_USERS_MODEL,
+            useFactory: defineAdminUsers,
+            inject: [SEQUELIZE],
+        },
         DatabaseBootstrap,
     ],
-    exports: [SEQUELIZE, NAMES_MODEL, TWIN_NAMES_MODEL, DatabaseBootstrap],
+    exports: [
+        SEQUELIZE,
+        NAMES_MODEL,
+        TWIN_NAMES_MODEL,
+        ADMIN_USERS_MODEL,
+        DatabaseBootstrap,
+    ],
 })
 export class DatabaseModule {}
