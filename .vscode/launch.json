@@ -4,10 +4,10 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug",
+      "name": "Debug API",
       "cwd": "${workspaceRoot}",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["workspace", "@tbn/web", "dev:server"]
+      "runtimeArgs": ["workspace", "@tbn/api", "dev"]
     }
   ]
 }

@@ -15,7 +15,6 @@ export default tseslint.config(
     // Browser sources
     {
         files: ['src/**/*.{ts,tsx}'],
-        ignores: ['src/Server.ts'],
         extends: [reactHooks.configs.flat.recommended],
         plugins: { 'react-refresh': reactRefresh },
         languageOptions: {
@@ -27,20 +26,6 @@ export default tseslint.config(
                 'warn',
                 { allowConstantExport: true },
             ],
-        },
-    },
-
-    // Server source
-    {
-        files: ['src/Server.ts'],
-        languageOptions: {
-            ecmaVersion: 2022,
-            globals: globals.node,
-        },
-        rules: {
-            // /[^\u0000-\u00ff]/ is used deliberately to detect Tamil text and
-            // switch the PDF font accordingly.
-            'no-control-regex': 'off',
         },
     },
 
