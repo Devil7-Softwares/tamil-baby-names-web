@@ -4,6 +4,7 @@ import {
     IFilterData,
     IName,
     ITwinName,
+    PUBLISHED,
 } from '@tbn/shared';
 import { Sequelize } from 'sequelize';
 
@@ -54,14 +55,15 @@ export class NamesService {
             });
 
             // `numerology1`/`numerology2` carry every method; the client is
-            // sent only the number for the one it asked about. `sourceId` is
-            // provenance, which the public response has no business carrying.
+            // sent only the number for the one it asked about. `sourceId` and
+            // `status` are curation state, not the client's business.
             const values = rows.map(
                 ({
                     dataValues: {
                         numerology1,
                         numerology2,
                         sourceId: _sourceId,
+                        status: _status,
                         ...row
                     },
                 }) => ({
@@ -90,7 +92,14 @@ export class NamesService {
         });
 
         const values = rows.map(
-            ({ dataValues: { numerology, sourceId: _sourceId, ...row } }) => ({
+            ({
+                dataValues: {
+                    numerology,
+                    sourceId: _sourceId,
+                    status: _status,
+                    ...row
+                },
+            }) => ({
                 ...row,
                 nameNumber: resolveNameNumber(filters, row.name, numerology),
             }),
@@ -100,7 +109,11 @@ export class NamesService {
     }
 
     async getFirstLetters(filters: IFilterData): Promise<string[]> {
-        const where = filters.gender ? 'WHERE gender = :gender' : '';
+        // The picker offers letters the site can actually show, so it reads the
+        // same published subset the name lists do.
+        const where = filters.gender
+            ? `WHERE status = '${PUBLISHED}' AND gender = :gender`
+            : `WHERE status = '${PUBLISHED}'`;
         const replacements = filters.gender ? { gender: filters.gender } : {};
 
         // The alias is quoted because postgres folds unquoted identifiers to

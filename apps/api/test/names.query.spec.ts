@@ -19,8 +19,19 @@ const base: IFilterData = {
     numerology: 'chaldean',
 };
 
-const clauses = (where: unknown) =>
+const allClauses = (where: unknown) =>
     (where as Record<symbol, unknown[]>)[Op.and] ?? [];
+
+/** Everything but the published filter, which every query carries. */
+const clauses = (where: unknown) =>
+    allClauses(where).filter(
+        (clause) =>
+            !(
+                clause &&
+                typeof clause === 'object' &&
+                'status' in (clause as object)
+            ),
+    );
 
 describe('startsWithLetter', () => {
     it('excludes the vowel signs when the syllable has to match exactly', () => {
@@ -166,6 +177,20 @@ describe('namesWhere', () => {
 
     it('drops the filters that were not asked for', () => {
         expect(clauses(namesWhere(base, undefined, null))).toEqual([]);
+    });
+
+    it('serves published rows only, whatever else was asked for', () => {
+        expect(allClauses(namesWhere(base, undefined, null))).toContainEqual({
+            status: 'published',
+        });
+
+        expect(
+            allClauses(namesWhere({ ...base, religion: 'hindu' }, ['க'], null)),
+        ).toContainEqual({ status: 'published' });
+
+        expect(
+            allClauses(twinNamesWhere({ ...base, twinNames: true }, [], null)),
+        ).toContainEqual({ status: 'published' });
     });
 });
 

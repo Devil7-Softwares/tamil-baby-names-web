@@ -4,6 +4,7 @@ import {
     IName,
     ITwinName,
     NameNumerology,
+    PUBLISHED,
     Religion,
 } from '@tbn/shared';
 import { Op, WhereOptions } from 'sequelize';
@@ -91,12 +92,15 @@ export const nameNumberWhere = (
     ),
 });
 
+// The public site serves published rows only; a candidate exists but is not
+// on the site until a reviewer says so.
 export const twinNamesWhere = (
     filters: IFilterData,
     startsWith: string[] | undefined,
     nameNumbers: WhereOptions | null,
 ): WhereOptions => ({
     [Op.and]: [
+        { status: PUBLISHED },
         startsWith && startsWith.length
             ? {
                   [Op.or]: startsWith.flatMap((char) => {
@@ -120,6 +124,7 @@ export const namesWhere = (
     nameNumbers: WhereOptions | null,
 ): WhereOptions => ({
     [Op.and]: [
+        { status: PUBLISHED },
         startsWith && startsWith.length
             ? filters.startsWithMode === 'manual'
                 ? {

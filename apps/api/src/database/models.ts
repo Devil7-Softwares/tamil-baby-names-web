@@ -1,7 +1,9 @@
 import {
     IName,
     ITwinName,
+    NAME_STATUSES,
     NameNumerology,
+    NameStatus,
     USER_ROLES,
     UserRole,
 } from '@tbn/shared';
@@ -27,12 +29,14 @@ export type AdminUserDraft = Omit<IAdminUser, 'id' | 'createdAt' | 'updatedAt'>;
 export interface NamesRow extends IName {
     numerology: NameNumerology | null;
     sourceId: number | null;
+    status: NameStatus;
 }
 
 export interface TwinNamesRow extends ITwinName {
     numerology1: NameNumerology | null;
     numerology2: NameNumerology | null;
     sourceId: number | null;
+    status: NameStatus;
 }
 
 export type NamesModel = ModelStatic<Model<NamesRow>>;
@@ -41,6 +45,12 @@ export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
 const table = {
     timestamps: false,
+};
+
+const status = {
+    type: DataTypes.ENUM(...NAME_STATUSES),
+    allowNull: false,
+    defaultValue: 'candidate',
 };
 
 const id = {
@@ -62,6 +72,7 @@ export const defineNames = (sequelize: Sequelize): NamesModel =>
             meaning: DataTypes.STRING,
             numerology: DataTypes.JSONB,
             sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
+            status,
         },
         { ...table, tableName: 'names' },
     );
@@ -80,6 +91,7 @@ export const defineTwinNames = (sequelize: Sequelize): TwinNamesModel =>
             numerology1: DataTypes.JSONB,
             numerology2: DataTypes.JSONB,
             sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
+            status,
         },
         { ...table, tableName: 'twin_names' },
     );
