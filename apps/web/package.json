@@ -22,7 +22,6 @@
     "clsx": "^2.1.1",
     "dayjs": "^1.11.23",
     "dotenv": "^17.4.2",
-    "file-saver": "^2.0.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-drifter-stars": "^2.0.2",
@@ -31,7 +30,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/file-saver": "^2.0.7",
     "@types/gtag.js": "^0.0.20",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
