@@ -76,6 +76,21 @@ const getPagination = (
     }
 };
 
+interface IPageProps {
+    value: number;
+    active: boolean;
+    onClick: (value: number) => void;
+}
+
+const Page: React.FC<IPageProps> = ({ value, active, onClick }) => (
+    <div
+        className={clsx('page', active && 'active')}
+        onClick={() => onClick(value)}
+    >
+        {value}
+    </div>
+);
+
 export const Pagination: React.FC<IProps> = ({
     currentPage,
     sizePerPage,
@@ -95,15 +110,6 @@ export const Pagination: React.FC<IProps> = ({
 
         onChange(value);
     };
-
-    const Page: React.FC<{ value: number }> = ({ value }) => (
-        <div
-            className={clsx('page', value === currentPage && 'active')}
-            onClick={() => handleOnChange(value)}
-        >
-            {value}
-        </div>
-    );
 
     return (
         <div className='pagination-container'>
@@ -129,7 +135,12 @@ export const Pagination: React.FC<IProps> = ({
                         }
 
                         return (
-                            <Page key={pageNumber} value={Number(pageNumber)} />
+                            <Page
+                                key={pageNumber}
+                                value={Number(pageNumber)}
+                                active={pageNumber === currentPage}
+                                onClick={handleOnChange}
+                            />
                         );
                     })}
                     <div
