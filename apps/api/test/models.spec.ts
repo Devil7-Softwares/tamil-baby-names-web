@@ -26,7 +26,9 @@ describe('models', () => {
         );
     });
 
-    it('exposes every column the shared interfaces declare', () => {
+    // The numerology columns used to be added by ALTER TABLE at boot and were
+    // never declared, so typescript could not see what the queries read.
+    it('exposes every column the queries read, numerology included', () => {
         expect(Object.keys(names.getAttributes()).sort()).toEqual([
             'firstLetter',
             'gender',
@@ -34,6 +36,7 @@ describe('models', () => {
             'language',
             'meaning',
             'name',
+            'numerology',
             'religion',
         ]);
         expect(Object.keys(twinNames.getAttributes()).sort()).toEqual([
@@ -44,6 +47,8 @@ describe('models', () => {
             'meaning2',
             'name1',
             'name2',
+            'numerology1',
+            'numerology2',
         ]);
     });
 });

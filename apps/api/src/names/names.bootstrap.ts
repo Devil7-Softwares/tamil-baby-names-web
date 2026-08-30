@@ -1,14 +1,14 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 
 import { DatabaseBootstrap } from '../database/database.bootstrap.js';
-import { NumerologyColumnsService } from './numerology-columns.service.js';
+import { NumerologyBackfillService } from './numerology-backfill.service.js';
 import { SortCollationService } from './sort-collation.service.js';
 
 @Injectable()
 export class NamesBootstrap implements OnApplicationBootstrap {
     constructor(
         private readonly database: DatabaseBootstrap,
-        private readonly numerologyColumns: NumerologyColumnsService,
+        private readonly numerology: NumerologyBackfillService,
         private readonly sortCollation: SortCollationService,
     ) {}
 
@@ -19,7 +19,7 @@ export class NamesBootstrap implements OnApplicationBootstrap {
     private async prepare(): Promise<void> {
         await this.database.ready;
 
-        await this.numerologyColumns.prepare();
+        await this.numerology.run();
         await this.sortCollation.resolve();
     }
 }

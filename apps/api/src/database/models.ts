@@ -1,4 +1,10 @@
-import { IName, ITwinName, USER_ROLES, UserRole } from '@tbn/shared';
+import {
+    IName,
+    ITwinName,
+    NameNumerology,
+    USER_ROLES,
+    UserRole,
+} from '@tbn/shared';
 import { DataTypes, Model, ModelStatic, Sequelize } from 'sequelize';
 
 export interface IAdminUser {
@@ -13,8 +19,22 @@ export interface IAdminUser {
 
 export type AdminUserDraft = Omit<IAdminUser, 'id' | 'createdAt' | 'updatedAt'>;
 
-export type NamesModel = ModelStatic<Model<IName>>;
-export type TwinNamesModel = ModelStatic<Model<ITwinName>>;
+/**
+ * The stored numerology, which the model owns rather than the queries: the old
+ * per-method columns were added at runtime and never declared here, so
+ * typescript could not see the columns the queries sorted on.
+ */
+export interface NamesRow extends IName {
+    numerology: NameNumerology | null;
+}
+
+export interface TwinNamesRow extends ITwinName {
+    numerology1: NameNumerology | null;
+    numerology2: NameNumerology | null;
+}
+
+export type NamesModel = ModelStatic<Model<NamesRow>>;
+export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
 const table = {
@@ -28,7 +48,7 @@ const id = {
 };
 
 export const defineNames = (sequelize: Sequelize): NamesModel =>
-    sequelize.define<Model<IName>>(
+    sequelize.define<Model<NamesRow>>(
         'Names',
         {
             id,
@@ -38,12 +58,13 @@ export const defineNames = (sequelize: Sequelize): NamesModel =>
             language: DataTypes.STRING,
             name: DataTypes.STRING,
             meaning: DataTypes.STRING,
+            numerology: DataTypes.JSONB,
         },
         { ...table, tableName: 'names' },
     );
 
 export const defineTwinNames = (sequelize: Sequelize): TwinNamesModel =>
-    sequelize.define<Model<ITwinName>>(
+    sequelize.define<Model<TwinNamesRow>>(
         'TwinNames',
         {
             id,
@@ -53,6 +74,8 @@ export const defineTwinNames = (sequelize: Sequelize): TwinNamesModel =>
             meaning1: DataTypes.STRING,
             name2: DataTypes.STRING,
             meaning2: DataTypes.STRING,
+            numerology1: DataTypes.JSONB,
+            numerology2: DataTypes.JSONB,
         },
         { ...table, tableName: 'twin_names' },
     );

@@ -14,15 +14,12 @@ import {
 } from '../database/database.constants.js';
 import { NamesModel, TwinNamesModel } from '../database/models.js';
 import {
-    applyNameNumbers,
-    nameNumberAttributes,
     nameNumberWhere,
     namesWhere,
     resolveNameNumber,
     twinNamesWhere,
     wantedNumbers,
 } from './names.query.js';
-import { NumerologyColumnsService } from './numerology-columns.service.js';
 import { SortCollationService } from './sort-collation.service.js';
 
 @Injectable()
@@ -31,7 +28,6 @@ export class NamesService {
         @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
         @Inject(NAMES_MODEL) private readonly names: NamesModel,
         @Inject(TWIN_NAMES_MODEL) private readonly twinNames: TwinNamesModel,
-        private readonly numerologyColumns: NumerologyColumnsService,
         private readonly sortCollation: SortCollationService,
     ) {}
 
@@ -42,66 +38,55 @@ export class NamesService {
     ): Promise<[IName[] | ITwinName[], number]> {
         const startsWith = getStartingLettersForFilter(filters);
         const wanted = wantedNumbers(filters);
-        const ready = this.numerologyColumns.isReady;
 
-        // With the columns in place the filter is just another predicate, so
-        // the query keeps its own LIMIT; without them it has to read every
-        // match.
-        const inSql = wanted.length > 0 && ready;
-        const inMemory = wanted.length > 0 && !ready;
+        const nameNumbers = wanted.length
+            ? nameNumberWhere(filters, wanted)
+            : null;
 
-        const nameNumbers = inSql ? nameNumberWhere(filters, wanted) : null;
-        const paged = inMemory ? undefined : { page, limit };
-
-        const offset =
-            paged?.page && paged.limit
-                ? (paged.page - 1) * paged.limit
-                : undefined;
+        const offset = page && limit ? (page - 1) * limit : undefined;
 
         if (filters.twinNames) {
             const { rows, count } = await this.twinNames.findAndCountAll({
                 where: twinNamesWhere(filters, startsWith, nameNumbers),
-                attributes: nameNumberAttributes(filters, ready),
                 order: this.sortCollation.order(['name1', 'name2']),
                 offset,
-                limit: paged?.limit,
+                limit,
             });
 
-            const values = rows.map(({ dataValues: row }) => ({
-                ...row,
-                nameNumber1: resolveNameNumber(
-                    filters,
-                    row.name1,
-                    row.nameNumber1,
-                ),
-                nameNumber2: resolveNameNumber(
-                    filters,
-                    row.name2,
-                    row.nameNumber2,
-                ),
-            }));
+            // `numerology1`/`numerology2` carry every method; the client is
+            // sent only the number for the one it asked about.
+            const values = rows.map(
+                ({ dataValues: { numerology1, numerology2, ...row } }) => ({
+                    ...row,
+                    nameNumber1: resolveNameNumber(
+                        filters,
+                        row.name1,
+                        numerology1,
+                    ),
+                    nameNumber2: resolveNameNumber(
+                        filters,
+                        row.name2,
+                        numerology2,
+                    ),
+                }),
+            );
 
-            return inMemory
-                ? applyNameNumbers(filters, values, count, page, limit)
-                : [values, count];
+            return [values, count];
         }
 
         const { rows, count } = await this.names.findAndCountAll({
             where: namesWhere(filters, startsWith, nameNumbers),
-            attributes: nameNumberAttributes(filters, ready),
             order: this.sortCollation.order(['name']),
             offset,
-            limit: paged?.limit,
+            limit,
         });
 
-        const values = rows.map(({ dataValues: row }) => ({
+        const values = rows.map(({ dataValues: { numerology, ...row } }) => ({
             ...row,
-            nameNumber: resolveNameNumber(filters, row.name, row.nameNumber),
+            nameNumber: resolveNameNumber(filters, row.name, numerology),
         }));
 
-        return inMemory
-            ? applyNameNumbers(filters, values, count, page, limit)
-            : [values, count];
+        return [values, count];
     }
 
     async getFirstLetters(filters: IFilterData): Promise<string[]> {

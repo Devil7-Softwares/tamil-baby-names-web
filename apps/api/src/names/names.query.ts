@@ -3,11 +3,10 @@ import {
     IFilterData,
     IName,
     ITwinName,
+    NameNumerology,
     Religion,
 } from '@tbn/shared';
-import { col, Op, ProjectionAlias, WhereOptions } from 'sequelize';
-
-import { numerologyColumn, NumerologySuffix } from './numerology-column.js';
+import { Op, WhereOptions } from 'sequelize';
 
 const TAMIL_VOWEL_SIGN = /[\u0BBE-\u0BCD]/;
 
@@ -53,85 +52,44 @@ export const wantedNumbers = (filters: IFilterData): number[] =>
 export const numbersOf = (item: IName | ITwinName) =>
     'name1' in item ? [item.nameNumber1, item.nameNumber2] : [item.nameNumber];
 
-const suffixesOf = (filters: IFilterData): ReadonlyArray<NumerologySuffix> =>
-    filters.twinNames ? ['1', '2'] : [''];
+/** The jsonb columns holding each name's numbers, one per name in the row. */
+const numerologyColumnsOf = (
+    filters: IFilterData,
+): ReadonlyArray<'numerology' | 'numerology1' | 'numerology2'> =>
+    filters.twinNames ? ['numerology1', 'numerology2'] : ['numerology'];
 
 /**
- * Reads the stored column, so the number shown and the number filtered on are
+ * Reads the stored object, so the number shown and the number filtered on are
  * the same value. A row inserted since the last backfill has none yet, and is
  * computed rather than reported as unvalued.
  */
 export const resolveNameNumber = (
     filters: IFilterData,
     name: string,
-    stored: number | null | undefined,
+    stored: NameNumerology | null | undefined,
 ): number | null => {
-    if (stored === null || stored === undefined) {
+    if (!stored) {
         return getNameNumber(name, filters.numerology)?.number ?? null;
     }
 
-    return stored === 0 ? null : stored;
+    return stored[filters.numerology] ?? null;
 };
 
-export const nameNumberAttributes = (
-    filters: IFilterData,
-    ready: boolean,
-): { include: ProjectionAlias[] } | undefined => {
-    if (!ready) {
-        return undefined;
-    }
-
-    return {
-        include: suffixesOf(filters).map((suffix) => [
-            col(numerologyColumn(filters.numerology, suffix)),
-            `nameNumber${suffix}`,
-        ]),
-    };
-};
-
-// Either name qualifies a twin pair; both numbers are printed, so which one
-// matched stays visible.
+/**
+ * Containment rather than an equality on an extracted key, because `@>` is what
+ * the GIN index on the column can answer. Either name qualifies a twin pair;
+ * both numbers are printed, so which one matched stays visible.
+ */
 export const nameNumberWhere = (
     filters: IFilterData,
     wanted: number[],
 ): WhereOptions => ({
-    [Op.or]: suffixesOf(filters).map((suffix) => ({
-        [numerologyColumn(filters.numerology, suffix)]: { [Op.in]: wanted },
-    })),
+    [Op.or]: numerologyColumnsOf(filters).flatMap((column) =>
+        wanted.map((number) => ({
+            [column]: { [Op.contains]: { [filters.numerology]: number } },
+        })),
+    ),
 });
-
-/**
- * The fallback for when the columns are not ready: filter over the rows, which
- * costs the query its own LIMIT, since the page has to be cut from the rows
- * that survive the filter rather than the ones that reached it.
- */
-export function applyNameNumbers<T extends IName | ITwinName>(
-    filters: IFilterData,
-    rows: T[],
-    total: number,
-    page?: number,
-    limit?: number,
-): [T[], number] {
-    const wanted = wantedNumbers(filters);
-
-    if (!wanted.length) {
-        return [rows, total];
-    }
-
-    const filtered = rows.filter((item) =>
-        numbersOf(item).some(
-            (value) =>
-                value !== null && value !== undefined && wanted.includes(value),
-        ),
-    );
-
-    return [
-        page && limit
-            ? filtered.slice((page - 1) * limit, page * limit)
-            : filtered,
-        filtered.length,
-    ];
-}
 
 export const twinNamesWhere = (
     filters: IFilterData,

@@ -4,7 +4,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { NamesBootstrap } from './names.bootstrap.js';
 import { NamesController } from './names.controller.js';
 import { NamesService } from './names.service.js';
-import { NumerologyColumnsService } from './numerology-columns.service.js';
+import { NumerologyBackfillService } from './numerology-backfill.service.js';
 import { SortCollationService } from './sort-collation.service.js';
 
 @Module({
@@ -13,9 +13,9 @@ import { SortCollationService } from './sort-collation.service.js';
     providers: [
         NamesBootstrap,
         NamesService,
-        NumerologyColumnsService,
+        NumerologyBackfillService,
         SortCollationService,
     ],
-    exports: [NamesService, NumerologyColumnsService, SortCollationService],
+    exports: [NamesService, NumerologyBackfillService, SortCollationService],
 })
 export class NamesModule {}

@@ -1,3 +1,8 @@
+import { Numerology } from '../types/index.js';
+
+/** Name numbers by method. A method that cannot value the name is absent. */
+export type NameNumerology = Partial<Record<Numerology, number>>;
+
 export interface IName {
     id: number;
     gender: string;

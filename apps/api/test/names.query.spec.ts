@@ -1,10 +1,9 @@
-import { getNameNumber, IFilterData, IName } from '@tbn/shared';
+import { getNameNumber, IFilterData } from '@tbn/shared';
 import { Op } from 'sequelize';
 import { describe, expect, it } from 'vitest';
 
 import {
-    applyNameNumbers,
-    nameNumberAttributes,
+    nameNumberWhere,
     namesWhere,
     resolveNameNumber,
     startsWithLetter,
@@ -88,12 +87,14 @@ describe('wantedNumbers', () => {
 });
 
 describe('resolveNameNumber', () => {
-    it('reports the stored value', () => {
-        expect(resolveNameNumber(base, 'அறிவு', 7)).toBe(7);
+    it('reports the number stored for the chosen method', () => {
+        expect(
+            resolveNameNumber(base, 'அறிவு', { chaldean: 7, enkanitham: 3 }),
+        ).toBe(7);
     });
 
-    it('reads 0 as the name having no value', () => {
-        expect(resolveNameNumber(base, 'அறிவு', 0)).toBe(null);
+    it('reads an absent method as the name having no value', () => {
+        expect(resolveNameNumber(base, 'அறிவு', { enkanitham: 3 })).toBe(null);
     });
 
     it('computes a row the backfill has not reached yet', () => {
@@ -103,27 +104,28 @@ describe('resolveNameNumber', () => {
     });
 });
 
-describe('nameNumberAttributes', () => {
-    it('selects nothing extra while the columns are not ready', () => {
-        expect(nameNumberAttributes(base, false)).toBeUndefined();
+describe('nameNumberWhere', () => {
+    it('asks for containment, which the gin index can answer', () => {
+        const where = nameNumberWhere(base, [3, 7]) as Record<
+            symbol,
+            unknown[]
+        >;
+
+        expect(where[Op.or]).toEqual([
+            { numerology: { [Op.contains]: { chaldean: 3 } } },
+            { numerology: { [Op.contains]: { chaldean: 7 } } },
+        ]);
     });
 
-    it('aliases the column of the chosen method', () => {
-        const attributes = nameNumberAttributes(base, true);
-
-        expect(attributes?.include).toHaveLength(1);
-        expect(attributes?.include[0][1]).toBe('nameNumber');
-    });
-
-    it('aliases both columns for twin names', () => {
-        const attributes = nameNumberAttributes(
+    it('lets either name of a twin pair carry the number', () => {
+        const where = nameNumberWhere(
             { ...base, twinNames: true },
-            true,
-        );
+            [5],
+        ) as Record<symbol, Array<Record<string, unknown>>>;
 
-        expect(attributes?.include.map(([, alias]) => alias)).toEqual([
-            'nameNumber1',
-            'nameNumber2',
+        expect(Object.keys(Object.assign({}, ...where[Op.or]))).toEqual([
+            'numerology1',
+            'numerology2',
         ]);
     });
 });
@@ -187,34 +189,5 @@ describe('twinNamesWhere', () => {
         expect(first[Op.or]).toHaveLength(2);
         expect(first[Op.or][0].name1[Op.iLike]).toBe('க%');
         expect(first[Op.or][1].name2[Op.iLike]).toBe('க%');
-    });
-});
-
-describe('applyNameNumbers', () => {
-    const rows = [1, 2, 3, 4, 5, 6].map(
-        (nameNumber, index) =>
-            ({ id: index + 1, name: `name-${index}`, nameNumber }) as IName,
-    );
-
-    it('leaves the rows alone when no number was picked', () => {
-        expect(applyNameNumbers(base, rows, 6)).toEqual([rows, 6]);
-    });
-
-    it('counts what survives the filter, not what the query returned', () => {
-        const filters = { ...base, nameNumbers: [2, 4, 6] };
-
-        const [filtered, total] = applyNameNumbers(filters, rows, 6);
-
-        expect(filtered.map((row) => row.nameNumber)).toEqual([2, 4, 6]);
-        expect(total).toBe(3);
-    });
-
-    it('cuts the page from the rows that survived', () => {
-        const filters = { ...base, nameNumbers: [2, 4, 6] };
-
-        const [filtered, total] = applyNameNumbers(filters, rows, 6, 2, 2);
-
-        expect(filtered.map((row) => row.nameNumber)).toEqual([6]);
-        expect(total).toBe(3);
     });
 });
