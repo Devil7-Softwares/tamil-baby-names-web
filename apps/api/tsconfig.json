@@ -15,5 +15,5 @@
     "target": "ES2023",
     "types": ["node"]
   },
-  "include": ["src", "test", "eslint.config.mjs", "vitest.config.mts"]
+  "include": ["src", "test", "eslint.config.js", "vitest.config.ts"]
 }
