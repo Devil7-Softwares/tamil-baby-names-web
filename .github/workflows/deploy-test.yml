@@ -32,26 +32,36 @@ jobs:
         run: yarn prettier --check .
       - name: Running tests
         run: yarn test
-      - name: Building server & client
+      - name: Building the api and the client
         run: yarn build
         env:
           RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
-      - name: Copy package.json
+      - name: Assembling the deployment
         run: |
+          mkdir -p deploy
+          cp -r apps/api/dist/. deploy/
+          cp -r apps/web/dist/public deploy/public
+          mkdir -p deploy/vendor/shared
+          cp packages/shared/package.json deploy/vendor/shared/
+          cp -r packages/shared/dist deploy/vendor/shared/dist
+          echo "require('./main.js');" > deploy/index.js
           node -e '
-            const pkg = require("./apps/web/package.json");
-            for (const field of ["dependencies", "devDependencies"]) {
-              for (const [name, range] of Object.entries(pkg[field] ?? {})) {
-                if (range.startsWith("workspace:")) delete pkg[field][name];
+            const pkg = require("./apps/api/package.json");
+            delete pkg.devDependencies;
+            pkg.main = "index.js";
+            pkg.scripts = { start: "node index.js" };
+            for (const [name, range] of Object.entries(pkg.dependencies)) {
+              if (range.startsWith("workspace:")) {
+                pkg.dependencies[name] = "file:./vendor/shared";
               }
             }
             require("fs").writeFileSync(
-              "apps/web/dist/package.json",
+              "deploy/package.json",
               JSON.stringify(pkg, null, 2) + "\n",
             );
           '
       - name: Force restart post upload
-        run: mkdir -p apps/web/dist/tmp && echo $EPOCHSECONDS > apps/web/dist/tmp/restart.txt
+        run: mkdir -p deploy/tmp && echo $EPOCHSECONDS > deploy/tmp/restart.txt
       - name: Uploading files to server
         if: github.event_name == 'push'
         uses: SamKirkland/FTP-Deploy-Action@4.0.0
@@ -59,4 +69,4 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./apps/web/dist/
+          local-dir: ./deploy/
