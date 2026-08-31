@@ -17,6 +17,7 @@ import {
     SOURCES_MODEL,
     VERIFICATIONS_MODEL,
 } from '../../database/database.constants.js';
+import { LookupsService } from '../../database/lookups.service.js';
 import {
     ClustersModel,
     IMeaning,
@@ -37,6 +38,12 @@ import {
 /** A meaning before its source id is resolved to the slug the client sees. */
 type StoredMeaning = Omit<AdminMeaning, 'source'> & { sourceId: number | null };
 
+/** Reads a name off a lookup, for the rows the import gave one. */
+const labelReader =
+    (labels: Map<number, string>) =>
+    (id: number | null): string | null =>
+        id === null ? null : (labels.get(id) ?? null);
+
 /** Published, then candidate, then rejected — the order a reviewer reads in. */
 const byStatusThenId = (a: StoredMeaning, b: StoredMeaning): number =>
     NAME_STATUSES.indexOf(a.status) - NAME_STATUSES.indexOf(b.status) ||
@@ -52,6 +59,7 @@ export class AdminNamesService {
         @Inject(SOURCES_MODEL) private readonly sources: SourcesModel,
         @Inject(VERIFICATIONS_MODEL)
         private readonly verifications: VerificationsModel,
+        private readonly lookups: LookupsService,
         private readonly sortCollation: SortCollationService,
     ) {}
 
@@ -72,13 +80,15 @@ export class AdminNamesService {
             rows.map(({ dataValues }) => dataValues.id),
         );
 
-        const [meanings, slugs] = await Promise.all([
+        const [meanings, slugs, labels] = await Promise.all([
             this.meaningsFor([...members.values()].flat().map(({ id }) => id)),
             this.sourceSlugs(),
+            this.lookups.labels(),
         ]);
 
-        const slug = (id: number | null) =>
-            id === null ? null : (slugs.get(id) ?? null);
+        const slug = labelReader(slugs);
+        const religion = labelReader(labels.religions);
+        const language = labelReader(labels.languages);
 
         return {
             items: rows.map(({ dataValues: cluster }) => {
@@ -90,8 +100,8 @@ export class AdminNamesService {
                     gender: cluster.gender,
                     members: rowsHere.map((row) => ({
                         id: row.id,
-                        religion: row.religion,
-                        language: row.language,
+                        religion: religion(row.religionId),
+                        language: language(row.languageId),
                         status: row.status,
                         source: slug(row.sourceId),
                     })),

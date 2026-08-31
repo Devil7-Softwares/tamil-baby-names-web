@@ -32,6 +32,8 @@ export interface NamesRow extends Omit<IName, 'meaning'> {
     numerology: NameNumerology | null;
     sourceId: number | null;
     clusterId: number | null;
+    religionId: number | null;
+    languageId: number | null;
     status: NameStatus;
 }
 
@@ -39,6 +41,7 @@ export interface TwinNamesRow extends Omit<ITwinName, 'meaning1' | 'meaning2'> {
     numerology1: NameNumerology | null;
     numerology2: NameNumerology | null;
     sourceId: number | null;
+    languageId: number | null;
     status: NameStatus;
 }
 
@@ -78,6 +81,20 @@ export interface ICluster {
 }
 
 export type ClusterDraft = Pick<ICluster, 'name' | 'gender' | 'sortKey'>;
+
+/**
+ * A religion or a language, named once. The slug is what a request filters on
+ * and the name is the Tamil the catalogue shows.
+ */
+export interface ILookup {
+    id: number;
+    slug: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type LookupDraft = Pick<ILookup, 'slug' | 'name'>;
 
 export interface ISource {
     id: number;
@@ -129,6 +146,7 @@ export type NamesModel = ModelStatic<Model<NamesRow>>;
 export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
 export type MeaningsModel = ModelStatic<Model<IMeaning, MeaningDraft>>;
 export type ClustersModel = ModelStatic<Model<ICluster, ClusterDraft>>;
+export type LookupModel = ModelStatic<Model<ILookup, LookupDraft>>;
 export type SourcesModel = ModelStatic<Model<ISource, SourceDraft>>;
 export type VerificationsModel = ModelStatic<
     Model<IVerification, VerificationDraft>
@@ -164,6 +182,8 @@ export const defineNames = (sequelize: Sequelize): NamesModel =>
             numerology: DataTypes.JSONB,
             sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
             clusterId: { type: DataTypes.INTEGER, field: 'cluster_id' },
+            religionId: { type: DataTypes.INTEGER, field: 'religion_id' },
+            languageId: { type: DataTypes.INTEGER, field: 'language_id' },
             status,
         },
         { ...table, tableName: 'names' },
@@ -181,6 +201,7 @@ export const defineTwinNames = (sequelize: Sequelize): TwinNamesModel =>
             numerology1: DataTypes.JSONB,
             numerology2: DataTypes.JSONB,
             sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
+            languageId: { type: DataTypes.INTEGER, field: 'language_id' },
             status,
         },
         { ...table, tableName: 'twin_names' },
@@ -234,6 +255,34 @@ export const defineClusters = (sequelize: Sequelize): ClustersModel =>
             underscored: true,
         },
     );
+
+/** The two lookups are the same table twice, so they are defined once. */
+const defineLookup =
+    (modelName: string, tableName: string) =>
+    (sequelize: Sequelize): LookupModel =>
+        sequelize.define<Model<ILookup, LookupDraft>>(
+            modelName,
+            {
+                id,
+                slug: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    unique: true,
+                },
+                name: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    unique: true,
+                },
+                createdAt: DataTypes.DATE,
+                updatedAt: DataTypes.DATE,
+            },
+            { ...table, tableName, timestamps: true, underscored: true },
+        );
+
+export const defineReligions = defineLookup('Religions', 'religions');
+
+export const defineLanguages = defineLookup('Languages', 'languages');
 
 export const defineSources = (sequelize: Sequelize): SourcesModel =>
     sequelize.define<Model<ISource, SourceDraft>>(

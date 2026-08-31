@@ -86,6 +86,10 @@ const StatusChip: React.FC<{
     );
 };
 
+/** Whatever the import recorded about a row, and nothing where it did not. */
+const filedAs = ({ religion, language }: AdminClusterMember): string =>
+    [religion, language].filter(Boolean).join(' · ');
+
 /** The catalogue rows the cluster gathered, one line each. */
 const Members: React.FC<{
     members: AdminClusterMember[];
@@ -107,7 +111,7 @@ const Members: React.FC<{
                 />
 
                 <Typography variant='body2'>
-                    {member.religion} · {member.language}
+                    {filedAs(member) || '—'}
                 </Typography>
 
                 <Typography variant='body2' color='text.secondary'>

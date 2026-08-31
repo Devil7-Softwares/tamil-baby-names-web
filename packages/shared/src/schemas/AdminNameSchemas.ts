@@ -16,11 +16,14 @@ export const AdminMeaningSchema = z.object({
 /**
  * One catalogue row inside a cluster. The spelling and gender live on the
  * cluster; what stays here is what the import filed differently row by row.
+ *
+ * Religion and language are null where the import never recorded one, which is
+ * most of the catalogue's languages.
  */
 export const AdminClusterMemberSchema = z.object({
     id: z.number().int().positive(),
-    religion: z.string(),
-    language: z.string(),
+    religion: z.string().nullable(),
+    language: z.string().nullable(),
     status: z.enum(NAME_STATUSES),
     source: z.string().nullable(),
 });

@@ -3,6 +3,7 @@ import { Op, Sequelize, Transaction } from 'sequelize';
 import { describe, expect, it } from 'vitest';
 
 import { AdminNamesService } from '../src/admin/names/admin-names.service.js';
+import { LookupsService } from '../src/database/lookups.service.js';
 import {
     ClustersModel,
     IMeaning,
@@ -111,6 +112,12 @@ const build = (rows: IMeaning[]) => {
         { findAll: async () => [] } as unknown as ClustersModel,
         { findAll: async () => [] } as unknown as SourcesModel,
         verifications,
+        {
+            labels: async () => ({
+                religions: new Map(),
+                languages: new Map(),
+            }),
+        } as unknown as LookupsService,
         { order: () => [] } as unknown as SortCollationService,
     );
 

@@ -11,12 +11,15 @@ import { validateEnv } from '../src/config/env.js';
 import {
     ADMIN_USERS_MODEL,
     CLUSTERS_MODEL,
+    LANGUAGES_MODEL,
     MEANINGS_MODEL,
     NAMES_MODEL,
+    RELIGIONS_MODEL,
     SEQUELIZE,
     SOURCES_MODEL,
     VERIFICATIONS_MODEL,
 } from '../src/database/database.constants.js';
+import { LookupsService } from '../src/database/lookups.service.js';
 import { IAdminUser } from '../src/database/models.js';
 import { SortCollationService } from '../src/database/sort-collation.service.js';
 import { appOptions, configureApp } from '../src/setup.js';
@@ -50,6 +53,8 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
         NAMES_MODEL,
         MEANINGS_MODEL,
         CLUSTERS_MODEL,
+        RELIGIONS_MODEL,
+        LANGUAGES_MODEL,
         SOURCES_MODEL,
         VERIFICATIONS_MODEL,
     ];
@@ -60,8 +65,14 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
             { provide: ADMIN_USERS_MODEL, useValue: usersModel(row) },
             ...catalogue.map((token) => ({ provide: token, useValue: {} })),
             { provide: SortCollationService, useValue: { order: () => [] } },
+            LookupsService,
         ],
-        exports: [ADMIN_USERS_MODEL, ...catalogue, SortCollationService],
+        exports: [
+            ADMIN_USERS_MODEL,
+            ...catalogue,
+            LookupsService,
+            SortCollationService,
+        ],
     })
     class StubDatabaseModule {}
 

@@ -3,8 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
     defineClusters,
+    defineLanguages,
     defineMeanings,
     defineNames,
+    defineReligions,
     defineSources,
     defineTwinNames,
     defineVerifications,
@@ -17,6 +19,8 @@ const meanings = defineMeanings(sequelize);
 const clusters = defineClusters(sequelize);
 const sources = defineSources(sequelize);
 const verifications = defineVerifications(sequelize);
+const religions = defineReligions(sequelize);
+const languages = defineLanguages(sequelize);
 
 describe('models', () => {
     it('reads the tables the catalogue already uses', () => {
@@ -46,9 +50,11 @@ describe('models', () => {
             'gender',
             'id',
             'language',
+            'languageId',
             'name',
             'numerology',
             'religion',
+            'religionId',
             'sourceId',
             'status',
         ]);
@@ -56,6 +62,7 @@ describe('models', () => {
             'gender',
             'id',
             'language',
+            'languageId',
             'name1',
             'name2',
             'numerology1',
@@ -145,6 +152,25 @@ describe('models', () => {
         expect(verifications.getAttributes().reason.defaultValue).toBe(
             'decision',
         );
+    });
+
+    it('names a religion and a language once each', () => {
+        expect(religions.tableName).toBe('religions');
+        expect(languages.tableName).toBe('languages');
+        expect(Object.keys(languages.getAttributes()).sort()).toEqual([
+            'createdAt',
+            'id',
+            'name',
+            'slug',
+            'updatedAt',
+        ]);
+        expect(languages.getAttributes().slug.unique).toBe(true);
+    });
+
+    it('points a catalogue row at both lookups', () => {
+        expect(names.getAttributes().religionId.field).toBe('religion_id');
+        expect(names.getAttributes().languageId.field).toBe('language_id');
+        expect(twinNames.getAttributes().languageId.field).toBe('language_id');
     });
 
     it('reads the source each row was imported from', () => {

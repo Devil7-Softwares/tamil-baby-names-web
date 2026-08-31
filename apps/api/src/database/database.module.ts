@@ -6,18 +6,23 @@ import { DatabaseBootstrap } from './database.bootstrap.js';
 import {
     ADMIN_USERS_MODEL,
     CLUSTERS_MODEL,
+    LANGUAGES_MODEL,
     MEANINGS_MODEL,
     NAMES_MODEL,
+    RELIGIONS_MODEL,
     SEQUELIZE,
     SOURCES_MODEL,
     TWIN_NAMES_MODEL,
     VERIFICATIONS_MODEL,
 } from './database.constants.js';
+import { LookupsService } from './lookups.service.js';
 import {
     defineAdminUsers,
     defineClusters,
+    defineLanguages,
     defineMeanings,
     defineNames,
+    defineReligions,
     defineSources,
     defineTwinNames,
     defineVerifications,
@@ -57,6 +62,16 @@ import { SortCollationService } from './sort-collation.service.js';
             inject: [SEQUELIZE],
         },
         {
+            provide: RELIGIONS_MODEL,
+            useFactory: defineReligions,
+            inject: [SEQUELIZE],
+        },
+        {
+            provide: LANGUAGES_MODEL,
+            useFactory: defineLanguages,
+            inject: [SEQUELIZE],
+        },
+        {
             provide: SOURCES_MODEL,
             useFactory: defineSources,
             inject: [SEQUELIZE],
@@ -72,6 +87,7 @@ import { SortCollationService } from './sort-collation.service.js';
             inject: [SEQUELIZE],
         },
         DatabaseBootstrap,
+        LookupsService,
         SortCollationService,
     ],
     exports: [
@@ -80,10 +96,13 @@ import { SortCollationService } from './sort-collation.service.js';
         TWIN_NAMES_MODEL,
         MEANINGS_MODEL,
         CLUSTERS_MODEL,
+        RELIGIONS_MODEL,
+        LANGUAGES_MODEL,
         SOURCES_MODEL,
         VERIFICATIONS_MODEL,
         ADMIN_USERS_MODEL,
         DatabaseBootstrap,
+        LookupsService,
         SortCollationService,
     ],
 })
