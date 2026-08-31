@@ -91,34 +91,30 @@ export class NamesService {
                 rows.map(({ dataValues }) => dataValues.id),
             );
 
-            // `numerology1`/`numerology2` carry every method; the client is
-            // sent only the number for the one it asked about. `sourceId` and
-            // `status` are curation state, not the client's business.
-            const values = rows.map(
-                ({
-                    dataValues: {
-                        numerology1,
-                        numerology2,
-                        sourceId: _sourceId,
-                        status: _status,
-                        // Lifted out of the spread so each name still comes
-                        // before its meaning, as it did when both were columns.
-                        name2,
-                        ...row
-                    },
-                }) => ({
-                    ...row,
-                    meaning1: meanings.get(`${row.id}:1`) ?? '',
-                    name2,
-                    meaning2: meanings.get(`${row.id}:2`) ?? '',
-                    nameNumber1: resolveNameNumber(
-                        filters,
-                        row.name1,
-                        numerology1,
-                    ),
-                    nameNumber2: resolveNameNumber(filters, name2, numerology2),
-                }),
-            );
+            // Named rather than spread: the columns review needs — the
+            // source, the status, the reviewer's notes — stay out of what a
+            // client is sent however many of them the catalogue grows.
+            // `numerology1`/`numerology2` carry every method, and the client is
+            // sent only the number for the one it asked about.
+            const values = rows.map(({ dataValues: row }) => ({
+                id: row.id,
+                gender: row.gender,
+                language: row.language,
+                name1: row.name1,
+                meaning1: meanings.get(`${row.id}:1`) ?? '',
+                name2: row.name2,
+                meaning2: meanings.get(`${row.id}:2`) ?? '',
+                nameNumber1: resolveNameNumber(
+                    filters,
+                    row.name1,
+                    row.numerology1,
+                ),
+                nameNumber2: resolveNameNumber(
+                    filters,
+                    row.name2,
+                    row.numerology2,
+                ),
+            }));
 
             return [values, count];
         }
@@ -135,20 +131,16 @@ export class NamesService {
             rows.map(({ dataValues }) => dataValues.id),
         );
 
-        const values = rows.map(
-            ({
-                dataValues: {
-                    numerology,
-                    sourceId: _sourceId,
-                    status: _status,
-                    ...row
-                },
-            }) => ({
-                ...row,
-                meaning: meanings.get(`${row.id}:1`) ?? '',
-                nameNumber: resolveNameNumber(filters, row.name, numerology),
-            }),
-        );
+        const values = rows.map(({ dataValues: row }) => ({
+            id: row.id,
+            gender: row.gender,
+            religion: row.religion,
+            firstLetter: row.firstLetter,
+            language: row.language,
+            name: row.name,
+            meaning: meanings.get(`${row.id}:1`) ?? '',
+            nameNumber: resolveNameNumber(filters, row.name, row.numerology),
+        }));
 
         return [values, count];
     }
