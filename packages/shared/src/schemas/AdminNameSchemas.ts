@@ -26,6 +26,8 @@ export const AdminClusterMemberSchema = z.object({
     language: z.string().nullable(),
     status: z.enum(NAME_STATUSES),
     source: z.string().nullable(),
+    /** What the import recorded that no column could hold. */
+    notes: z.string().nullable(),
 });
 
 export const AdminClusterSchema = z.object({

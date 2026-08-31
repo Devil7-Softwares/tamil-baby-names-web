@@ -104,6 +104,7 @@ export class AdminNamesService {
                         language: language(row.languageId),
                         status: row.status,
                         source: slug(row.sourceId),
+                        notes: row.notes,
                     })),
                     // Pooled across the cluster's rows and re-sorted: gathering
                     // them row by row would order by row before status.

@@ -34,6 +34,8 @@ export interface NamesRow extends Omit<IName, 'meaning'> {
     clusterId: number | null;
     religionId: number | null;
     languageId: number | null;
+    /** What a reviewer needs to know about the row that no column says. */
+    notes: string | null;
     status: NameStatus;
 }
 
@@ -184,6 +186,7 @@ export const defineNames = (sequelize: Sequelize): NamesModel =>
             clusterId: { type: DataTypes.INTEGER, field: 'cluster_id' },
             religionId: { type: DataTypes.INTEGER, field: 'religion_id' },
             languageId: { type: DataTypes.INTEGER, field: 'language_id' },
+            notes: DataTypes.TEXT,
             status,
         },
         { ...table, tableName: 'names' },

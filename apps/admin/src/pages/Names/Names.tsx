@@ -1,3 +1,4 @@
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
     Alert,
     Box,
@@ -107,6 +108,12 @@ const Members: React.FC<{
                 <Typography variant='body2'>
                     {filedAs(member) || '—'}
                 </Typography>
+
+                {member.notes && (
+                    <Tooltip title={member.notes}>
+                        <InfoOutlinedIcon fontSize='small' color='disabled' />
+                    </Tooltip>
+                )}
 
                 <Typography variant='body2' color='text.secondary'>
                     {member.source ?? '—'}

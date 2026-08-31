@@ -52,6 +52,7 @@ describe('models', () => {
             'language',
             'languageId',
             'name',
+            'notes',
             'numerology',
             'religion',
             'religionId',

@@ -23,7 +23,12 @@ const cluster = {
 };
 
 /** Hindu rows carry a language; the import gave the rest a religion instead. */
-const member = (id: number, religionId: number, languageId: number | null) => ({
+const member = (
+    id: number,
+    religionId: number,
+    languageId: number | null,
+    notes: string | null = null,
+) => ({
     id,
     clusterId: 1,
     gender: 'boy',
@@ -35,6 +40,7 @@ const member = (id: number, religionId: number, languageId: number | null) => ({
     sourceId: null,
     religionId,
     languageId,
+    notes,
     status: 'published' as const,
 });
 
@@ -98,5 +104,17 @@ describe('AdminNamesService.list', () => {
         });
 
         expect(page.items[0].members[0].religion).toBeNull();
+    });
+});
+
+describe('the notes a row carries', () => {
+    it('hands the reviewer what no column could hold', async () => {
+        const page = await build([
+            member(10, 1, 4, 'Imported under "சிறப்பு" (special).'),
+        ]).list({ page: 1, limit: 25 });
+
+        expect(page.items[0].members[0].notes).toBe(
+            'Imported under "சிறப்பு" (special).',
+        );
     });
 });
