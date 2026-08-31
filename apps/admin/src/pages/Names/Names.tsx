@@ -33,13 +33,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { orpc } from '~/api/orpc';
-import { useDebounced } from '~/utils';
-
-const STATUS_COLOUR: Record<NameStatus, 'success' | 'warning' | 'default'> = {
-    published: 'success',
-    candidate: 'warning',
-    rejected: 'default',
-};
+import { STATUS_COLOUR, useDebounced } from '~/utils';
 
 const ANY = 'any';
 

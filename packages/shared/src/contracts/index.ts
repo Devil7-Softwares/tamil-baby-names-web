@@ -1,8 +1,10 @@
 import { adminAuthContract } from './adminAuth.js';
 import { adminNamesContract } from './adminNames.js';
+import { adminOverviewContract } from './adminOverview.js';
 
 export * from './adminAuth.js';
 export * from './adminNames.js';
+export * from './adminOverview.js';
 export * from './errors.js';
 
 /**
@@ -14,5 +16,6 @@ export const contract = {
     admin: {
         auth: adminAuthContract,
         names: adminNamesContract,
+        overview: adminOverviewContract,
     },
 };

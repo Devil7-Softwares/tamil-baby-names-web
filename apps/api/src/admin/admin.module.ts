@@ -8,6 +8,8 @@ import { AdminAuthGuard } from './auth/admin-auth.guard.js';
 import { AdminAuthService } from './auth/admin-auth.service.js';
 import { AdminNamesController } from './names/admin-names.controller.js';
 import { AdminNamesService } from './names/admin-names.service.js';
+import { AdminOverviewController } from './overview/admin-overview.controller.js';
+import { AdminOverviewService } from './overview/admin-overview.service.js';
 import { AdminBootstrapService } from './users/admin-bootstrap.service.js';
 import { UsersService } from './users/users.service.js';
 
@@ -26,12 +28,17 @@ declare module '@orpc/nest' {
             inject: [REQUEST],
         }),
     ],
-    controllers: [AdminAuthController, AdminNamesController],
+    controllers: [
+        AdminAuthController,
+        AdminNamesController,
+        AdminOverviewController,
+    ],
     providers: [
         AdminAuthGuard,
         AdminAuthService,
         AdminBootstrapService,
         AdminNamesService,
+        AdminOverviewService,
         UsersService,
     ],
     exports: [AdminAuthGuard, AdminAuthService, UsersService],
