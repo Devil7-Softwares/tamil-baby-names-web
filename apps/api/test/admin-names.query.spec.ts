@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
     adminNamesWhere,
     escapeLike,
+    meaningSubjectWhere,
 } from '../src/admin/names/admin-names.query.js';
 
 const base: AdminNamesQuery = { page: 1, limit: 25 };
@@ -67,5 +68,19 @@ describe('adminNamesWhere', () => {
 
     it('adds nothing when the duplicates filter is off', () => {
         expect(clauses({ ...base, duplicatesOnly: false })).toEqual([]);
+    });
+});
+
+describe('meaningSubjectWhere', () => {
+    it('gathers the other readings of a single name', () => {
+        expect(
+            meaningSubjectWhere({ nameId: 12, twinNameId: null, slot: 1 }),
+        ).toEqual({ nameId: 12 });
+    });
+
+    it('keeps the two sides of a twin pair apart', () => {
+        expect(
+            meaningSubjectWhere({ nameId: null, twinNameId: 4, slot: 2 }),
+        ).toEqual({ twinNameId: 4, slot: 2 });
     });
 });

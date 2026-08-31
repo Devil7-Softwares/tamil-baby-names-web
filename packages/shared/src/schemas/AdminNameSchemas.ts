@@ -51,7 +51,24 @@ export const AdminNamesPageSchema = z.object({
     limit: z.number().int().positive(),
 });
 
+/** The id travels in the path, so it arrives as a string whatever sent it. */
+export const AdminStatusUpdateSchema = z.object({
+    id: z.coerce.number().int().positive(),
+    status: z.enum(NAME_STATUSES),
+});
+
+/**
+ * Every reading a meaning review changed. Publishing one returns the reading it
+ * displaced as well: only one reading of a name may be published, so the
+ * incumbent goes back to the pool rather than being rejected on its behalf.
+ */
+export const AdminMeaningsUpdateSchema = z.object({
+    meanings: z.array(AdminMeaningSchema),
+});
+
 export type AdminMeaning = z.infer<typeof AdminMeaningSchema>;
 export type AdminName = z.infer<typeof AdminNameSchema>;
 export type AdminNamesQuery = z.infer<typeof AdminNamesQuerySchema>;
 export type AdminNamesPage = z.infer<typeof AdminNamesPageSchema>;
+export type AdminStatusUpdate = z.infer<typeof AdminStatusUpdateSchema>;
+export type AdminMeaningsUpdate = z.infer<typeof AdminMeaningsUpdateSchema>;

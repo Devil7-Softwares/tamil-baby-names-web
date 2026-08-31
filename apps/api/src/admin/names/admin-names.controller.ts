@@ -16,4 +16,36 @@ export class AdminNamesController {
             this.names.list(input),
         );
     }
+
+    @UseGuards(AdminAuthGuard)
+    @Implement(contract.admin.names.setStatus)
+    setStatus() {
+        return implement(contract.admin.names.setStatus).handler(
+            async ({ errors, input }) => {
+                const updated = await this.names.setStatus(input);
+
+                if (!updated) {
+                    throw errors.NOT_FOUND();
+                }
+
+                return updated;
+            },
+        );
+    }
+
+    @UseGuards(AdminAuthGuard)
+    @Implement(contract.admin.names.setMeaningStatus)
+    setMeaningStatus() {
+        return implement(contract.admin.names.setMeaningStatus).handler(
+            async ({ errors, input }) => {
+                const updated = await this.names.setMeaningStatus(input);
+
+                if (!updated) {
+                    throw errors.NOT_FOUND();
+                }
+
+                return updated;
+            },
+        );
+    }
 }

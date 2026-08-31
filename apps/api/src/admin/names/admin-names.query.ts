@@ -37,3 +37,18 @@ export const adminNamesWhere = (query: AdminNamesQuery): WhereOptions => {
 
     return { [Op.and]: clauses };
 };
+
+/**
+ * The readings that compete with this one. A meaning belongs to either a name
+ * or one side of a twin pair, and only that side: slot 2 of a pair is a
+ * different subject from slot 1.
+ */
+export const meaningSubjectWhere = ({
+    nameId,
+    twinNameId,
+    slot,
+}: {
+    nameId: number | null;
+    twinNameId: number | null;
+    slot: number;
+}): WhereOptions => (nameId === null ? { twinNameId, slot } : { nameId });

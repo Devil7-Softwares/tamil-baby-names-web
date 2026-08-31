@@ -4,6 +4,7 @@ import {
     Chip,
     FormControlLabel,
     LinearProgress,
+    Menu,
     MenuItem,
     Paper,
     Stack,
@@ -19,7 +20,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     AdminMeaning,
     AdminName,
@@ -28,6 +29,7 @@ import {
     NameStatus,
 } from '@tbn/shared';
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 import { orpc } from '~/api/orpc';
 import { useDebounced } from '~/utils';
@@ -40,7 +42,54 @@ const STATUS_COLOUR: Record<NameStatus, 'success' | 'warning' | 'default'> = {
 
 const ANY = 'any';
 
-const Meanings: React.FC<{ meanings: AdminMeaning[] }> = ({ meanings }) => {
+/** The status, and the only control that changes it. */
+const StatusChip: React.FC<{
+    status: NameStatus;
+    disabled: boolean;
+    onChange: (status: NameStatus) => void;
+}> = ({ status, disabled, onChange }) => {
+    const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+
+    return (
+        <>
+            <Chip
+                size='small'
+                label={status}
+                color={STATUS_COLOUR[status]}
+                disabled={disabled}
+                onClick={(event) => setAnchor(event.currentTarget)}
+            />
+
+            <Menu
+                anchorEl={anchor}
+                open={!!anchor}
+                onClose={() => setAnchor(null)}
+            >
+                {NAME_STATUSES.map((value) => (
+                    <MenuItem
+                        key={value}
+                        selected={value === status}
+                        onClick={() => {
+                            setAnchor(null);
+
+                            if (value !== status) {
+                                onChange(value);
+                            }
+                        }}
+                    >
+                        {value}
+                    </MenuItem>
+                ))}
+            </Menu>
+        </>
+    );
+};
+
+const Meanings: React.FC<{
+    meanings: AdminMeaning[];
+    disabled: boolean;
+    onChange: (id: number, status: NameStatus) => void;
+}> = ({ meanings, disabled, onChange }) => {
     if (!meanings.length) {
         return (
             <Typography variant='body2' color='text.secondary'>
@@ -60,58 +109,105 @@ const Meanings: React.FC<{ meanings: AdminMeaning[] }> = ({ meanings }) => {
                 >
                     <Typography variant='body2'>{meaning.text}</Typography>
 
-                    {meaning.status !== 'published' && (
-                        <Chip
-                            size='small'
-                            label={meaning.status}
-                            color={STATUS_COLOUR[meaning.status]}
-                        />
-                    )}
+                    <StatusChip
+                        status={meaning.status}
+                        disabled={disabled}
+                        onChange={(status) => onChange(meaning.id, status)}
+                    />
                 </Stack>
             ))}
         </Stack>
     );
 };
 
-const NameRow: React.FC<{ row: AdminName }> = ({ row }) => (
-    <TableRow hover>
-        <TableCell>
-            <Stack direction='row' spacing={1} sx={{ alignItems: 'center' }}>
-                <Typography variant='body2'>{row.name}</Typography>
+const NameRow: React.FC<{ row: AdminName }> = ({ row }) => {
+    const queryClient = useQueryClient();
 
-                {row.duplicates > 1 && (
-                    <Tooltip
-                        title={`The catalogue holds this name on ${row.duplicates} rows`}
-                    >
-                        <Chip size='small' label={`×${row.duplicates}`} />
-                    </Tooltip>
-                )}
-            </Stack>
-        </TableCell>
+    // Without an input, the key matches every page and filter the reviewer has
+    // visited, not just the one on screen.
+    const reread = () =>
+        queryClient.invalidateQueries({
+            queryKey: orpc.admin.names.list.key(),
+        });
 
-        <TableCell>{row.gender}</TableCell>
-        <TableCell>{row.religion}</TableCell>
-        <TableCell>{row.language}</TableCell>
+    const nameStatus = useMutation(
+        orpc.admin.names.setStatus.mutationOptions({
+            onSuccess: reread,
+            onError: () => toast.error('Could not update the name.'),
+        }),
+    );
 
-        <TableCell>
-            <Chip
-                size='small'
-                label={row.status}
-                color={STATUS_COLOUR[row.status]}
-            />
-        </TableCell>
+    const meaningStatus = useMutation(
+        orpc.admin.names.setMeaningStatus.mutationOptions({
+            onSuccess: async ({ meanings }, { id }) => {
+                // Publishing a reading sends the one it replaced back to the
+                // pool, which is worth saying out loud: nobody asked for it.
+                meanings
+                    .filter((meaning) => meaning.id !== id)
+                    .forEach((meaning) =>
+                        toast.info(`“${meaning.text}” is a candidate again.`),
+                    );
 
-        <TableCell>
-            <Meanings meanings={row.meanings} />
-        </TableCell>
+                await reread();
+            },
+            onError: () => toast.error('Could not update the meaning.'),
+        }),
+    );
 
-        <TableCell>
-            <Typography variant='body2' color='text.secondary'>
-                {row.source ?? '—'}
-            </Typography>
-        </TableCell>
-    </TableRow>
-);
+    const pending = nameStatus.isPending || meaningStatus.isPending;
+
+    return (
+        <TableRow hover>
+            <TableCell>
+                <Stack
+                    direction='row'
+                    spacing={1}
+                    sx={{ alignItems: 'center' }}
+                >
+                    <Typography variant='body2'>{row.name}</Typography>
+
+                    {row.duplicates > 1 && (
+                        <Tooltip
+                            title={`The catalogue holds this name on ${row.duplicates} rows`}
+                        >
+                            <Chip size='small' label={`×${row.duplicates}`} />
+                        </Tooltip>
+                    )}
+                </Stack>
+            </TableCell>
+
+            <TableCell>{row.gender}</TableCell>
+            <TableCell>{row.religion}</TableCell>
+            <TableCell>{row.language}</TableCell>
+
+            <TableCell>
+                <StatusChip
+                    status={row.status}
+                    disabled={pending}
+                    onChange={(status) =>
+                        nameStatus.mutate({ id: row.id, status })
+                    }
+                />
+            </TableCell>
+
+            <TableCell>
+                <Meanings
+                    meanings={row.meanings}
+                    disabled={pending}
+                    onChange={(id, status) =>
+                        meaningStatus.mutate({ id, status })
+                    }
+                />
+            </TableCell>
+
+            <TableCell>
+                <Typography variant='body2' color='text.secondary'>
+                    {row.source ?? '—'}
+                </Typography>
+            </TableCell>
+        </TableRow>
+    );
+};
 
 const Names: React.FC = () => {
     const [search, setSearch] = useState('');

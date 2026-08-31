@@ -1,20 +1,28 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AdminMeaning, AdminNamesPage, AdminNamesQuery } from '@tbn/shared';
-import { col, fn, Op } from 'sequelize';
+import {
+    AdminMeaning,
+    AdminMeaningsUpdate,
+    AdminNamesPage,
+    AdminNamesQuery,
+    AdminStatusUpdate,
+} from '@tbn/shared';
+import { col, fn, Op, Sequelize, Transaction } from 'sequelize';
 
 import {
     MEANINGS_MODEL,
     NAMES_MODEL,
+    SEQUELIZE,
     SOURCES_MODEL,
 } from '../../database/database.constants.js';
 import {
+    IMeaning,
     ISource,
     MeaningsModel,
     NamesModel,
     SourcesModel,
 } from '../../database/models.js';
 import { SortCollationService } from '../../database/sort-collation.service.js';
-import { adminNamesWhere } from './admin-names.query.js';
+import { adminNamesWhere, meaningSubjectWhere } from './admin-names.query.js';
 
 /** A meaning before its source id is resolved to the slug the client sees. */
 type StoredMeaning = Omit<AdminMeaning, 'source'> & { sourceId: number | null };
@@ -22,6 +30,7 @@ type StoredMeaning = Omit<AdminMeaning, 'source'> & { sourceId: number | null };
 @Injectable()
 export class AdminNamesService {
     constructor(
+        @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
         @Inject(NAMES_MODEL) private readonly names: NamesModel,
         @Inject(MEANINGS_MODEL) private readonly meanings: MeaningsModel,
         @Inject(SOURCES_MODEL) private readonly sources: SourcesModel,
@@ -65,6 +74,111 @@ export class AdminNamesService {
             page: query.page,
             limit: query.limit,
         };
+    }
+
+    /** Null when no such row exists, which the handler reports as a 404. */
+    async setStatus({
+        id,
+        status,
+    }: AdminStatusUpdate): Promise<AdminStatusUpdate | null> {
+        const [affected] = await this.names.update(
+            { status },
+            { where: { id } },
+        );
+
+        return affected ? { id, status } : null;
+    }
+
+    async setMeaningStatus({
+        id,
+        status,
+    }: AdminStatusUpdate): Promise<AdminMeaningsUpdate | null> {
+        const changed = await this.sequelize.transaction(
+            async (transaction) => {
+                const subject = await this.meanings.findByPk(id, {
+                    transaction,
+                });
+
+                if (!subject) {
+                    return null;
+                }
+
+                // Before the promotion, not after: `meanings_published_name_idx`
+                // is unique, so writing the second published row would be
+                // rejected outright.
+                const displaced =
+                    status === 'published'
+                        ? await this.demoteIncumbents(
+                              subject.dataValues,
+                              transaction,
+                          )
+                        : [];
+
+                await this.meanings.update(
+                    { status },
+                    { where: { id }, transaction },
+                );
+
+                return [{ ...subject.dataValues, status }, ...displaced];
+            },
+        );
+
+        if (!changed) {
+            return null;
+        }
+
+        const slugs = await this.sourceSlugs();
+
+        return {
+            meanings: changed.map(({ id, text, status, sourceId }) => ({
+                id,
+                text,
+                status,
+                source: sourceId ? (slugs.get(sourceId) ?? null) : null,
+            })),
+        };
+    }
+
+    /**
+     * Sends whatever is published for this subject back to the pool. Candidate,
+     * never rejected: rejection is a reviewer's judgment on the text, not
+     * something another reading's promotion should decide on its behalf.
+     */
+    private async demoteIncumbents(
+        subject: IMeaning,
+        transaction: Transaction,
+    ): Promise<IMeaning[]> {
+        // Locks every reading of the subject, the one being promoted included,
+        // so two reviewers publishing different readings of the same name
+        // queue up instead of racing the unique index.
+        const siblings = await this.meanings.findAll({
+            where: meaningSubjectWhere(subject),
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+
+        const incumbents = siblings
+            .map(({ dataValues }) => dataValues)
+            .filter(
+                (row) => row.id !== subject.id && row.status === 'published',
+            );
+
+        if (!incumbents.length) {
+            return [];
+        }
+
+        await this.meanings.update(
+            { status: 'candidate' },
+            {
+                where: { id: { [Op.in]: incumbents.map(({ id }) => id) } },
+                transaction,
+            },
+        );
+
+        return incumbents.map((row) => ({
+            ...row,
+            status: 'candidate' as const,
+        }));
     }
 
     /**

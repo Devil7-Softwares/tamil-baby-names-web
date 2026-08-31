@@ -12,6 +12,7 @@ import {
     ADMIN_USERS_MODEL,
     MEANINGS_MODEL,
     NAMES_MODEL,
+    SEQUELIZE,
     SOURCES_MODEL,
 } from '../src/database/database.constants.js';
 import { IAdminUser } from '../src/database/models.js';
@@ -42,7 +43,7 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
     // AdminModule resolves the model from.
     // The catalogue tokens are unused by these tests but are what the admin
     // module's other controllers are built from.
-    const catalogue = [NAMES_MODEL, MEANINGS_MODEL, SOURCES_MODEL];
+    const catalogue = [SEQUELIZE, NAMES_MODEL, MEANINGS_MODEL, SOURCES_MODEL];
 
     @Global()
     @Module({
