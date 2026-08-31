@@ -11,6 +11,7 @@ import {
     SEQUELIZE,
     SOURCES_MODEL,
     TWIN_NAMES_MODEL,
+    VERIFICATIONS_MODEL,
 } from './database.constants.js';
 import {
     defineAdminUsers,
@@ -19,6 +20,7 @@ import {
     defineNames,
     defineSources,
     defineTwinNames,
+    defineVerifications,
 } from './models.js';
 import { SortCollationService } from './sort-collation.service.js';
 
@@ -60,6 +62,11 @@ import { SortCollationService } from './sort-collation.service.js';
             inject: [SEQUELIZE],
         },
         {
+            provide: VERIFICATIONS_MODEL,
+            useFactory: defineVerifications,
+            inject: [SEQUELIZE],
+        },
+        {
             provide: ADMIN_USERS_MODEL,
             useFactory: defineAdminUsers,
             inject: [SEQUELIZE],
@@ -74,6 +81,7 @@ import { SortCollationService } from './sort-collation.service.js';
         MEANINGS_MODEL,
         CLUSTERS_MODEL,
         SOURCES_MODEL,
+        VERIFICATIONS_MODEL,
         ADMIN_USERS_MODEL,
         DatabaseBootstrap,
         SortCollationService,

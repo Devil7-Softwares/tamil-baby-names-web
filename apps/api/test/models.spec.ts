@@ -7,6 +7,7 @@ import {
     defineNames,
     defineSources,
     defineTwinNames,
+    defineVerifications,
 } from '../src/database/models.js';
 
 const sequelize = new Sequelize({ dialect: 'postgres' });
@@ -15,6 +16,7 @@ const twinNames = defineTwinNames(sequelize);
 const meanings = defineMeanings(sequelize);
 const clusters = defineClusters(sequelize);
 const sources = defineSources(sequelize);
+const verifications = defineVerifications(sequelize);
 
 describe('models', () => {
     it('reads the tables the catalogue already uses', () => {
@@ -112,6 +114,37 @@ describe('models', () => {
 
     it('points a catalogue row at its cluster', () => {
         expect(names.getAttributes().clusterId.field).toBe('cluster_id');
+    });
+
+    it('records a transition rather than a state', () => {
+        expect(verifications.tableName).toBe('verifications');
+        expect(Object.keys(verifications.getAttributes()).sort()).toEqual([
+            'actorId',
+            'createdAt',
+            'fromStatus',
+            'id',
+            'meaningId',
+            'nameId',
+            'reason',
+            'toStatus',
+        ]);
+        expect(verifications.getAttributes().fromStatus.field).toBe(
+            'from_status',
+        );
+    });
+
+    // A ledger entry is written once and never revised.
+    it('keeps no updated_at on a verification', () => {
+        expect(Object.keys(verifications.getAttributes())).not.toContain(
+            'updatedAt',
+        );
+    });
+
+    it('attributes a decision to a reviewer unless the pipeline made it', () => {
+        expect(verifications.getAttributes().actorId.allowNull).not.toBe(false);
+        expect(verifications.getAttributes().reason.defaultValue).toBe(
+            'decision',
+        );
     });
 
     it('reads the source each row was imported from', () => {

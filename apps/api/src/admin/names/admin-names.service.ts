@@ -15,6 +15,7 @@ import {
     NAMES_MODEL,
     SEQUELIZE,
     SOURCES_MODEL,
+    VERIFICATIONS_MODEL,
 } from '../../database/database.constants.js';
 import {
     ClustersModel,
@@ -24,6 +25,8 @@ import {
     NamesModel,
     NamesRow,
     SourcesModel,
+    VerificationDraft,
+    VerificationsModel,
 } from '../../database/models.js';
 import { SortCollationService } from '../../database/sort-collation.service.js';
 import {
@@ -47,6 +50,8 @@ export class AdminNamesService {
         @Inject(MEANINGS_MODEL) private readonly meanings: MeaningsModel,
         @Inject(CLUSTERS_MODEL) private readonly clusters: ClustersModel,
         @Inject(SOURCES_MODEL) private readonly sources: SourcesModel,
+        @Inject(VERIFICATIONS_MODEL)
+        private readonly verifications: VerificationsModel,
         private readonly sortCollation: SortCollationService,
     ) {}
 
@@ -108,22 +113,41 @@ export class AdminNamesService {
     }
 
     /** Null when no such row exists, which the handler reports as a 404. */
-    async setStatus({
-        id,
-        status,
-    }: AdminStatusUpdate): Promise<AdminStatusUpdate | null> {
-        const [affected] = await this.names.update(
-            { status },
-            { where: { id } },
-        );
+    async setStatus(
+        { id, status }: AdminStatusUpdate,
+        actorId: number,
+    ): Promise<AdminStatusUpdate | null> {
+        return this.sequelize.transaction(async (transaction) => {
+            // Read before written, because the ledger records a transition and
+            // the status it moved from is gone once the update lands.
+            const row = await this.names.findByPk(id, { transaction });
 
-        return affected ? { id, status } : null;
+            if (!row) {
+                return null;
+            }
+
+            await this.names.update({ status }, { where: { id }, transaction });
+
+            await this.record(
+                [
+                    {
+                        nameId: id,
+                        fromStatus: row.dataValues.status,
+                        toStatus: status,
+                        actorId,
+                    },
+                ],
+                transaction,
+            );
+
+            return { id, status };
+        });
     }
 
-    async setMeaningStatus({
-        id,
-        status,
-    }: AdminStatusUpdate): Promise<AdminMeaningsUpdate | null> {
+    async setMeaningStatus(
+        { id, status }: AdminStatusUpdate,
+        actorId: number,
+    ): Promise<AdminMeaningsUpdate | null> {
         const changed = await this.sequelize.transaction(
             async (transaction) => {
                 const subject = await this.meanings.findByPk(id, {
@@ -150,6 +174,25 @@ export class AdminNamesService {
                     { where: { id }, transaction },
                 );
 
+                await this.record(
+                    [
+                        {
+                            meaningId: id,
+                            fromStatus: subject.dataValues.status,
+                            toStatus: status,
+                            actorId,
+                        },
+                        ...displaced.map((row) => ({
+                            meaningId: row.id,
+                            fromStatus: 'published' as const,
+                            toStatus: row.status,
+                            reason: 'displacement' as const,
+                            actorId,
+                        })),
+                    ],
+                    transaction,
+                );
+
                 return [{ ...subject.dataValues, status }, ...displaced];
             },
         );
@@ -169,6 +212,17 @@ export class AdminNamesService {
                 source: sourceId ? (slugs.get(sourceId) ?? null) : null,
             })),
         };
+    }
+
+    /**
+     * Writes in the caller's transaction, so a status change and the record of
+     * who made it either both land or neither does.
+     */
+    private async record(
+        entries: VerificationDraft[],
+        transaction: Transaction,
+    ): Promise<void> {
+        await this.verifications.bulkCreate(entries, { transaction });
     }
 
     /**

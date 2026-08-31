@@ -6,6 +6,8 @@ import {
     NameStatus,
     USER_ROLES,
     UserRole,
+    VERIFICATION_REASONS,
+    VerificationReason,
 } from '@tbn/shared';
 import { DataTypes, Model, ModelStatic, Sequelize } from 'sequelize';
 
@@ -104,11 +106,33 @@ export type SourceDraft = Pick<ISource, 'slug' | 'kind'> &
         >
     >;
 
+/**
+ * One review decision, kept after the fact. The subject is a catalogue row or a
+ * reading, as an exclusive arc rather than a table/id pair, so both sides keep
+ * real referential integrity.
+ */
+export interface IVerification {
+    id: number;
+    nameId: number | null;
+    meaningId: number | null;
+    fromStatus: NameStatus;
+    toStatus: NameStatus;
+    reason: VerificationReason;
+    actorId: number | null;
+    createdAt: Date;
+}
+
+export type VerificationDraft = Pick<IVerification, 'fromStatus' | 'toStatus'> &
+    Partial<Pick<IVerification, 'nameId' | 'meaningId' | 'reason' | 'actorId'>>;
+
 export type NamesModel = ModelStatic<Model<NamesRow>>;
 export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
 export type MeaningsModel = ModelStatic<Model<IMeaning, MeaningDraft>>;
 export type ClustersModel = ModelStatic<Model<ICluster, ClusterDraft>>;
 export type SourcesModel = ModelStatic<Model<ISource, SourceDraft>>;
+export type VerificationsModel = ModelStatic<
+    Model<IVerification, VerificationDraft>
+>;
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
 const table = {
@@ -235,6 +259,42 @@ export const defineSources = (sequelize: Sequelize): SourcesModel =>
             ...table,
             tableName: 'sources',
             timestamps: true,
+            underscored: true,
+        },
+    );
+
+export const defineVerifications = (sequelize: Sequelize): VerificationsModel =>
+    sequelize.define<Model<IVerification, VerificationDraft>>(
+        'Verifications',
+        {
+            id,
+            nameId: { type: DataTypes.INTEGER, field: 'name_id' },
+            meaningId: { type: DataTypes.INTEGER, field: 'meaning_id' },
+            fromStatus: {
+                type: DataTypes.ENUM(...NAME_STATUSES),
+                field: 'from_status',
+                allowNull: false,
+            },
+            toStatus: {
+                type: DataTypes.ENUM(...NAME_STATUSES),
+                field: 'to_status',
+                allowNull: false,
+            },
+            reason: {
+                type: DataTypes.ENUM(...VERIFICATION_REASONS),
+                allowNull: false,
+                defaultValue: 'decision',
+            },
+            actorId: { type: DataTypes.INTEGER, field: 'actor_id' },
+            createdAt: DataTypes.DATE,
+        },
+        {
+            ...table,
+            tableName: 'verifications',
+            // Written once and never revised, so there is nothing an
+            // `updated_at` could say that `created_at` does not.
+            timestamps: true,
+            updatedAt: false,
             underscored: true,
         },
     );

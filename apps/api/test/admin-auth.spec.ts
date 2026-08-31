@@ -15,6 +15,7 @@ import {
     NAMES_MODEL,
     SEQUELIZE,
     SOURCES_MODEL,
+    VERIFICATIONS_MODEL,
 } from '../src/database/database.constants.js';
 import { IAdminUser } from '../src/database/models.js';
 import { SortCollationService } from '../src/database/sort-collation.service.js';
@@ -50,6 +51,7 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
         MEANINGS_MODEL,
         CLUSTERS_MODEL,
         SOURCES_MODEL,
+        VERIFICATIONS_MODEL,
     ];
 
     @Global()
