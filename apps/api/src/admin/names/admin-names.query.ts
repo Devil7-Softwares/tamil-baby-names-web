@@ -1,5 +1,5 @@
-import { AdminNamesQuery } from '@tbn/shared';
-import { literal, Op, WhereOptions } from 'sequelize';
+import { AdminNamesQuery, NAME_STATUSES, NameStatus } from '@tbn/shared';
+import { literal, Op, Utils, WhereOptions } from 'sequelize';
 
 /**
  * `%` and `_` are LIKE wildcards, so a reviewer searching for a literal one
@@ -9,16 +9,35 @@ import { literal, Op, WhereOptions } from 'sequelize';
 export const escapeLike = (term: string): string =>
     term.replace(/[\\%_]/g, (character) => `\\${character}`);
 
-/** Names the catalogue holds more than once, whatever their status. */
+/** Clusters the import filed more than once, whatever their rows' status. */
 const DUPLICATED = literal(
-    `"Names"."name" IN (SELECT "name" FROM "names" GROUP BY "name" HAVING count(*) > 1)`,
+    `(SELECT count(*) FROM "names" WHERE "names"."cluster_id" = "Clusters"."id") > 1`,
 );
 
-export const adminNamesWhere = (query: AdminNamesQuery): WhereOptions => {
+/**
+ * Status lives on the member rows, not the cluster, so a cluster matches when
+ * any row in it does: narrowing to `candidate` asks which clusters still hold
+ * something undecided, not which have nothing decided.
+ *
+ * Built once per status from the enum itself, so the subquery text can never
+ * be assembled out of anything that arrived with the request.
+ */
+const HAS_MEMBER: Record<NameStatus, Utils.Literal> = Object.fromEntries(
+    NAME_STATUSES.map((status) => [
+        status,
+        literal(
+            `EXISTS (SELECT 1 FROM "names"
+                     WHERE "names"."cluster_id" = "Clusters"."id"
+                       AND "names"."status" = '${status}')`,
+        ),
+    ]),
+) as Record<NameStatus, Utils.Literal>;
+
+export const adminClustersWhere = (query: AdminNamesQuery): WhereOptions => {
     const clauses: WhereOptions[] = [];
 
     if (query.status) {
-        clauses.push({ status: query.status });
+        clauses.push(HAS_MEMBER[query.status]);
     }
 
     if (query.gender) {

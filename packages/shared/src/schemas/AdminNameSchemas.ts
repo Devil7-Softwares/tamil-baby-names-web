@@ -9,19 +9,33 @@ export const AdminMeaningSchema = z.object({
     text: z.string(),
     status: z.enum(NAME_STATUSES),
     source: z.string().nullable(),
+    /** The row this reading belongs to, and the one publishing it wins. */
+    nameId: z.number().int().positive().nullable(),
 });
 
-export const AdminNameSchema = z.object({
+/**
+ * One catalogue row inside a cluster. The spelling and gender live on the
+ * cluster; what stays here is what the import filed differently row by row.
+ */
+export const AdminClusterMemberSchema = z.object({
     id: z.number().int().positive(),
-    name: z.string(),
-    gender: z.string(),
     religion: z.string(),
     language: z.string(),
     status: z.enum(NAME_STATUSES),
     source: z.string().nullable(),
+});
+
+export const AdminClusterSchema = z.object({
+    id: z.number().int().positive(),
+    name: z.string(),
+    gender: z.string(),
+    members: z.array(AdminClusterMemberSchema),
+    /**
+     * Every reading across the cluster's rows. A cluster the import filed more
+     * than once is where the readings disagree, which is the whole reason to
+     * look at it.
+     */
     meanings: z.array(AdminMeaningSchema),
-    /** How many rows carry this same name, this one included. */
-    duplicates: z.number().int().positive(),
 });
 
 /**
@@ -37,15 +51,14 @@ export const AdminNamesQuerySchema = z.object({
     gender: z.enum(GENDERS).optional(),
     search: z.string().trim().max(255).optional(),
     /**
-     * Only names the catalogue holds more than once. These are the rows worth
-     * a reviewer's time: the import filed them separately and their meanings
-     * disagree.
+     * Only clusters the import filed more than once. These are the ones worth
+     * a reviewer's time: their readings are the ones that disagree.
      */
     duplicatesOnly: BooleanParam.optional(),
 });
 
-export const AdminNamesPageSchema = z.object({
-    items: z.array(AdminNameSchema),
+export const AdminClustersPageSchema = z.object({
+    items: z.array(AdminClusterSchema),
     total: z.number().int().nonnegative(),
     page: z.number().int().positive(),
     limit: z.number().int().positive(),
@@ -67,8 +80,9 @@ export const AdminMeaningsUpdateSchema = z.object({
 });
 
 export type AdminMeaning = z.infer<typeof AdminMeaningSchema>;
-export type AdminName = z.infer<typeof AdminNameSchema>;
+export type AdminClusterMember = z.infer<typeof AdminClusterMemberSchema>;
+export type AdminCluster = z.infer<typeof AdminClusterSchema>;
 export type AdminNamesQuery = z.infer<typeof AdminNamesQuerySchema>;
-export type AdminNamesPage = z.infer<typeof AdminNamesPageSchema>;
+export type AdminClustersPage = z.infer<typeof AdminClustersPageSchema>;
 export type AdminStatusUpdate = z.infer<typeof AdminStatusUpdateSchema>;
 export type AdminMeaningsUpdate = z.infer<typeof AdminMeaningsUpdateSchema>;

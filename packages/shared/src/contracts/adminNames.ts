@@ -1,8 +1,8 @@
 import { oc } from '@orpc/contract';
 
 import {
+    AdminClustersPageSchema,
     AdminMeaningsUpdateSchema,
-    AdminNamesPageSchema,
     AdminNamesQuerySchema,
     AdminStatusUpdateSchema,
 } from '../schemas/AdminNameSchemas.js';
@@ -13,14 +13,14 @@ export const adminNamesContract = {
         .route({
             method: 'GET',
             path: '/admin/names',
-            summary: 'Browse the catalogue, whatever a row’s status',
+            summary: 'Browse the catalogue a cluster at a time',
         })
         .errors({
             UNAUTHORIZED: commonErrors.UNAUTHORIZED,
             SERVICE_UNAVAILABLE: commonErrors.SERVICE_UNAVAILABLE,
         })
         .input(AdminNamesQuerySchema)
-        .output(AdminNamesPageSchema),
+        .output(AdminClustersPageSchema),
 
     setStatus: oc
         .route({

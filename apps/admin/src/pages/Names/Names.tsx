@@ -22,8 +22,9 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+    AdminCluster,
+    AdminClusterMember,
     AdminMeaning,
-    AdminName,
     GENDERS,
     NAME_STATUSES,
     NameStatus,
@@ -85,6 +86,38 @@ const StatusChip: React.FC<{
     );
 };
 
+/** The catalogue rows the cluster gathered, one line each. */
+const Members: React.FC<{
+    members: AdminClusterMember[];
+    disabled: boolean;
+    onChange: (id: number, status: NameStatus) => void;
+}> = ({ members, disabled, onChange }) => (
+    <Stack spacing={0.5}>
+        {members.map((member) => (
+            <Stack
+                key={member.id}
+                direction='row'
+                spacing={1}
+                sx={{ alignItems: 'center' }}
+            >
+                <StatusChip
+                    status={member.status}
+                    disabled={disabled}
+                    onChange={(status) => onChange(member.id, status)}
+                />
+
+                <Typography variant='body2'>
+                    {member.religion} · {member.language}
+                </Typography>
+
+                <Typography variant='body2' color='text.secondary'>
+                    {member.source ?? '—'}
+                </Typography>
+            </Stack>
+        ))}
+    </Stack>
+);
+
 const Meanings: React.FC<{
     meanings: AdminMeaning[];
     disabled: boolean;
@@ -120,7 +153,7 @@ const Meanings: React.FC<{
     );
 };
 
-const NameRow: React.FC<{ row: AdminName }> = ({ row }) => {
+const ClusterRow: React.FC<{ cluster: AdminCluster }> = ({ cluster }) => {
     const queryClient = useQueryClient();
 
     // Without an input, the key matches every page and filter the reviewer has
@@ -164,46 +197,39 @@ const NameRow: React.FC<{ row: AdminName }> = ({ row }) => {
                     spacing={1}
                     sx={{ alignItems: 'center' }}
                 >
-                    <Typography variant='body2'>{row.name}</Typography>
+                    <Typography variant='body2'>{cluster.name}</Typography>
 
-                    {row.duplicates > 1 && (
+                    {cluster.members.length > 1 && (
                         <Tooltip
-                            title={`The catalogue holds this name on ${row.duplicates} rows`}
+                            title={`The import filed this name on ${cluster.members.length} rows`}
                         >
-                            <Chip size='small' label={`×${row.duplicates}`} />
+                            <Chip
+                                size='small'
+                                label={`×${cluster.members.length}`}
+                            />
                         </Tooltip>
                     )}
                 </Stack>
             </TableCell>
 
-            <TableCell>{row.gender}</TableCell>
-            <TableCell>{row.religion}</TableCell>
-            <TableCell>{row.language}</TableCell>
+            <TableCell>{cluster.gender}</TableCell>
 
             <TableCell>
-                <StatusChip
-                    status={row.status}
+                <Members
+                    members={cluster.members}
                     disabled={pending}
-                    onChange={(status) =>
-                        nameStatus.mutate({ id: row.id, status })
-                    }
+                    onChange={(id, status) => nameStatus.mutate({ id, status })}
                 />
             </TableCell>
 
             <TableCell>
                 <Meanings
-                    meanings={row.meanings}
+                    meanings={cluster.meanings}
                     disabled={pending}
                     onChange={(id, status) =>
                         meaningStatus.mutate({ id, status })
                     }
                 />
-            </TableCell>
-
-            <TableCell>
-                <Typography variant='body2' color='text.secondary'>
-                    {row.source ?? '—'}
-                </Typography>
             </TableCell>
         </TableRow>
     );
@@ -219,7 +245,7 @@ const Names: React.FC = () => {
 
     const term = useDebounced(search);
 
-    const names = useQuery(
+    const clusters = useQuery(
         orpc.admin.names.list.queryOptions({
             input: {
                 page: page + 1,
@@ -315,18 +341,18 @@ const Names: React.FC = () => {
                                 }
                             />
                         }
-                        label='Held more than once'
+                        label='Filed more than once'
                     />
                 </Stack>
             </Paper>
 
-            {names.isError && (
+            {clusters.isError && (
                 <Alert severity='error'>Could not load the catalogue.</Alert>
             )}
 
             <Paper>
                 <Box sx={{ height: 4 }}>
-                    {names.isFetching && <LinearProgress />}
+                    {clusters.isFetching && <LinearProgress />}
                 </Box>
 
                 <TableContainer>
@@ -335,22 +361,22 @@ const Names: React.FC = () => {
                             <TableRow>
                                 <TableCell>Name</TableCell>
                                 <TableCell>Gender</TableCell>
-                                <TableCell>Religion</TableCell>
-                                <TableCell>Language</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Meanings</TableCell>
-                                <TableCell>Source</TableCell>
+                                <TableCell>Rows</TableCell>
+                                <TableCell>Readings</TableCell>
                             </TableRow>
                         </TableHead>
 
                         <TableBody>
-                            {names.data?.items.map((row) => (
-                                <NameRow key={row.id} row={row} />
+                            {clusters.data?.items.map((cluster) => (
+                                <ClusterRow
+                                    key={cluster.id}
+                                    cluster={cluster}
+                                />
                             ))}
 
-                            {names.data?.items.length === 0 && (
+                            {clusters.data?.items.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={7}>
+                                    <TableCell colSpan={4}>
                                         <Typography
                                             variant='body2'
                                             color='text.secondary'
@@ -366,7 +392,7 @@ const Names: React.FC = () => {
 
                 <TablePagination
                     component='div'
-                    count={names.data?.total ?? 0}
+                    count={clusters.data?.total ?? 0}
                     page={page}
                     onPageChange={(_, next) => setPage(next)}
                     rowsPerPage={limit}

@@ -10,6 +10,7 @@ import { AdminBootstrapService } from '../src/admin/users/admin-bootstrap.servic
 import { validateEnv } from '../src/config/env.js';
 import {
     ADMIN_USERS_MODEL,
+    CLUSTERS_MODEL,
     MEANINGS_MODEL,
     NAMES_MODEL,
     SEQUELIZE,
@@ -43,7 +44,13 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
     // AdminModule resolves the model from.
     // The catalogue tokens are unused by these tests but are what the admin
     // module's other controllers are built from.
-    const catalogue = [SEQUELIZE, NAMES_MODEL, MEANINGS_MODEL, SOURCES_MODEL];
+    const catalogue = [
+        SEQUELIZE,
+        NAMES_MODEL,
+        MEANINGS_MODEL,
+        CLUSTERS_MODEL,
+        SOURCES_MODEL,
+    ];
 
     @Global()
     @Module({

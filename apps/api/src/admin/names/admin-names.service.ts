@@ -1,31 +1,43 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+    AdminClustersPage,
     AdminMeaning,
     AdminMeaningsUpdate,
-    AdminNamesPage,
     AdminNamesQuery,
     AdminStatusUpdate,
+    NAME_STATUSES,
 } from '@tbn/shared';
-import { col, fn, Op, Sequelize, Transaction } from 'sequelize';
+import { Op, Sequelize, Transaction } from 'sequelize';
 
 import {
+    CLUSTERS_MODEL,
     MEANINGS_MODEL,
     NAMES_MODEL,
     SEQUELIZE,
     SOURCES_MODEL,
 } from '../../database/database.constants.js';
 import {
+    ClustersModel,
     IMeaning,
     ISource,
     MeaningsModel,
     NamesModel,
+    NamesRow,
     SourcesModel,
 } from '../../database/models.js';
 import { SortCollationService } from '../../database/sort-collation.service.js';
-import { adminNamesWhere, meaningSubjectWhere } from './admin-names.query.js';
+import {
+    adminClustersWhere,
+    meaningSubjectWhere,
+} from './admin-names.query.js';
 
 /** A meaning before its source id is resolved to the slug the client sees. */
 type StoredMeaning = Omit<AdminMeaning, 'source'> & { sourceId: number | null };
+
+/** Published, then candidate, then rejected — the order a reviewer reads in. */
+const byStatusThenId = (a: StoredMeaning, b: StoredMeaning): number =>
+    NAME_STATUSES.indexOf(a.status) - NAME_STATUSES.indexOf(b.status) ||
+    a.id - b.id;
 
 @Injectable()
 export class AdminNamesService {
@@ -33,43 +45,62 @@ export class AdminNamesService {
         @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
         @Inject(NAMES_MODEL) private readonly names: NamesModel,
         @Inject(MEANINGS_MODEL) private readonly meanings: MeaningsModel,
+        @Inject(CLUSTERS_MODEL) private readonly clusters: ClustersModel,
         @Inject(SOURCES_MODEL) private readonly sources: SourcesModel,
         private readonly sortCollation: SortCollationService,
     ) {}
 
-    async list(query: AdminNamesQuery): Promise<AdminNamesPage> {
-        const { rows, count } = await this.names.findAndCountAll({
-            where: adminNamesWhere(query),
-            order: this.sortCollation.order(['name']),
+    /**
+     * A page of clusters rather than of catalogue rows: the import filed a name
+     * once per reading it found, and a reviewer wants those readings in front
+     * of them together rather than pages apart.
+     */
+    async list(query: AdminNamesQuery): Promise<AdminClustersPage> {
+        const { rows, count } = await this.clusters.findAndCountAll({
+            where: adminClustersWhere(query),
+            order: this.sortCollation.order(['sort_key']),
             offset: (query.page - 1) * query.limit,
             limit: query.limit,
         });
 
-        const ids = rows.map(({ dataValues }) => dataValues.id);
+        const members = await this.membersFor(
+            rows.map(({ dataValues }) => dataValues.id),
+        );
 
-        const [meanings, duplicates, slugs] = await Promise.all([
-            this.meaningsFor(ids),
-            this.duplicateCounts(rows.map(({ dataValues }) => dataValues.name)),
+        const [meanings, slugs] = await Promise.all([
+            this.meaningsFor([...members.values()].flat().map(({ id }) => id)),
             this.sourceSlugs(),
         ]);
 
+        const slug = (id: number | null) =>
+            id === null ? null : (slugs.get(id) ?? null);
+
         return {
-            items: rows.map(({ dataValues: row }) => ({
-                id: row.id,
-                name: row.name,
-                gender: row.gender,
-                religion: row.religion,
-                language: row.language,
-                status: row.status,
-                source: row.sourceId ? (slugs.get(row.sourceId) ?? null) : null,
-                meanings: (meanings.get(row.id) ?? []).map(
-                    ({ sourceId, ...meaning }) => ({
-                        ...meaning,
-                        source: sourceId ? (slugs.get(sourceId) ?? null) : null,
-                    }),
-                ),
-                duplicates: duplicates.get(row.name) ?? 1,
-            })),
+            items: rows.map(({ dataValues: cluster }) => {
+                const rowsHere = members.get(cluster.id) ?? [];
+
+                return {
+                    id: cluster.id,
+                    name: cluster.name,
+                    gender: cluster.gender,
+                    members: rowsHere.map((row) => ({
+                        id: row.id,
+                        religion: row.religion,
+                        language: row.language,
+                        status: row.status,
+                        source: slug(row.sourceId),
+                    })),
+                    // Pooled across the cluster's rows and re-sorted: gathering
+                    // them row by row would order by row before status.
+                    meanings: rowsHere
+                        .flatMap((row) => meanings.get(row.id) ?? [])
+                        .sort(byStatusThenId)
+                        .map(({ sourceId, ...meaning }) => ({
+                            ...meaning,
+                            source: slug(sourceId),
+                        })),
+                };
+            }),
             total: count,
             page: query.page,
             limit: query.limit,
@@ -130,10 +161,11 @@ export class AdminNamesService {
         const slugs = await this.sourceSlugs();
 
         return {
-            meanings: changed.map(({ id, text, status, sourceId }) => ({
+            meanings: changed.map(({ id, text, status, sourceId, nameId }) => ({
                 id,
                 text,
                 status,
+                nameId,
                 source: sourceId ? (slugs.get(sourceId) ?? null) : null,
             })),
         };
@@ -181,11 +213,35 @@ export class AdminNamesService {
         }));
     }
 
-    /**
-     * Every reading of the names on this page, published first: the enum is
-     * declared published, candidate, rejected, which is the order a reviewer
-     * wants to read them in.
-     */
+    /** The catalogue rows each of these clusters gathered. */
+    private async membersFor(
+        clusterIds: number[],
+    ): Promise<Map<number, NamesRow[]>> {
+        const byCluster = new Map<number, NamesRow[]>();
+
+        if (!clusterIds.length) {
+            return byCluster;
+        }
+
+        const rows = await this.names.findAll({
+            where: { clusterId: { [Op.in]: clusterIds } },
+            order: ['id'],
+        });
+
+        for (const { dataValues } of rows) {
+            // Every row read here was selected by `clusterId`, so it has one.
+            const clusterId = dataValues.clusterId as number;
+
+            byCluster.set(clusterId, [
+                ...(byCluster.get(clusterId) ?? []),
+                dataValues,
+            ]);
+        }
+
+        return byCluster;
+    }
+
+    /** Every reading of the rows on this page, keyed by the row it belongs to. */
     private async meaningsFor(
         ids: number[],
     ): Promise<Map<number, StoredMeaning[]>> {
@@ -206,41 +262,20 @@ export class AdminNamesService {
         for (const { dataValues } of rows) {
             // Every row read here was selected by `nameId`, so it has one.
             const nameId = dataValues.nameId as number;
-            const list = byName.get(nameId) ?? [];
 
-            list.push({
-                id: dataValues.id,
-                text: dataValues.text,
-                status: dataValues.status,
-                sourceId: dataValues.sourceId,
-            });
-
-            byName.set(nameId, list);
+            byName.set(nameId, [
+                ...(byName.get(nameId) ?? []),
+                {
+                    id: dataValues.id,
+                    text: dataValues.text,
+                    status: dataValues.status,
+                    nameId: dataValues.nameId,
+                    sourceId: dataValues.sourceId,
+                },
+            ]);
         }
 
         return byName;
-    }
-
-    /** How many rows each of these names occupies, so the page can flag them. */
-    private async duplicateCounts(
-        names: string[],
-    ): Promise<Map<string, number>> {
-        if (!names.length) {
-            return new Map();
-        }
-
-        const rows = await this.names.findAll({
-            attributes: ['name', [fn('count', col('id')), 'count']],
-            where: { name: { [Op.in]: [...new Set(names)] } },
-            group: ['name'],
-            raw: true,
-        });
-
-        return new Map(
-            (rows as unknown as Array<{ name: string; count: string }>).map(
-                ({ name, count }) => [name, Number(count)],
-            ),
-        );
     }
 
     private async sourceSlugs(): Promise<Map<number, string>> {

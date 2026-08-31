@@ -3,7 +3,7 @@ import { Op } from 'sequelize';
 import { describe, expect, it } from 'vitest';
 
 import {
-    adminNamesWhere,
+    adminClustersWhere,
     escapeLike,
     meaningSubjectWhere,
 } from '../src/admin/names/admin-names.query.js';
@@ -11,7 +11,9 @@ import {
 const base: AdminNamesQuery = { page: 1, limit: 25 };
 
 const clauses = (query: AdminNamesQuery) =>
-    (adminNamesWhere(query) as Record<symbol, unknown[]>)[Op.and];
+    (adminClustersWhere(query) as Record<symbol, unknown[]>)[Op.and];
+
+const sql = (clause: unknown) => String((clause as { val: string }).val);
 
 describe('escapeLike', () => {
     it('keeps a wildcard the reviewer typed from widening their search', () => {
@@ -25,14 +27,22 @@ describe('escapeLike', () => {
     });
 });
 
-describe('adminNamesWhere', () => {
+describe('adminClustersWhere', () => {
     it('reads every status, unlike the public site', () => {
         expect(clauses(base)).toEqual([]);
     });
 
-    it('narrows to one status when asked', () => {
-        expect(clauses({ ...base, status: 'candidate' })).toEqual([
-            { status: 'candidate' },
+    // Status lives on the member rows, so the cluster matches when any row does.
+    it('finds the clusters still holding a row of that status', () => {
+        const [clause] = clauses({ ...base, status: 'candidate' });
+
+        expect(sql(clause)).toContain('EXISTS');
+        expect(sql(clause)).toContain(`"names"."status" = 'candidate'`);
+    });
+
+    it('narrows to the gender a cluster is keyed on', () => {
+        expect(clauses({ ...base, gender: 'girl' })).toEqual([
+            { gender: 'girl' },
         ]);
     });
 
@@ -53,17 +63,17 @@ describe('adminNamesWhere', () => {
     });
 
     it('combines the filters instead of replacing them', () => {
+        expect(clauses({ ...base, gender: 'girl' })).toHaveLength(1);
         expect(
             clauses({ ...base, status: 'published', gender: 'girl' }),
-        ).toEqual([{ status: 'published' }, { gender: 'girl' }]);
+        ).toHaveLength(2);
     });
 
-    it('asks for the names the catalogue holds more than once', () => {
+    it('asks for the clusters the import filed more than once', () => {
         const [clause] = clauses({ ...base, duplicatesOnly: true });
 
-        expect(String((clause as { val: string }).val)).toContain(
-            'HAVING count(*) > 1',
-        );
+        expect(sql(clause)).toContain('> 1');
+        expect(sql(clause)).toContain('"names"."cluster_id"');
     });
 
     it('adds nothing when the duplicates filter is off', () => {

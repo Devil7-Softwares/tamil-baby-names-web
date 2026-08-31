@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { AdminNamesService } from '../src/admin/names/admin-names.service.js';
 import {
+    ClustersModel,
     IMeaning,
     MeaningsModel,
     NamesModel,
@@ -83,6 +84,7 @@ const build = (rows: IMeaning[]) => {
         } as unknown as Sequelize,
         names,
         meanings,
+        { findAll: async () => [] } as unknown as ClustersModel,
         { findAll: async () => [] } as unknown as SourcesModel,
         { order: () => [] } as unknown as SortCollationService,
     );
@@ -127,8 +129,20 @@ describe('AdminNamesService.setMeaningStatus', () => {
         });
 
         expect(updated?.meanings).toEqual([
-            { id: 2, text: 'reading 2', status: 'published', source: null },
-            { id: 1, text: 'reading 1', status: 'candidate', source: null },
+            {
+                id: 2,
+                text: 'reading 2',
+                status: 'published',
+                source: null,
+                nameId: 1,
+            },
+            {
+                id: 1,
+                text: 'reading 1',
+                status: 'candidate',
+                source: null,
+                nameId: 1,
+            },
         ]);
     });
 
