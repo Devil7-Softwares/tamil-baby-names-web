@@ -29,6 +29,7 @@ export type AdminUserDraft = Omit<IAdminUser, 'id' | 'createdAt' | 'updatedAt'>;
 export interface NamesRow extends Omit<IName, 'meaning'> {
     numerology: NameNumerology | null;
     sourceId: number | null;
+    clusterId: number | null;
     status: NameStatus;
 }
 
@@ -61,6 +62,21 @@ export type MeaningDraft = Pick<IMeaning, 'text'> &
         Pick<IMeaning, 'nameId' | 'twinNameId' | 'slot' | 'sourceId' | 'status'>
     >;
 
+/**
+ * The rows a reviewer decides about together: one spelling, one gender, however
+ * many times the import filed it.
+ */
+export interface ICluster {
+    id: number;
+    name: string;
+    gender: string;
+    sortKey: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type ClusterDraft = Pick<ICluster, 'name' | 'gender' | 'sortKey'>;
+
 export interface ISource {
     id: number;
     slug: string;
@@ -91,6 +107,7 @@ export type SourceDraft = Pick<ISource, 'slug' | 'kind'> &
 export type NamesModel = ModelStatic<Model<NamesRow>>;
 export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
 export type MeaningsModel = ModelStatic<Model<IMeaning, MeaningDraft>>;
+export type ClustersModel = ModelStatic<Model<ICluster, ClusterDraft>>;
 export type SourcesModel = ModelStatic<Model<ISource, SourceDraft>>;
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
@@ -122,6 +139,7 @@ export const defineNames = (sequelize: Sequelize): NamesModel =>
             name: DataTypes.STRING,
             numerology: DataTypes.JSONB,
             sourceId: { type: DataTypes.INTEGER, field: 'source_id' },
+            clusterId: { type: DataTypes.INTEGER, field: 'cluster_id' },
             status,
         },
         { ...table, tableName: 'names' },
@@ -165,6 +183,29 @@ export const defineMeanings = (sequelize: Sequelize): MeaningsModel =>
         {
             ...table,
             tableName: 'meanings',
+            timestamps: true,
+            underscored: true,
+        },
+    );
+
+export const defineClusters = (sequelize: Sequelize): ClustersModel =>
+    sequelize.define<Model<ICluster, ClusterDraft>>(
+        'Clusters',
+        {
+            id,
+            name: { type: DataTypes.STRING, allowNull: false },
+            gender: { type: DataTypes.STRING, allowNull: false },
+            sortKey: {
+                type: DataTypes.TEXT,
+                field: 'sort_key',
+                allowNull: false,
+            },
+            createdAt: DataTypes.DATE,
+            updatedAt: DataTypes.DATE,
+        },
+        {
+            ...table,
+            tableName: 'clusters',
             timestamps: true,
             underscored: true,
         },

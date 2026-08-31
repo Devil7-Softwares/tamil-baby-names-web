@@ -5,6 +5,7 @@ import { Sequelize } from 'sequelize';
 import { DatabaseBootstrap } from './database.bootstrap.js';
 import {
     ADMIN_USERS_MODEL,
+    CLUSTERS_MODEL,
     MEANINGS_MODEL,
     NAMES_MODEL,
     SEQUELIZE,
@@ -13,6 +14,7 @@ import {
 } from './database.constants.js';
 import {
     defineAdminUsers,
+    defineClusters,
     defineMeanings,
     defineNames,
     defineSources,
@@ -48,6 +50,11 @@ import { SortCollationService } from './sort-collation.service.js';
             inject: [SEQUELIZE],
         },
         {
+            provide: CLUSTERS_MODEL,
+            useFactory: defineClusters,
+            inject: [SEQUELIZE],
+        },
+        {
             provide: SOURCES_MODEL,
             useFactory: defineSources,
             inject: [SEQUELIZE],
@@ -65,6 +72,7 @@ import { SortCollationService } from './sort-collation.service.js';
         NAMES_MODEL,
         TWIN_NAMES_MODEL,
         MEANINGS_MODEL,
+        CLUSTERS_MODEL,
         SOURCES_MODEL,
         ADMIN_USERS_MODEL,
         DatabaseBootstrap,

@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize';
 import { describe, expect, it } from 'vitest';
 
 import {
+    defineClusters,
     defineMeanings,
     defineNames,
     defineSources,
@@ -12,6 +13,7 @@ const sequelize = new Sequelize({ dialect: 'postgres' });
 const names = defineNames(sequelize);
 const twinNames = defineTwinNames(sequelize);
 const meanings = defineMeanings(sequelize);
+const clusters = defineClusters(sequelize);
 const sources = defineSources(sequelize);
 
 describe('models', () => {
@@ -37,6 +39,7 @@ describe('models', () => {
     // never declared, so typescript could not see what the queries read.
     it('exposes every column the queries read, numerology included', () => {
         expect(Object.keys(names.getAttributes()).sort()).toEqual([
+            'clusterId',
             'firstLetter',
             'gender',
             'id',
@@ -85,6 +88,30 @@ describe('models', () => {
 
     it('proposes a meaning rather than publishing it', () => {
         expect(meanings.getAttributes().status.defaultValue).toBe('candidate');
+    });
+
+    it('gathers the rows a reviewer decides about together', () => {
+        expect(clusters.tableName).toBe('clusters');
+        expect(Object.keys(clusters.getAttributes()).sort()).toEqual([
+            'createdAt',
+            'gender',
+            'id',
+            'name',
+            'sortKey',
+            'updatedAt',
+        ]);
+        expect(clusters.getAttributes().sortKey.field).toBe('sort_key');
+    });
+
+    // Name alone would pool Abi the boy with Abi the girl, whose readings
+    // disagree in all 121 groups that span both genders.
+    it('keys a cluster on the gender as well as the spelling', () => {
+        expect(clusters.getAttributes().gender.allowNull).toBe(false);
+        expect(clusters.getAttributes().name.allowNull).toBe(false);
+    });
+
+    it('points a catalogue row at its cluster', () => {
+        expect(names.getAttributes().clusterId.field).toBe('cluster_id');
     });
 
     it('reads the source each row was imported from', () => {
