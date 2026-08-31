@@ -5,4 +5,5 @@ export * from './interfaces/index.js';
 export * from './numerology/index.js';
 export * from './schemas/index.js';
 export * from './timezones/index.js';
+export * from './transliteration/index.js';
 export * from './types/index.js';
