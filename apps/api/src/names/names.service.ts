@@ -42,9 +42,13 @@ export class NamesService {
      * The published meaning of every row on the page, keyed by subject and
      * slot. A second query rather than a join, because the name lists are
      * ordered by a collation Sequelize cannot express inside an include.
+     *
+     * Single names read by cluster rather than by row: the reading is published
+     * once for the spelling, so the second row of a name the import filed twice
+     * would otherwise show nothing.
      */
     private async publishedMeanings(
-        column: 'nameId' | 'twinNameId',
+        column: 'clusterId' | 'twinNameId',
         ids: number[],
     ): Promise<Map<string, string>> {
         if (!ids.length) {
@@ -127,8 +131,10 @@ export class NamesService {
         });
 
         const meanings = await this.publishedMeanings(
-            'nameId',
-            rows.map(({ dataValues }) => dataValues.id),
+            'clusterId',
+            rows
+                .map(({ dataValues }) => dataValues.clusterId)
+                .filter((id): id is number => id !== null),
         );
 
         const values = rows.map(({ dataValues: row }) => ({
@@ -138,7 +144,7 @@ export class NamesService {
             firstLetter: row.firstLetter,
             language: row.language,
             name: row.name,
-            meaning: meanings.get(`${row.id}:1`) ?? '',
+            meaning: meanings.get(`${row.clusterId}:1`) ?? '',
             nameNumber: resolveNameNumber(filters, row.name, row.numerology),
         }));
 

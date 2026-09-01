@@ -82,15 +82,36 @@ describe('adminClustersWhere', () => {
 });
 
 describe('meaningSubjectWhere', () => {
-    it('gathers the other readings of a single name', () => {
+    it('gathers the other readings of the whole cluster, not just the row', () => {
         expect(
-            meaningSubjectWhere({ nameId: 12, twinNameId: null, slot: 1 }),
+            meaningSubjectWhere({
+                nameId: 12,
+                twinNameId: null,
+                clusterId: 3,
+                slot: 1,
+            }),
+        ).toEqual({ clusterId: 3 });
+    });
+
+    it('falls back to the row when its cluster is gone', () => {
+        expect(
+            meaningSubjectWhere({
+                nameId: 12,
+                twinNameId: null,
+                clusterId: null,
+                slot: 1,
+            }),
         ).toEqual({ nameId: 12 });
     });
 
     it('keeps the two sides of a twin pair apart', () => {
         expect(
-            meaningSubjectWhere({ nameId: null, twinNameId: 4, slot: 2 }),
+            meaningSubjectWhere({
+                nameId: null,
+                twinNameId: 4,
+                clusterId: null,
+                slot: 2,
+            }),
         ).toEqual({ twinNameId: 4, slot: 2 });
     });
 });

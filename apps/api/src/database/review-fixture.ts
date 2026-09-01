@@ -22,7 +22,7 @@ export interface FixtureReport {
 
 export interface FixtureRemoval {
     readings: number;
-    /** Rows whose own reading had been displaced by a fixture one. */
+    /** Clusters whose own reading had been displaced by a fixture one. */
     republished: number;
 }
 
@@ -111,7 +111,7 @@ export const seedReviewFixture = async (
 };
 
 /**
- * Removes every reading the fixture wrote. A name left with none published —
+ * Removes every reading the fixture wrote. A cluster left with none published —
  * because a reviewer published a fixture reading, which demoted the import's —
  * gets its own reading back, the oldest being the one that was there first.
  */
@@ -139,17 +139,17 @@ export const undoReviewFixture = async ({
     const touched = [
         ...new Set(
             removed
-                .map(({ nameId }) => nameId)
+                .map(({ clusterId }) => clusterId)
                 .filter((id): id is number => id !== null),
         ),
     ];
 
     let republished = 0;
 
-    for (const nameId of touched) {
+    for (const clusterId of touched) {
         const left = (
             await meanings.findAll({
-                where: { nameId },
+                where: { clusterId },
                 order: [['id', 'ASC']],
             })
         ).map(({ dataValues }) => dataValues);

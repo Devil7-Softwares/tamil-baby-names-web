@@ -83,6 +83,7 @@ describe('models', () => {
     it('points a meaning at a single name or one side of a twin pair', () => {
         expect(meanings.tableName).toBe('meanings');
         expect(Object.keys(meanings.getAttributes()).sort()).toEqual([
+            'clusterId',
             'createdAt',
             'id',
             'nameId',

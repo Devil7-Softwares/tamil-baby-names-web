@@ -58,16 +58,29 @@ export const adminClustersWhere = (query: AdminNamesQuery): WhereOptions => {
 };
 
 /**
- * The readings that compete with this one. A meaning belongs to either a name
- * or one side of a twin pair, and only that side: slot 2 of a pair is a
- * different subject from slot 1.
+ * The readings that compete with this one. For a single name that is its
+ * cluster, not its row: the same spelling filed twice is one decision, and
+ * publishing a reading has to displace whatever the cluster's other rows
+ * publish. A twin pair belongs to one side and only that side: slot 2 of a
+ * pair is a different subject from slot 1.
+ *
+ * `clusterId` falls back to `nameId` for a row whose cluster was removed, so
+ * the row still competes with itself rather than with everything unclustered.
  */
 export const meaningSubjectWhere = ({
     nameId,
     twinNameId,
+    clusterId,
     slot,
 }: {
     nameId: number | null;
     twinNameId: number | null;
+    clusterId: number | null;
     slot: number;
-}): WhereOptions => (nameId === null ? { twinNameId, slot } : { nameId });
+}): WhereOptions => {
+    if (nameId === null) {
+        return { twinNameId, slot };
+    }
+
+    return clusterId === null ? { nameId } : { clusterId };
+};

@@ -17,10 +17,16 @@ import { SortCollationService } from '../src/database/sort-collation.service.js'
 
 const ACTOR = 7;
 
-const meaning = (id: number, status: NameStatus, nameId = 1): IMeaning => ({
+const meaning = (
+    id: number,
+    status: NameStatus,
+    nameId = 1,
+    clusterId = 9,
+): IMeaning => ({
     id,
     nameId,
     twinNameId: null,
+    clusterId,
     slot: 1,
     text: `reading ${id}`,
     sourceId: null,
@@ -53,10 +59,22 @@ const build = (rows: IMeaning[]) => {
 
             return row ? { dataValues: row } : null;
         },
-        findAll: async (options: { where: unknown; lock?: unknown }) => {
+        // Honours the where, because which rows come back is the point: a
+        // subject is a cluster now, not a catalogue row.
+        findAll: async (options: {
+            where: Record<string, unknown>;
+            lock?: unknown;
+        }) => {
             locked.push(options.lock);
 
-            return rows.map((row) => ({ dataValues: row }));
+            return rows
+                .filter((row) =>
+                    Object.entries(options.where).every(
+                        ([column, value]) =>
+                            row[column as keyof IMeaning] === value,
+                    ),
+                )
+                .map((row) => ({ dataValues: row }));
         },
         update: async (
             values: { status?: NameStatus },
@@ -229,6 +247,48 @@ describe('AdminNamesService.setMeaningStatus', () => {
             },
         ]);
         expect(updated?.meanings).toHaveLength(1);
+    });
+
+    it('displaces the reading published on a sibling row of the same cluster', async () => {
+        const { service, writes } = build([
+            meaning(1, 'published', 1),
+            meaning(2, 'candidate', 2),
+        ]);
+
+        await service.setMeaningStatus({ id: 2, status: 'published' }, ACTOR);
+
+        expect(writes).toEqual([
+            {
+                table: 'meanings',
+                values: { status: 'candidate' },
+                where: { id: { [Op.in]: [1] } },
+                transaction,
+            },
+            {
+                table: 'meanings',
+                values: { status: 'published' },
+                where: { id: 2 },
+                transaction,
+            },
+        ]);
+    });
+
+    it('leaves another cluster’s published reading where it is', async () => {
+        const { service, writes } = build([
+            meaning(1, 'published', 1, 8),
+            meaning(2, 'candidate', 2),
+        ]);
+
+        await service.setMeaningStatus({ id: 2, status: 'published' }, ACTOR);
+
+        expect(writes).toEqual([
+            {
+                table: 'meanings',
+                values: { status: 'published' },
+                where: { id: 2 },
+                transaction,
+            },
+        ]);
     });
 
     it('reports an unknown reading rather than writing anything', async () => {

@@ -56,6 +56,8 @@ export interface IMeaning {
     id: number;
     nameId: number | null;
     twinNameId: number | null;
+    /** The name's cluster, kept in step by a trigger. Never written by hand. */
+    clusterId: number | null;
     slot: number;
     text: string;
     sourceId: number | null;
@@ -217,6 +219,7 @@ export const defineMeanings = (sequelize: Sequelize): MeaningsModel =>
             id,
             nameId: { type: DataTypes.INTEGER, field: 'name_id' },
             twinNameId: { type: DataTypes.INTEGER, field: 'twin_name_id' },
+            clusterId: { type: DataTypes.INTEGER, field: 'cluster_id' },
             slot: {
                 type: DataTypes.SMALLINT,
                 allowNull: false,
