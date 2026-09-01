@@ -61,3 +61,43 @@ export const ImportFileSchema = z.object({
 export type ImportSourceInput = z.output<typeof ImportSourceSchema>;
 export type ImportNameInput = z.output<typeof ImportNameSchema>;
 export type ImportFileInput = z.output<typeof ImportFileSchema>;
+
+/** A record the import would not take, and what was wrong with it. */
+export const ImportRejectionSchema = z.object({
+    /** Its position in the file, which is the only handle a bad record has. */
+    at: z.number().int().min(0),
+    name: z.string().nullable(),
+    reason: z.string(),
+});
+
+/** What an import did, as the CLI prints it and the dashboard shows it. */
+export const ImportReportSchema = z.object({
+    source: z.string(),
+    clusters: z.number().int().min(0),
+    names: z.number().int().min(0),
+    meanings: z.number().int().min(0),
+    /** Records the catalogue already held in full. */
+    unchanged: z.number().int().min(0),
+    rejected: z.array(ImportRejectionSchema),
+});
+
+/**
+ * Roughly 5 MB, which is thousands of names. A batch bigger than this belongs
+ * on the command line, where nothing has to hold it in a browser first.
+ */
+export const IMPORT_LIMIT = 5_000_000;
+
+/**
+ * A batch as the dashboard sends it: the file's own text rather than a parsed
+ * object, so the checksum recorded against the source is over the bytes the
+ * file actually holds — the same one the command line computes for it.
+ */
+export const ImportRequestSchema = z.object({
+    content: z.string().min(1).max(IMPORT_LIMIT),
+    /** Reports what would happen and rolls it back, writing nothing. */
+    dryRun: z.boolean().default(false),
+});
+
+export type ImportRejection = z.output<typeof ImportRejectionSchema>;
+export type ImportReport = z.output<typeof ImportReportSchema>;
+export type ImportRequest = z.output<typeof ImportRequestSchema>;

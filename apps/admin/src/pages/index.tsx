@@ -6,6 +6,7 @@ import { AppLayout, LoadingOverlay, ProtectedRoute } from '~/components';
 const Login = lazy(() => import('./Login/Login'));
 const Dashboard = lazy(() => import('./Dashboard/Dashboard'));
 const Names = lazy(() => import('./Names/Names'));
+const ImportPage = lazy(() => import('./Import/Import'));
 
 export const Pages: React.FC = () => (
     <Suspense fallback={<LoadingOverlay />}>
@@ -16,6 +17,12 @@ export const Pages: React.FC = () => (
                 <Route element={<AppLayout />}>
                     <Route path='/' element={<Dashboard />} />
                     <Route path='/names' element={<Names />} />
+                </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute adminOnly />}>
+                <Route element={<AppLayout />}>
+                    <Route path='/import' element={<ImportPage />} />
                 </Route>
             </Route>
 

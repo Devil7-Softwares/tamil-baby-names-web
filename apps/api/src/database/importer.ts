@@ -2,6 +2,7 @@ import {
     firstSyllable,
     ImportFileInput,
     ImportNameSchema,
+    ImportReport,
     ImportSourceInput,
     sortKey,
 } from '@tbn/shared';
@@ -26,24 +27,6 @@ export interface ImporterModels {
     sources: SourcesModel;
     religions: LookupModel;
     languages: LookupModel;
-}
-
-/** A record the import would not take, and what was wrong with it. */
-export interface ImportRejection {
-    /** Its position in the file, which is the only handle a bad record has. */
-    at: number;
-    name: string | null;
-    reason: string;
-}
-
-export interface ImportReport {
-    source: string;
-    clusters: number;
-    names: number;
-    meanings: number;
-    /** Records the catalogue already held in full. */
-    unchanged: number;
-    rejected: ImportRejection[];
 }
 
 export interface ImportOptions {

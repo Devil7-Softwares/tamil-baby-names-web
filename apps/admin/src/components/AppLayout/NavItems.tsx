@@ -1,5 +1,6 @@
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import SortByAlphaOutlinedIcon from '@mui/icons-material/SortByAlphaOutlined';
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import { ReactNode } from 'react';
 
 export interface NavItem {
@@ -17,4 +18,10 @@ export interface NavItem {
 export const NavItems: NavItem[] = [
     { label: 'Dashboard', path: '/', icon: <DashboardOutlinedIcon /> },
     { label: 'Names', path: '/names', icon: <SortByAlphaOutlinedIcon /> },
+    {
+        label: 'Import',
+        path: '/import',
+        icon: <UploadFileOutlinedIcon />,
+        adminOnly: true,
+    },
 ];

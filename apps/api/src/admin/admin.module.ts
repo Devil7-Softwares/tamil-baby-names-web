@@ -6,6 +6,8 @@ import { Request } from 'express';
 import { AdminAuthController } from './auth/admin-auth.controller.js';
 import { AdminAuthGuard } from './auth/admin-auth.guard.js';
 import { AdminAuthService } from './auth/admin-auth.service.js';
+import { AdminImportController } from './import/admin-import.controller.js';
+import { AdminImportService } from './import/admin-import.service.js';
 import { AdminNamesController } from './names/admin-names.controller.js';
 import { AdminNamesService } from './names/admin-names.service.js';
 import { AdminOverviewController } from './overview/admin-overview.controller.js';
@@ -30,6 +32,7 @@ declare module '@orpc/nest' {
     ],
     controllers: [
         AdminAuthController,
+        AdminImportController,
         AdminNamesController,
         AdminOverviewController,
     ],
@@ -37,6 +40,7 @@ declare module '@orpc/nest' {
         AdminAuthGuard,
         AdminAuthService,
         AdminBootstrapService,
+        AdminImportService,
         AdminNamesService,
         AdminOverviewService,
         UsersService,
