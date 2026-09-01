@@ -12,6 +12,7 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "fixture:review": "node dist/fixture.js",
+    "import:names": "node dist/import.js",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run",
     "test:watch": "vitest",

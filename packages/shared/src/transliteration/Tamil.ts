@@ -129,3 +129,33 @@ export const romanise = (name: string): string => {
  */
 export const sortKey = (name: string): string =>
     fold(romanise(name).toLowerCase()).replace(NOISE, '');
+
+/**
+ * The syllable a name begins with, which is what `names.first_letter` holds and
+ * what the nakshatra letter tables are written in: கா rather than க, and ஸ்ரீ
+ * rather than ஸ். A vowel sign belongs to the consonant it hangs on, and a
+ * pulli binds the consonant after it into the same syllable, so a conjunct
+ * stays whole.
+ *
+ * A name already in Latin letters gets its first character, which is all that
+ * can honestly be said about it.
+ */
+export const firstSyllable = (name: string): string => {
+    const letters = [...name];
+    let end = 1;
+
+    while (end < letters.length) {
+        if (SIGNS[letters[end]]) {
+            end++;
+            break;
+        }
+
+        if (letters[end] !== PULLI) {
+            break;
+        }
+
+        end += 2;
+    }
+
+    return letters.slice(0, end).join('');
+};

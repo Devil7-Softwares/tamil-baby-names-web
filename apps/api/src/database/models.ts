@@ -39,6 +39,9 @@ export interface NamesRow extends Omit<IName, 'meaning'> {
     status: NameStatus;
 }
 
+/** A catalogue row before the database gives it an id — what an import writes. */
+export type NameDraft = Omit<NamesRow, 'id'>;
+
 export interface TwinNamesRow extends Omit<ITwinName, 'meaning1' | 'meaning2'> {
     numerology1: NameNumerology | null;
     numerology2: NameNumerology | null;
@@ -146,7 +149,7 @@ export interface IVerification {
 export type VerificationDraft = Pick<IVerification, 'fromStatus' | 'toStatus'> &
     Partial<Pick<IVerification, 'nameId' | 'meaningId' | 'reason' | 'actorId'>>;
 
-export type NamesModel = ModelStatic<Model<NamesRow>>;
+export type NamesModel = ModelStatic<Model<NamesRow, NameDraft>>;
 export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
 export type MeaningsModel = ModelStatic<Model<IMeaning, MeaningDraft>>;
 export type ClustersModel = ModelStatic<Model<ICluster, ClusterDraft>>;
@@ -174,7 +177,7 @@ const id = {
 };
 
 export const defineNames = (sequelize: Sequelize): NamesModel =>
-    sequelize.define<Model<NamesRow>>(
+    sequelize.define<Model<NamesRow, NameDraft>>(
         'Names',
         {
             id,

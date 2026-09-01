@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { romanise, sortKey } from '../src/transliteration/Tamil.js';
+import {
+    firstSyllable,
+    romanise,
+    sortKey,
+} from '../src/transliteration/Tamil.js';
 
 describe('romanise', () => {
     it('carries the a a consonant is written with', () => {
@@ -57,5 +61,29 @@ describe('sortKey', () => {
     it('keeps the vowel length the scheme spells out', () => {
         expect(sortKey('கோபி')).toBe('koopi');
         expect(sortKey('Gopi')).toBe('kopi');
+    });
+});
+
+describe('firstSyllable', () => {
+    it('keeps the vowel sign hanging on the consonant', () => {
+        expect(firstSyllable('காசிமா')).toBe('கா');
+    });
+
+    it('stops at a vowel standing on its own', () => {
+        expect(firstSyllable('அன்பு')).toBe('அ');
+    });
+
+    // A pulli joins what follows, so the conjunct the catalogue files under
+    // ஸ்ரீ stays whole instead of breaking after the ஸ.
+    it('carries a conjunct through the pulli that binds it', () => {
+        expect(firstSyllable('ஸ்ரீவித்யா')).toBe('ஸ்ரீ');
+    });
+
+    it('says only the first letter of a name written in Latin', () => {
+        expect(firstSyllable('Bexley')).toBe('B');
+    });
+
+    it('has nothing to say about an empty name', () => {
+        expect(firstSyllable('')).toBe('');
     });
 });
