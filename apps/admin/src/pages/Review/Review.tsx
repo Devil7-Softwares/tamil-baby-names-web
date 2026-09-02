@@ -56,6 +56,7 @@ const did = (run: AdminReviewRun): string => {
             run.added && counted(run.added, 'written', 'written'),
             run.dropped && counted(run.dropped, 'row dropped', 'rows dropped'),
             run.abstained && `${run.abstained} left alone`,
+            run.unchanged && `${run.unchanged} already right`,
             run.failed && `${run.failed} unreadable`,
         ]
             .filter(Boolean)

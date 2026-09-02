@@ -36,6 +36,7 @@ const outcome = (over: Partial<ReviewOutcome> = {}): ReviewOutcome => ({
     added: 0,
     dropped: 0,
     abstained: false,
+    unchanged: false,
     ...over,
 });
 

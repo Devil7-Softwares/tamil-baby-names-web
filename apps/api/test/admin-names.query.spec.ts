@@ -123,9 +123,21 @@ describe('the second pass over what an agent did', () => {
         expect(sql(clause)).toContain('"verifications"');
         expect(sql(clause)).toContain(`v."agent_id" IS NOT NULL`);
         expect(sql(clause)).toContain(
-            `v."reason" NOT IN ('abstained', 'considered')`,
+            `v."reason" NOT IN ('abstained', 'unchanged', 'considered')`,
         );
         expect(sql(clause)).not.toMatch(/^\s*NOT /);
+    });
+
+    // "Not sure" and "sure, nothing to do" are opposite things, and answering
+    // one filter with both is what made terra read as unsure six times when its
+    // lowest answer of the run was 58.
+    it('keeps "already right" out of "was unsure"', () => {
+        const [unsure] = clauses({ ...base, agentReview: 'unsure' });
+        const [right] = clauses({ ...base, agentReview: 'unchanged' });
+
+        expect(sql(unsure)).toContain(`v."reason" = 'abstained'`);
+        expect(sql(unsure)).not.toContain('unchanged');
+        expect(sql(right)).toContain(`v."reason" = 'unchanged'`);
     });
 
     // A comparison run's verdict is an opinion the catalogue never acted on,

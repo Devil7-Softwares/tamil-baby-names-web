@@ -25,6 +25,7 @@ type Counts = Pick<
     IReviewRun,
     | 'reviewed'
     | 'abstained'
+    | 'unchanged'
     | 'published'
     | 'rejected'
     | 'added'
@@ -35,6 +36,7 @@ type Counts = Pick<
 const ZERO: Counts = {
     reviewed: 0,
     abstained: 0,
+    unchanged: 0,
     published: 0,
     rejected: 0,
     added: 0,
@@ -61,6 +63,7 @@ const seen = (run: IReviewRun, agent: string): AdminReviewRun => ({
     total: run.total,
     reviewed: run.reviewed,
     abstained: run.abstained,
+    unchanged: run.unchanged,
     published: run.published,
     rejected: run.rejected,
     added: run.added,
@@ -337,6 +340,7 @@ const tally = (counts: Counts, outcome: ReviewOutcome | null): void => {
 
     counts.reviewed += 1;
     counts.abstained += outcome.abstained ? 1 : 0;
+    counts.unchanged += outcome.unchanged ? 1 : 0;
     counts.published += outcome.published;
     counts.rejected += outcome.rejected;
     counts.added += outcome.added;

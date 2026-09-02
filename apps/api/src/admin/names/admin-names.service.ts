@@ -479,6 +479,7 @@ export class AdminNamesService {
                 confidence: row.confidence,
                 note: row.note,
                 abstained: row.reason === 'abstained',
+                unchanged: row.reason === 'unchanged',
                 considered: row.reason === 'considered',
                 at: row.created_at.toISOString(),
             });

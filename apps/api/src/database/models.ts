@@ -254,7 +254,10 @@ export interface IReviewRun {
     requested: number;
     total: number;
     reviewed: number;
+    /** It would not decide — below the confidence bar. */
     abstained: number;
+    /** It was sure, and the catalogue was already right. */
+    unchanged: number;
     published: number;
     rejected: number;
     added: number;
@@ -567,6 +570,7 @@ export const defineReviewRuns = (sequelize: Sequelize): ReviewRunsModel =>
             total: counter(),
             reviewed: counter(),
             abstained: counter(),
+            unchanged: counter(),
             published: counter(),
             rejected: counter(),
             added: counter(),

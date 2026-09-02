@@ -142,6 +142,7 @@ export class ReviewService {
             agent: agent.slug,
             reviewed: 0,
             abstained: 0,
+            unchanged: 0,
             published: 0,
             rejected: 0,
             added: 0,
@@ -169,6 +170,7 @@ export class ReviewService {
             } else {
                 report.reviewed += 1;
                 report.abstained += outcome.abstained ? 1 : 0;
+                report.unchanged += outcome.unchanged ? 1 : 0;
                 report.published += outcome.published;
                 report.rejected += outcome.rejected;
                 report.added += outcome.added;

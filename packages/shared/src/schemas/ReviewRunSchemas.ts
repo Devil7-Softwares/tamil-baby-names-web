@@ -13,7 +13,10 @@ export const AdminReviewRunSchema = z.object({
     /** What the queue actually held, which is what the progress bar is over. */
     total: z.number().int().nonnegative(),
     reviewed: z.number().int().nonnegative(),
+    /** It would not decide — below the confidence bar, and worth a person. */
     abstained: z.number().int().nonnegative(),
+    /** It was sure, and the catalogue was already right. Needs nobody. */
+    unchanged: z.number().int().nonnegative(),
     published: z.number().int().nonnegative(),
     rejected: z.number().int().nonnegative(),
     added: z.number().int().nonnegative(),

@@ -163,10 +163,11 @@ export const applyVerdict = async (
         added: 0,
         dropped: 0,
         abstained: false,
+        unchanged: false,
     };
 
     if (verdict.confidence < CONFIDENT_ENOUGH) {
-        await abstain(models, agent, candidate, verdict, runId);
+        await record_(models, agent, candidate, verdict, runId, 'abstained');
 
         return { ...outcome, abstained: true };
     }
@@ -329,17 +330,20 @@ export const applyVerdict = async (
             );
         }
 
+        // Confident, and its answer named nothing to change. The opposite of
+        // abstaining, and counted as such.
         if (!ledger.length && !outcome.added) {
-            await abstain(
+            await record_(
                 models,
                 agent,
                 candidate,
                 verdict,
                 runId,
+                'unchanged',
                 transaction,
             );
 
-            return { ...outcome, abstained: true };
+            return { ...outcome, unchanged: true };
         }
 
         return outcome;
@@ -347,16 +351,25 @@ export const applyVerdict = async (
 };
 
 /**
- * Records that the agent looked and did not decide. Without this a second run
- * asks the same question of the same 160,000 rows, and a person has no way to
- * find what the model found hard.
+ * Records that the agent looked and changed nothing, and which of the two ways
+ * that happened.
+ *
+ * `abstained` is below the confidence bar — it would not decide, and a person
+ * is worth the most there. `unchanged` is the opposite: certain, and the
+ * catalogue was already right. Both write the same shape and mean opposite
+ * things, and calling them one thing made the queue claim a model was unsure
+ * when it had never once been unsure.
+ *
+ * Either way the row has to exist, or a second run asks the same question of
+ * the same 160,000 rows.
  */
-const abstain = async (
+const record_ = async (
     models: ReviewModels,
     agent: IAgent,
     candidate: Candidate,
     verdict: ReviewVerdict,
     runId: number | null,
+    reason: 'abstained' | 'unchanged',
     transaction?: Transaction,
 ): Promise<void> => {
     const subject = candidate.rows[0];
@@ -368,7 +381,7 @@ const abstain = async (
                 nameId: subject.id,
                 fromStatus: subject.status,
                 toStatus: subject.status,
-                reason: 'abstained',
+                reason,
                 agentId: agent.id,
                 confidence: verdict.confidence,
                 note: verdict.note,
@@ -380,9 +393,16 @@ const abstain = async (
 };
 
 /**
- * The ledger as a run that writes nothing should record it: every entry left
- * where it was, and `considered` in place of what it would have been. Returned
- * unchanged for a run that does write.
+ * The ledger as a run that writes nothing should record it: `considered` in
+ * place of whatever the reason would have been, and **`to_status` left as the
+ * status the row would have reached**.
+ *
+ * Flattening it to `from_status` was the obvious thing and it threw the answer
+ * away: "Sonnet would have rejected reading 3" became indistinguishable from
+ * "Sonnet looked at reading 3", and comparing two models on what they would
+ * actually do was then impossible. The reason is what says nothing moved, and
+ * every reader already has to check it — the queue filters on it, and 0011's
+ * `down` replays by it.
  */
 const considered = (
     ledger: VerificationDraft[],
@@ -390,11 +410,7 @@ const considered = (
 ): VerificationDraft[] =>
     applied
         ? ledger
-        : ledger.map((entry) => ({
-              ...entry,
-              toStatus: entry.fromStatus,
-              reason: 'considered' as const,
-          }));
+        : ledger.map((entry) => ({ ...entry, reason: 'considered' as const }));
 
 /**
  * The narrow slice of a model this needs. `names` and `meanings` have

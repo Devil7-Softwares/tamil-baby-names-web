@@ -57,8 +57,19 @@ const Decision: React.FC<{ entry: AdminActivity }> = ({ entry }) => (
     >
         <Chip
             size='small'
-            color={STATUS_COLOUR[entry.toStatus]}
-            label={`${entry.fromStatus} → ${entry.toStatus}`}
+            // A considered entry carries the status the row *would* have
+            // reached, so without the prefix it reads as something that
+            // happened.
+            color={
+                entry.reason === 'considered'
+                    ? 'default'
+                    : STATUS_COLOUR[entry.toStatus]
+            }
+            label={
+                entry.reason === 'considered'
+                    ? `would: ${entry.fromStatus} → ${entry.toStatus}`
+                    : `${entry.fromStatus} → ${entry.toStatus}`
+            }
         />
 
         <Typography variant='body2' sx={{ flex: 1 }}>

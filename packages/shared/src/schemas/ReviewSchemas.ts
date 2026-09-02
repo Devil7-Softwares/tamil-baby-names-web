@@ -103,15 +103,19 @@ export const ReviewOutcomeSchema = z.object({
     added: z.number().int().nonnegative(),
     /** Rows sent to `rejected` because the entry is not a name. */
     dropped: z.number().int().nonnegative(),
-    /** True when the verdict was recorded but changed nothing. */
+    /** It would not decide: below `CONFIDENT_ENOUGH`, and worth a person. */
     abstained: z.boolean(),
+    /** It was sure, and the catalogue was already right. Needs nobody. */
+    unchanged: z.boolean(),
 });
 
 export const ReviewReportSchema = z.object({
     agent: z.string(),
     reviewed: z.number().int().nonnegative(),
-    /** Clusters the model answered on but that were left alone. */
+    /** Clusters it would not decide on. */
     abstained: z.number().int().nonnegative(),
+    /** Clusters it was sure about and found already right. */
+    unchanged: z.number().int().nonnegative(),
     published: z.number().int().nonnegative(),
     rejected: z.number().int().nonnegative(),
     added: z.number().int().nonnegative(),

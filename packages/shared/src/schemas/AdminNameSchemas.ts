@@ -62,8 +62,10 @@ export const AdminVerdictSchema = z.object({
     /** The agent's own 0–100. Read it sceptically; see `abstained`. */
     confidence: z.number().int().min(0).max(100).nullable(),
     note: z.string().nullable(),
-    /** It looked and would not decide, so nothing was changed. */
+    /** It looked and would not decide: below the bar, and worth a person. */
     abstained: z.boolean(),
+    /** It was sure, and found the catalogue already right. Needs nobody. */
+    unchanged: z.boolean(),
     /**
      * It decided, on a run that was told to write nothing. The catalogue is
      * untouched and the verdict is only an opinion — which is a different thing
@@ -97,6 +99,7 @@ const BooleanParam = z.union([z.boolean(), z.stringbool()]);
 export const AGENT_REVIEW_FILTERS = [
     'decided',
     'unsure',
+    'unchanged',
     'considered',
     'none',
 ] as const;

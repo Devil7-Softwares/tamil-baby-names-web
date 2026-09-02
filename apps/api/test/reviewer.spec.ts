@@ -368,11 +368,23 @@ describe('a run that is told to change nothing', () => {
         expect(ledger.every((entry) => entry.reason === 'considered')).toBe(
             true,
         );
-        // Left where they were, so the ledger never claims a status it did not
-        // write.
-        expect(
-            ledger.every((entry) => entry.fromStatus === entry.toStatus),
-        ).toBe(true);
+        // The status it *would* have reached is kept: without it "would have
+        // rejected reading 2" is indistinguishable from "looked at reading 2",
+        // and two models cannot be compared on what they would actually do.
+        expect(ledger).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    meaningId: 11,
+                    fromStatus: 'candidate',
+                    toStatus: 'rejected',
+                }),
+                expect.objectContaining({
+                    meaningId: 10,
+                    fromStatus: 'candidate',
+                    toStatus: 'published',
+                }),
+            ]),
+        );
         expect(ledger.every((entry) => entry.runId === 4)).toBe(true);
     });
 
@@ -471,10 +483,13 @@ describe('a model that is not sure', () => {
             verdict({ publish: 99, reject: [98] }),
         );
 
-        expect(outcome.abstained).toBe(true);
+        // Sure, and nothing to do — the opposite of abstaining, and counted
+        // apart from it. Together they made the queue call a model unsure that
+        // had never once been unsure.
+        expect(outcome).toMatchObject({ abstained: false, unchanged: true });
         expect(moves).toEqual([]);
         expect(ledger).toEqual([
-            expect.objectContaining({ reason: 'abstained', confidence: 90 }),
+            expect.objectContaining({ reason: 'unchanged', confidence: 90 }),
         ]);
     });
 });
