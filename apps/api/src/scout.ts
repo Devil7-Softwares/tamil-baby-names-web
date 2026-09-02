@@ -2,7 +2,34 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { Logger } from '@nestjs/common';
 
-import { parseScan, scoutBatch } from './scout-batch.js';
+import { parseScan, scoutBatch, ScoutBatchOptions } from './scout-batch.js';
+
+/**
+ * `x:0=girl,1=boy` — the `extra` field holding an app's own gender flag, and
+ * what its values mean. Rejected rather than half-read: a mapping typed wrong
+ * would file a whole catalogue under the wrong gender.
+ */
+const genderMapping = (
+    given: string,
+): ScoutBatchOptions['gender'] | undefined => {
+    if (!given) {
+        return undefined;
+    }
+
+    const [field, pairs] = given.split(':');
+    const values = Object.fromEntries(
+        (pairs ?? '')
+            .split(',')
+            .filter(Boolean)
+            .map((pair) => pair.split('=', 2) as [string, string]),
+    );
+
+    if (!field || !Object.keys(values).length) {
+        throw new Error(`--gender-from should read like x:0=girl,1=boy`);
+    }
+
+    return { field, values };
+};
 
 /** How many skipped records are listed before the count speaks for the rest. */
 const LISTED = 20;
@@ -17,6 +44,7 @@ const argument = (name: string): string | undefined =>
  *
  *     yarn workspace @tbn/api scout:batch --scan=./names-all.csv \
  *         --package=com.rmitms.namesBabyTamil --out=./batch.json [--title=…]
+ *         [--gender-from=x:0=girl,1=boy] [--religion=muslim] [--language=tamil]
  *
  * Written out rather than imported directly, so the batch can be read before
  * anything is written: a scan is a decompiled app, and what it calls a name is
@@ -46,6 +74,9 @@ const run = async (): Promise<void> => {
         batch = scoutBatch(rows, {
             package: packageName,
             title: argument('title'),
+            gender: genderMapping(argument('gender-from') ?? ''),
+            religion: argument('religion'),
+            language: argument('language'),
         });
     } catch (error) {
         logger.error(`Could not read ${scan}.`, error);

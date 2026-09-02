@@ -14,6 +14,8 @@ export interface ScoutRow {
     version: string;
     origin: string;
     record: string;
+    /** Whatever the scan could not name, as JSON. Usually an app's own flags. */
+    extra: string;
 }
 
 /** A record the batch leaves behind, and what the scan did not say about it. */
@@ -35,6 +37,24 @@ export interface ScoutBatchOptions {
     package: string;
     /** The app's own name, which a scan does not record. */
     title?: string;
+    /**
+     * Where to read gender when the scan could not: a field of `extra` and
+     * what its values mean — `{ field: 'x', values: { '0': 'girl' } }`.
+     *
+     * An app that keeps gender as a flag leaves the scan nothing to go on — a
+     * column of `0` and `1` is as likely to be a favourite as a gender, and
+     * guessing is how a catalogue fills with confident nonsense. So the mapping
+     * comes from whoever checked it, rather than being inferred here.
+     */
+    gender?: { field: string; values: Record<string, string> };
+    /**
+     * The lookup slugs every name in the package is filed under, where the
+     * source says so of its whole catalogue — an app called "Muslim Tamil
+     * Names" is stating a religion, even though no column holds it. Left out
+     * for a source that is just a list of names.
+     */
+    religion?: string;
+    language?: string;
 }
 
 const COLUMNS = [
@@ -129,6 +149,42 @@ const GENDERS: Record<string, ImportNameInput['gender'] | undefined> = {
     girl: 'girl',
 };
 
+/** A scan writes `extra` as JSON, and writes nothing where it found nothing. */
+const parseExtra = (extra: string): Record<string, string> => {
+    if (!extra.trim()) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(extra) as Record<string, string>;
+    } catch {
+        return {};
+    }
+};
+
+/** What the scan read as a gender, else what the app's own flag was declared
+ * to mean. */
+const genderOf = (
+    group: ScoutRow[],
+    mapping: ScoutBatchOptions['gender'],
+): ImportNameInput['gender'] | undefined => {
+    const said = GENDERS[group.find(({ gender }) => gender)?.gender ?? ''];
+
+    if (said || !mapping) {
+        return said;
+    }
+
+    for (const { extra } of group) {
+        const flag = parseExtra(extra)[mapping.field];
+
+        if (flag !== undefined) {
+            return GENDERS[mapping.values[flag] ?? ''];
+        }
+    }
+
+    return undefined;
+};
+
 /**
  * Turns one package of a scan into a batch the importer takes.
  *
@@ -138,8 +194,9 @@ const GENDERS: Record<string, ImportNameInput['gender'] | undefined> = {
  * join. A record the scan only found in Latin is still imported — the
  * alternative is dropping a name because of the script it was written in.
  *
- * Nothing is filed under a religion or a language. This kind of source is a
- * list of names, and says neither.
+ * A religion and a language are filed only where the caller passes them,
+ * because a source that is a list of names says neither and the queue is where
+ * that gets decided.
  */
 export const scoutBatch = (
     rows: ScoutRow[],
@@ -164,8 +221,7 @@ export const scoutBatch = (
         const tamil = group.find(({ script }) => script === 'tamil');
         const latin = group.find(({ script }) => script === 'latin');
         const spelling = tamil ?? latin ?? group[0];
-        const gender =
-            GENDERS[group.find(({ gender }) => gender)?.gender ?? ''];
+        const gender = genderOf(group, options.gender);
         const meaning = group.find(({ meaning }) => meaning.trim())?.meaning;
 
         if (!spelling?.name.trim()) {
@@ -189,6 +245,8 @@ export const scoutBatch = (
         names.push({
             name: spelling.name,
             gender,
+            religion: options.religion ?? null,
+            language: options.language ?? null,
             meanings: meaning ? [meaning] : [],
             notes: transliteration
                 ? `The source spells it "${transliteration}" in Latin script.`

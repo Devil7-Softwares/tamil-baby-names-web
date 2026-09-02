@@ -14,6 +14,7 @@ const row = (over: Partial<ScoutRow> = {}): ScoutRow => ({
     version: '2.0',
     origin: 'classes.dex#record0.nametamil',
     record: 'classes.dex#record0:1',
+    extra: '',
     ...over,
 });
 
@@ -67,6 +68,8 @@ describe('batching a package', () => {
             {
                 name: 'கணேஷ்',
                 gender: 'boy',
+                religion: null,
+                language: null,
                 meanings: ['சிவனின் மகன்'],
                 notes: 'The source spells it "Ganesh" in Latin script.',
                 attestation: {
@@ -79,13 +82,28 @@ describe('batching a package', () => {
 
     // The one thing the batch must not do: file a list of names under a
     // religion the source never named.
-    it('files nothing under a religion or a language', () => {
+    it('files nothing under a religion or a language by default', () => {
         const [name] = scoutBatch([row()], {
             package: 'com.rmitms.namesBabyTamil',
         }).file.names as Array<Record<string, unknown>>;
 
-        expect(name).not.toHaveProperty('religion');
-        expect(name).not.toHaveProperty('language');
+        expect(name).toMatchObject({ religion: null, language: null });
+    });
+
+    // An app called "Muslim Tamil Names" is stating a religion of its whole
+    // catalogue, even though no column holds it.
+    it('files the whole package under a religion the caller states', () => {
+        const batch = scoutBatch(
+            [row({ package: 'bridleway.muslimtamilnames' })],
+            {
+                package: 'bridleway.muslimtamilnames',
+                religion: 'muslim',
+            },
+        );
+
+        expect(batch.file.names).toMatchObject([
+            { religion: 'muslim', language: null },
+        ]);
     });
 
     it('keeps a record the scan only found in Latin', () => {
@@ -111,6 +129,52 @@ describe('batching a package', () => {
                 reason: 'no gender',
             },
         ]);
+    });
+
+    // The app whose gender column the scan could not read: assets/dbs.db keeps
+    // it as x=0/1, which is as likely to be a favourite flag as a gender.
+    it('reads gender from a flag it was told the meaning of', () => {
+        const flagged = (x: string, name: string): ScoutRow =>
+            row({
+                name,
+                gender: '',
+                record: `assets_dbs.db#names:${name}`,
+                extra: JSON.stringify({ x }),
+            });
+
+        const batch = scoutBatch(
+            [flagged('0', 'அபீர்'), flagged('1', 'அபீப்')],
+            {
+                package: 'com.rmitms.namesBabyTamil',
+                gender: { field: 'x', values: { '0': 'girl', '1': 'boy' } },
+            },
+        );
+
+        expect(batch.file.names).toMatchObject([
+            { name: 'அபீர்', gender: 'girl' },
+            { name: 'அபீப்', gender: 'boy' },
+        ]);
+    });
+
+    it('leaves out a record whose flag the mapping does not cover', () => {
+        const batch = scoutBatch([row({ gender: '', extra: '{"x": "2"}' })], {
+            package: 'com.rmitms.namesBabyTamil',
+            gender: { field: 'x', values: { '0': 'girl' } },
+        });
+
+        expect(batch.file.names).toHaveLength(0);
+        expect(batch.skipped[0]).toMatchObject({ reason: 'no gender' });
+    });
+
+    // The scan's own reading wins: a flag is a fallback for what it could not
+    // work out, not an override of what it did.
+    it('prefers the gender the scan read over the flag', () => {
+        const batch = scoutBatch([row({ extra: '{"x": "0"}' })], {
+            package: 'com.rmitms.namesBabyTamil',
+            gender: { field: 'x', values: { '0': 'girl' } },
+        });
+
+        expect(batch.file.names).toMatchObject([{ gender: 'boy' }]);
     });
 
     it('takes only the package it was asked for', () => {
