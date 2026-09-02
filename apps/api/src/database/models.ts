@@ -161,6 +161,8 @@ export interface IVerification {
     confidence: number | null;
     /** The agent's one line of why, which is what a second pass reads. */
     note: string | null;
+    /** The run that wrote it, which is how a run's clusters are re-asked. */
+    runId: number | null;
     createdAt: Date;
 }
 
@@ -175,6 +177,7 @@ export type VerificationDraft = Pick<IVerification, 'fromStatus' | 'toStatus'> &
             | 'agentId'
             | 'confidence'
             | 'note'
+            | 'runId'
         >
     >;
 
@@ -258,6 +261,10 @@ export interface IReviewRun {
     dropped: number;
     failed: number;
     error: string | null;
+    /** The run whose clusters this one re-asked, or null for the queue's own. */
+    compareWith: number | null;
+    /** False for a run that records what it would have done and writes nothing. */
+    applied: boolean;
     startedAt: Date;
     finishedAt: Date | null;
 }
@@ -456,6 +463,7 @@ export const defineVerifications = (sequelize: Sequelize): VerificationsModel =>
             agentId: { type: DataTypes.INTEGER, field: 'agent_id' },
             confidence: DataTypes.SMALLINT,
             note: DataTypes.TEXT,
+            runId: { type: DataTypes.INTEGER, field: 'run_id' },
             createdAt: DataTypes.DATE,
         },
         {
@@ -565,6 +573,12 @@ export const defineReviewRuns = (sequelize: Sequelize): ReviewRunsModel =>
             dropped: counter(),
             failed: counter(),
             error: DataTypes.TEXT,
+            compareWith: { type: DataTypes.INTEGER, field: 'compare_with' },
+            applied: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+            },
             startedAt: { type: DataTypes.DATE, field: 'started_at' },
             finishedAt: { type: DataTypes.DATE, field: 'finished_at' },
         },

@@ -5,10 +5,12 @@ import {
     Box,
     Button,
     Chip,
+    FormControlLabel,
     LinearProgress,
     MenuItem,
     Paper,
     Stack,
+    Switch,
     Table,
     TableBody,
     TableCell,
@@ -45,18 +47,24 @@ const counted = (value: number, one: string, many: string): string =>
     `${value.toLocaleString()} ${value === 1 ? one : many}`;
 
 /** What a finished run did, in the words the command line uses. */
-const did = (run: AdminReviewRun): string =>
-    [
-        run.published && counted(run.published, 'published', 'published'),
-        run.rejected &&
-            counted(run.rejected, 'reading rejected', 'readings rejected'),
-        run.added && counted(run.added, 'written', 'written'),
-        run.dropped && counted(run.dropped, 'row dropped', 'rows dropped'),
-        run.abstained && `${run.abstained} left alone`,
-        run.failed && `${run.failed} unreadable`,
-    ]
-        .filter(Boolean)
-        .join(' · ') || 'nothing yet';
+const did = (run: AdminReviewRun): string => {
+    const summary =
+        [
+            run.published && counted(run.published, 'published', 'published'),
+            run.rejected &&
+                counted(run.rejected, 'reading rejected', 'readings rejected'),
+            run.added && counted(run.added, 'written', 'written'),
+            run.dropped && counted(run.dropped, 'row dropped', 'rows dropped'),
+            run.abstained && `${run.abstained} left alone`,
+            run.failed && `${run.failed} unreadable`,
+        ]
+            .filter(Boolean)
+            .join(' · ') || 'nothing yet';
+
+    // The counts of a run that wrote nothing say what it would have done, and
+    // reading them as what it did would be exactly wrong.
+    return run.applied ? summary : `would have: ${summary}`;
+};
 
 const when = (iso: string): string => new Date(iso).toLocaleString();
 
@@ -75,6 +83,8 @@ const Progress: React.FC<{ run: AdminReviewRun; onStop: () => void }> = ({
             >
                 <Typography variant='subtitle1' sx={{ flex: 1 }}>
                     Run #{run.id} · {run.agent}
+                    {run.compareWith ? ` · re-asking #${run.compareWith}` : ''}
+                    {run.applied ? '' : ' · changing nothing'}
                 </Typography>
 
                 <Typography variant='body2' color='text.secondary'>
@@ -106,6 +116,8 @@ const Progress: React.FC<{ run: AdminReviewRun; onStop: () => void }> = ({
 const Review: React.FC = () => {
     const [agentId, setAgentId] = useState<number | ''>('');
     const [limit, setLimit] = useState(25);
+    const [compareWith, setCompareWith] = useState<number | ''>('');
+    const [applied, setApplied] = useState(true);
 
     const queryClient = useQueryClient();
 
@@ -148,6 +160,14 @@ const Review: React.FC = () => {
     const runs = overview.data?.runs ?? [];
     const active = runs.filter(({ status }) => !isSettled(status));
     const chosen = agents.find(({ id }) => id === agentId);
+    const askable = runs.filter((run) => isSettled(run.status) && run.reviewed);
+    const source = runs.find(({ id }) => id === compareWith);
+
+    const waiting = !chosen
+        ? 'Pick an agent to see what is waiting for it.'
+        : source
+          ? `${counted(source.reviewed, 'cluster', 'clusters')} run #${source.id} looked at`
+          : `${chosen.pending.toLocaleString()} clusters waiting on this agent`;
 
     return (
         <Stack spacing={2}>
@@ -189,7 +209,10 @@ const Review: React.FC = () => {
                             <MenuItem
                                 key={agent.id}
                                 value={agent.id}
-                                disabled={!agent.enabled || !agent.pending}
+                                disabled={
+                                    !agent.enabled ||
+                                    (!agent.pending && !compareWith)
+                                }
                             >
                                 {agent.name} · {agent.model}
                                 {agent.enabled ? '' : ' — off'}
@@ -214,10 +237,44 @@ const Review: React.FC = () => {
                         ))}
                     </TextField>
 
+                    <TextField
+                        select
+                        label='Same clusters as'
+                        size='small'
+                        value={compareWith}
+                        onChange={(event) =>
+                            setCompareWith(
+                                event.target.value === ''
+                                    ? ''
+                                    : Number(event.target.value),
+                            )
+                        }
+                        sx={{ minWidth: 200 }}
+                    >
+                        <MenuItem value=''>The queue</MenuItem>
+                        {askable.map((run) => (
+                            <MenuItem key={run.id} value={run.id}>
+                                Run #{run.id} · {run.agent}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+
+                    <Tooltip title='Record what the agent would do and change nothing, so another agent can be asked the same question from the same starting point.'>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={!applied}
+                                    onChange={(event) =>
+                                        setApplied(!event.target.checked)
+                                    }
+                                />
+                            }
+                            label='Change nothing'
+                        />
+                    </Tooltip>
+
                     <Typography variant='body2' sx={{ flex: 1 }}>
-                        {chosen
-                            ? `${chosen.pending.toLocaleString()} clusters waiting on this agent`
-                            : 'Pick an agent to see what is waiting for it.'}
+                        {waiting}
                     </Typography>
 
                     <Button
@@ -226,7 +283,12 @@ const Review: React.FC = () => {
                         disabled={!chosen || start.isPending}
                         onClick={() =>
                             chosen &&
-                            start.mutate({ agentId: chosen.id, limit })
+                            start.mutate({
+                                agentId: chosen.id,
+                                limit,
+                                compareWith: compareWith || null,
+                                applied,
+                            })
                         }
                     >
                         Review
@@ -263,7 +325,18 @@ const Review: React.FC = () => {
                         <TableBody>
                             {runs.map((run) => (
                                 <TableRow key={run.id} hover>
-                                    <TableCell>#{run.id}</TableCell>
+                                    <TableCell>
+                                        #{run.id}
+                                        {run.compareWith && (
+                                            <Typography
+                                                variant='caption'
+                                                color='text.secondary'
+                                                sx={{ display: 'block' }}
+                                            >
+                                                re-asked #{run.compareWith}
+                                            </Typography>
+                                        )}
+                                    </TableCell>
                                     <TableCell>{run.agent}</TableCell>
                                     <TableCell>{when(run.startedAt)}</TableCell>
                                     <TableCell>

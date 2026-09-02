@@ -140,6 +140,7 @@ describe('models', () => {
             'nameId',
             'note',
             'reason',
+            'runId',
             'toStatus',
         ]);
         expect(verifications.getAttributes().fromStatus.field).toBe(

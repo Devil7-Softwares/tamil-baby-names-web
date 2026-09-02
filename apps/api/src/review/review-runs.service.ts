@@ -45,6 +45,13 @@ const ZERO: Counts = {
 /** Why a run could not be started, in words the dashboard shows as they are. */
 export class RunRefused extends Error {}
 
+export interface StartOptions {
+    /** Re-ask that run's clusters rather than the ones this agent has not seen. */
+    compareWith?: number | null;
+    /** False records what the agent would have done and changes nothing. */
+    applied?: boolean;
+}
+
 const seen = (run: IReviewRun, agent: string): AdminReviewRun => ({
     id: run.id,
     agentId: run.agentId,
@@ -60,6 +67,8 @@ const seen = (run: IReviewRun, agent: string): AdminReviewRun => ({
     dropped: run.dropped,
     failed: run.failed,
     error: run.error,
+    compareWith: run.compareWith,
+    applied: run.applied,
     startedAt: run.startedAt.toISOString(),
     finishedAt: run.finishedAt?.toISOString() ?? null,
 });
@@ -157,7 +166,11 @@ export class ReviewRunsService implements OnApplicationBootstrap {
      * Starts a run and returns straight away. The loop keeps going after the
      * request that asked for it has been answered.
      */
-    async start(agentId: number, requested: number): Promise<AdminReviewRun> {
+    async start(
+        agentId: number,
+        requested: number,
+        { compareWith = null, applied = true }: StartOptions = {},
+    ): Promise<AdminReviewRun> {
         const agent = await this.agents.findByPk(agentId);
 
         if (!agent) {
@@ -180,11 +193,20 @@ export class ReviewRunsService implements OnApplicationBootstrap {
             );
         }
 
-        const waiting = await this.review.pending(agentId);
+        if (compareWith !== null && !(await this.runs.findByPk(compareWith))) {
+            throw new RunRefused(`There is no run #${compareWith}.`);
+        }
+
+        const waiting =
+            compareWith === null
+                ? await this.review.pending(agentId)
+                : await this.review.reAskable(compareWith);
 
         if (!waiting) {
             throw new RunRefused(
-                `“${agent.dataValues.name}” has already looked at everything in the queue.`,
+                compareWith === null
+                    ? `“${agent.dataValues.name}” has already looked at everything in the queue.`
+                    : `Run #${compareWith} recorded no verdict to re-ask.`,
             );
         }
 
@@ -192,6 +214,8 @@ export class ReviewRunsService implements OnApplicationBootstrap {
             agentId,
             requested,
             total: Math.min(requested, waiting),
+            compareWith,
+            applied,
             startedAt: new Date(),
         });
 
@@ -203,9 +227,10 @@ export class ReviewRunsService implements OnApplicationBootstrap {
         // Deliberately not awaited: the caller gets the run back now and
         // watches it. `catch` rather than `await` so a throw cannot become an
         // unhandled rejection that takes the process down.
-        void this.drive(id, agent.dataValues, requested, stop).catch(
-            (error: unknown) => this.logger.error(String(error)),
-        );
+        void this.drive(id, agent.dataValues, requested, stop, {
+            compareWith,
+            applied,
+        }).catch((error: unknown) => this.logger.error(String(error)));
 
         return this.get(id) as Promise<AdminReviewRun>;
     }
@@ -236,12 +261,16 @@ export class ReviewRunsService implements OnApplicationBootstrap {
         agent: IAgent,
         requested: number,
         stop: AbortController,
+        { compareWith, applied }: Required<StartOptions>,
     ): Promise<void> {
         const counts = { ...ZERO };
 
         try {
             await this.review.run(agent, {
                 limit: requested,
+                runId: id,
+                compareWith,
+                applied,
                 signal: stop.signal,
                 onProgress: (outcome) => {
                     tally(counts, outcome);

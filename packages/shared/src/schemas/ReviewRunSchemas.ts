@@ -20,6 +20,13 @@ export const AdminReviewRunSchema = z.object({
     dropped: z.number().int().nonnegative(),
     failed: z.number().int().nonnegative(),
     error: z.string().nullable(),
+    /** The run whose clusters this one re-asked, or null for the queue's own. */
+    compareWith: z.number().int().positive().nullable(),
+    /**
+     * False for a run that recorded what it would have done and wrote nothing.
+     * The counts then read as "would have", which is what the page says.
+     */
+    applied: z.boolean(),
     startedAt: z.string(),
     finishedAt: z.string().nullable(),
 });
@@ -45,6 +52,19 @@ export const REVIEW_BATCH_MAX = 5000;
 export const ReviewStartSchema = z.object({
     agentId: z.coerce.number().int().positive(),
     limit: z.number().int().min(1).max(REVIEW_BATCH_MAX).default(25),
+    /**
+     * Re-ask the clusters an earlier run looked at, rather than take the next
+     * unreviewed ones. This is what puts two agents on the same question, and
+     * it deliberately overrides "not already answered by this agent" — asking
+     * again is the point.
+     */
+    compareWith: z.number().int().positive().nullish(),
+    /**
+     * False records the verdicts and changes nothing. Three models can then be
+     * asked about one cluster from one starting state, which is the only way
+     * the answers are about the models rather than about who ran first.
+     */
+    applied: z.boolean().default(true),
 });
 
 export const ReviewRunIdSchema = z.object({

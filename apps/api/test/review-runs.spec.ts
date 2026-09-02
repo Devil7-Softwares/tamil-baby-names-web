@@ -43,6 +43,8 @@ interface Options {
     agents?: IAgent[];
     runs?: Partial<IReviewRun>[];
     pending?: number;
+    /** How many clusters an earlier run is reported to have looked at. */
+    reAskable?: number;
     /** What the review hands back, one per cluster it "looks at". */
     outcomes?: Array<ReviewOutcome | null>;
     /** Blocks the run until released, so a cancel can land mid-way. */
@@ -53,6 +55,7 @@ const build = ({
     agents = [agent()],
     runs = [],
     pending = 100,
+    reAskable = 10,
     outcomes = [outcome()],
     gate,
 }: Options = {}) => {
@@ -141,8 +144,11 @@ const build = ({
         findAll: async () => agents.map(({ id, name }) => ({ id, name })),
     } as unknown as AgentsModel;
 
+    const asked: Array<Record<string, unknown>> = [];
+
     const review = {
         pending: async () => pending,
+        reAskable: async () => reAskable,
         run: async (
             _agent: IAgent,
             options: {
@@ -150,6 +156,7 @@ const build = ({
                 onProgress?: (outcome: ReviewOutcome | null) => void;
             },
         ) => {
+            asked.push(options as Record<string, unknown>);
             for (const each of outcomes) {
                 await gate;
 
@@ -168,7 +175,7 @@ const build = ({
         ready: Promise.resolve(),
     } as unknown as DatabaseBootstrap);
 
-    return { service, store, updates };
+    return { service, store, updates, asked };
 };
 
 /** Lets the run's own promises settle before the assertions read the store. */
@@ -252,6 +259,72 @@ describe('a run that should not start', () => {
         const { service } = build();
 
         await expect(service.start(99, 25)).rejects.toThrow(/no such agent/);
+    });
+});
+
+describe('asking two agents the same question', () => {
+    it('queues the clusters of the run it was pointed at', async () => {
+        const { service, store, asked } = build({
+            runs: [{ agentId: 3, status: 'finished' }],
+            reAskable: 6,
+        });
+
+        const run = await service.start(3, 25, {
+            compareWith: 1,
+            applied: false,
+        });
+        await settle();
+
+        expect(run.compareWith).toBe(1);
+        expect(run.applied).toBe(false);
+        // Six, not the hundred waiting: the batch is over that run's clusters.
+        expect(run.total).toBe(6);
+        expect(asked[0]).toMatchObject({
+            compareWith: 1,
+            applied: false,
+            runId: store[1].id,
+        });
+    });
+
+    // Re-asking is the point, so the "already answered" rule is the one thing
+    // that must not stand in its way.
+    it('lets an agent that has seen everything re-ask', async () => {
+        const { service } = build({
+            runs: [{ agentId: 3, status: 'finished' }],
+            pending: 0,
+        });
+
+        await expect(
+            service.start(3, 25, { compareWith: 1 }),
+        ).resolves.toMatchObject({ compareWith: 1 });
+    });
+
+    it('refuses a run it cannot find', async () => {
+        const { service } = build();
+
+        await expect(service.start(3, 25, { compareWith: 9 })).rejects.toThrow(
+            /no run #9/,
+        );
+    });
+
+    it('refuses a run that recorded nothing to re-ask', async () => {
+        const { service } = build({
+            runs: [{ agentId: 3, status: 'failed' }],
+            reAskable: 0,
+        });
+
+        await expect(service.start(3, 25, { compareWith: 1 })).rejects.toThrow(
+            /no verdict to re-ask/,
+        );
+    });
+
+    it('still applies by default', async () => {
+        const { service, asked } = build();
+
+        await service.start(3, 25);
+        await settle();
+
+        expect(asked[0]).toMatchObject({ applied: true, compareWith: null });
     });
 });
 

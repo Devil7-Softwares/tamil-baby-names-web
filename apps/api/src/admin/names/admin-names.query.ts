@@ -58,9 +58,13 @@ const verdictExists = (extra = ''): string =>
  */
 const AGENT_REVIEW: Record<AgentReviewFilter, Utils.Literal> = {
     // Changed something and nobody has checked it.
-    decided: literal(verdictExists(`AND v."reason" <> 'abstained'`)),
+    decided: literal(
+        verdictExists(`AND v."reason" NOT IN ('abstained', 'considered')`),
+    ),
     // Looked and would not decide. Where a person is worth the most.
     unsure: literal(verdictExists(`AND v."reason" = 'abstained'`)),
+    // Decided on a run that was told to write nothing: an opinion, not an act.
+    considered: literal(verdictExists(`AND v."reason" = 'considered'`)),
     // The backlog no agent has reached.
     none: literal(`NOT ${verdictExists()}`),
 };

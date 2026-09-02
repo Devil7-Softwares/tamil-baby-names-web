@@ -47,6 +47,7 @@ const ANY = 'any';
 const AGENT_REVIEW: Array<{ value: AgentReviewFilter; label: string }> = [
     { value: 'decided', label: 'An agent decided' },
     { value: 'unsure', label: 'An agent was unsure' },
+    { value: 'considered', label: 'An agent only gave an opinion' },
     { value: 'none', label: 'No agent has looked' },
 ];
 
@@ -159,7 +160,9 @@ const Verdict: React.FC<{ verdict: AdminVerdict }> = ({ verdict }) => (
                 <Typography variant='caption' sx={{ opacity: 0.7 }}>
                     {verdict.abstained
                         ? 'It would not decide, so nothing was changed.'
-                        : 'It changed this. Nobody has checked it since.'}
+                        : verdict.considered
+                          ? 'It was asked without being allowed to write. Nothing was changed.'
+                          : 'It changed this. Nobody has checked it since.'}
                 </Typography>
             </Stack>
         }
@@ -167,7 +170,13 @@ const Verdict: React.FC<{ verdict: AdminVerdict }> = ({ verdict }) => (
         <Chip
             size='small'
             variant='outlined'
-            color={verdict.abstained ? 'warning' : 'info'}
+            color={
+                verdict.abstained
+                    ? 'warning'
+                    : verdict.considered
+                      ? 'default'
+                      : 'info'
+            }
             icon={
                 verdict.abstained ? (
                     <HelpOutlineOutlinedIcon />

@@ -348,6 +348,90 @@ describe('applying a verdict', () => {
     });
 });
 
+describe('a run that is told to change nothing', () => {
+    // The whole point: two models cannot be compared if the first one's answer
+    // has already changed the rows the second one is shown.
+    it('records what it would have done and moves nothing', async () => {
+        const { models, ledger, moves } = build();
+
+        const outcome = await applyVerdict(
+            models,
+            agent,
+            candidate(),
+            verdict({ publish: 1, reject: [2] }),
+            { applied: false, runId: 4 },
+        );
+
+        expect(outcome).toMatchObject({ published: 1, rejected: 1 });
+        expect(moves).toEqual([]);
+        expect(ledger).toHaveLength(2);
+        expect(ledger.every((entry) => entry.reason === 'considered')).toBe(
+            true,
+        );
+        // Left where they were, so the ledger never claims a status it did not
+        // write.
+        expect(
+            ledger.every((entry) => entry.fromStatus === entry.toStatus),
+        ).toBe(true);
+        expect(ledger.every((entry) => entry.runId === 4)).toBe(true);
+    });
+
+    it('counts a reading it would have written without writing it', async () => {
+        const { models, created } = build();
+
+        const outcome = await applyVerdict(
+            models,
+            agent,
+            candidate(),
+            verdict({ publish: null, reject: [], add: 'ஒரு புதிய பொருள்' }),
+            { applied: false },
+        );
+
+        expect(outcome.added).toBe(1);
+        expect(created).toEqual([]);
+    });
+
+    // Found by running it: Claude answered "none of these, here is a better
+    // one" on two clusters, and both vanished from the run's own clusters.
+    it('leaves a trace when all it would do is propose a reading', async () => {
+        const { models, ledger } = build();
+
+        await applyVerdict(
+            models,
+            agent,
+            candidate(),
+            verdict({ publish: null, reject: [], add: 'ஒரு புதிய பொருள்' }),
+            { applied: false, runId: 5 },
+        );
+
+        expect(ledger).toHaveLength(1);
+        expect(ledger[0]).toMatchObject({
+            nameId: 1,
+            reason: 'considered',
+            runId: 5,
+            fromStatus: 'candidate',
+            toStatus: 'candidate',
+        });
+    });
+
+    it('stamps the run on a verdict it did apply', async () => {
+        const { models, ledger } = build();
+
+        await applyVerdict(
+            models,
+            agent,
+            candidate(),
+            verdict({ reject: [2] }),
+            { runId: 9 },
+        );
+
+        expect(ledger.every((entry) => entry.runId === 9)).toBe(true);
+        expect(ledger.every((entry) => entry.reason !== 'considered')).toBe(
+            true,
+        );
+    });
+});
+
 describe('a model that is not sure', () => {
     it('changes nothing and says it looked', async () => {
         const { models, ledger, moves } = build();
@@ -370,6 +454,7 @@ describe('a model that is not sure', () => {
                 agentId: 7,
                 confidence: 40,
                 note: 'I do not know this name.',
+                runId: null,
             },
         ]);
     });

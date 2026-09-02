@@ -247,6 +247,7 @@ describe('what an agent made of a cluster', () => {
             confidence: 85,
             note: 'From அமுதம், nectar.',
             abstained: false,
+            considered: false,
             at: '2026-09-02T08:00:00.000Z',
         });
     });

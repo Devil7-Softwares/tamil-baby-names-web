@@ -54,7 +54,10 @@ export class AdminReviewController {
                 admin(context, errors);
 
                 try {
-                    return await this.runs.start(input.agentId, input.limit);
+                    return await this.runs.start(input.agentId, input.limit, {
+                        compareWith: input.compareWith,
+                        applied: input.applied,
+                    });
                 } catch (error) {
                     // Every refusal here is something the person can act on:
                     // turn the agent on, wait for the run, or nothing is left.

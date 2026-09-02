@@ -64,6 +64,12 @@ export const AdminVerdictSchema = z.object({
     note: z.string().nullable(),
     /** It looked and would not decide, so nothing was changed. */
     abstained: z.boolean(),
+    /**
+     * It decided, on a run that was told to write nothing. The catalogue is
+     * untouched and the verdict is only an opinion — which is a different thing
+     * from both of the above, and the queue must not read it as "changed this".
+     */
+    considered: z.boolean(),
     at: z.string(),
 });
 
@@ -88,7 +94,12 @@ export const AdminClusterSchema = z.object({
  */
 const BooleanParam = z.union([z.boolean(), z.stringbool()]);
 
-export const AGENT_REVIEW_FILTERS = ['decided', 'unsure', 'none'] as const;
+export const AGENT_REVIEW_FILTERS = [
+    'decided',
+    'unsure',
+    'considered',
+    'none',
+] as const;
 
 export type AgentReviewFilter = (typeof AGENT_REVIEW_FILTERS)[number];
 

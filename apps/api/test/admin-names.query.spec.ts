@@ -122,7 +122,18 @@ describe('the second pass over what an agent did', () => {
 
         expect(sql(clause)).toContain('"verifications"');
         expect(sql(clause)).toContain(`v."agent_id" IS NOT NULL`);
-        expect(sql(clause)).toContain(`v."reason" <> 'abstained'`);
+        expect(sql(clause)).toContain(
+            `v."reason" NOT IN ('abstained', 'considered')`,
+        );
+        expect(sql(clause)).not.toMatch(/^\s*NOT /);
+    });
+
+    // A comparison run's verdict is an opinion the catalogue never acted on,
+    // so it answers its own filter and not "an agent decided".
+    it('keeps an opinion out of what an agent decided', () => {
+        const [clause] = clauses({ ...base, agentReview: 'considered' });
+
+        expect(sql(clause)).toContain(`v."reason" = 'considered'`);
         expect(sql(clause)).not.toMatch(/^\s*NOT /);
     });
 

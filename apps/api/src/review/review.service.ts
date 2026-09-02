@@ -41,6 +41,12 @@ const MAX_TOKENS = 800;
 
 export interface RunOptions {
     limit: number;
+    /** The run this is, stamped on every verdict so it can be re-asked later. */
+    runId?: number | null;
+    /** Take that run's clusters instead of the ones this agent has not seen. */
+    compareWith?: number | null;
+    /** False records what the agent would have done and changes nothing. */
+    applied?: boolean;
     /** Called after each cluster, so a caller can show progress or stop. */
     onProgress?: (outcome: ReviewOutcome | null) => void;
     signal?: AbortSignal;
@@ -86,15 +92,38 @@ export class ReviewService {
     }
 
     /**
+     * How many clusters an earlier run looked at. A re-ask is over these, and
+     * zero means the run wrote no verdict worth re-asking — which is what a run
+     * that failed on its first cluster leaves behind.
+     */
+    async reAskable(runId: number): Promise<number> {
+        const [row] = await this.sequelize.query<{ count: string }>(
+            `SELECT count(*)::text AS count FROM (${RE_ASK}) AS asked`,
+            {
+                type: QueryTypes.SELECT,
+                replacements: { sourceRun: runId, limit: null },
+            },
+        );
+
+        return Number(row.count);
+    }
+
+    /**
      * The clusters this agent has not answered on yet. Ordered by id so a run
      * that stops and starts again carries on rather than beginning afresh.
      */
-    async candidates(agentId: number, limit: number): Promise<Candidate[]> {
+    async candidates(
+        agentId: number,
+        limit: number,
+        compareWith?: number | null,
+    ): Promise<Candidate[]> {
         const rows = await this.sequelize.query<{ cluster_id: number }>(
-            UNREVIEWED,
+            compareWith ? RE_ASK : UNREVIEWED,
             {
                 type: QueryTypes.SELECT,
-                replacements: { agentId, limit },
+                replacements: compareWith
+                    ? { sourceRun: compareWith, limit }
+                    : { agentId, limit },
             },
         );
 
@@ -122,7 +151,11 @@ export class ReviewService {
         };
 
         const config = this.agents.configOf(agent);
-        const candidates = await this.candidates(agent.id, options.limit);
+        const candidates = await this.candidates(
+            agent.id,
+            options.limit,
+            options.compareWith,
+        );
 
         for (const candidate of candidates) {
             if (options.signal?.aborted) {
@@ -189,7 +222,10 @@ export class ReviewService {
             return null;
         }
 
-        return applyVerdict(this.models, agent, candidate, parsed.verdict);
+        return applyVerdict(this.models, agent, candidate, parsed.verdict, {
+            runId: options.runId,
+            applied: options.applied,
+        });
     }
 
     /** The rows, readings and labels for a page of clusters, in three reads. */
@@ -255,6 +291,22 @@ export class ReviewService {
  * answered on. "Answered on" includes abstaining: a model that looked and would
  * not decide should not be asked the same question on the next run.
  */
+/**
+ * The clusters an earlier run looked at, whatever it decided about them and
+ * whoever asked. Re-asking deliberately ignores "this agent has already
+ * answered": the point is a second answer to the same question.
+ */
+const RE_ASK = `
+    SELECT DISTINCT COALESCE(vn."cluster_id", vm."cluster_id") AS cluster_id
+    FROM "verifications" v
+    LEFT JOIN "names" vn ON vn."id" = v."name_id"
+    LEFT JOIN "meanings" vm ON vm."id" = v."meaning_id"
+    WHERE v."run_id" = :sourceRun
+      AND COALESCE(vn."cluster_id", vm."cluster_id") IS NOT NULL
+    ORDER BY 1
+    LIMIT COALESCE(:limit, 2147483647)
+`;
+
 const UNREVIEWED = `
     SELECT c."id" AS cluster_id
     FROM "clusters" c

@@ -120,6 +120,18 @@ export const parseVerdict = (text: string): Parsed => {
           };
 };
 
+export interface VerdictOptions {
+    /** The run it belongs to, stamped on every row so the run is re-askable. */
+    runId?: number | null;
+    /**
+     * False records what the verdict *would* have done and changes nothing.
+     * The ledger rows are written with `considered` and the status they already
+     * had, so a second model can be asked the same question from the same
+     * starting state — which is the only way the answers compare.
+     */
+    applied?: boolean;
+}
+
 /**
  * Applies one verdict, in one transaction.
  *
@@ -139,6 +151,7 @@ export const applyVerdict = async (
     agent: IAgent,
     candidate: Candidate,
     verdict: ReviewVerdict,
+    { runId = null, applied = true }: VerdictOptions = {},
 ): Promise<ReviewOutcome> => {
     const outcome: ReviewOutcome = {
         clusterId: candidate.clusterId,
@@ -153,7 +166,7 @@ export const applyVerdict = async (
     };
 
     if (verdict.confidence < CONFIDENT_ENOUGH) {
-        await abstain(models, agent, candidate, verdict);
+        await abstain(models, agent, candidate, verdict, runId);
 
         return { ...outcome, abstained: true };
     }
@@ -164,6 +177,18 @@ export const applyVerdict = async (
             agentId: agent.id,
             confidence: verdict.confidence,
             note: verdict.note,
+            runId,
+        };
+
+        // A run that only records still builds the whole ledger — the decision
+        // is the same one — and then declines to act on it.
+        const settle = async (
+            model: Movable,
+            key: 'nameId' | 'meaningId',
+        ): Promise<void> => {
+            if (applied) {
+                await move(model, key, ledger, transaction);
+            }
         };
 
         const at = (index: number): IMeaning | undefined =>
@@ -196,14 +221,9 @@ export const applyVerdict = async (
                 }
             }
 
-            await move(models.names as Movable, 'nameId', ledger, transaction);
-            await move(
-                models.meanings as Movable,
-                'meaningId',
-                ledger,
-                transaction,
-            );
-            await record(models, ledger, transaction);
+            await settle(models.names as Movable, 'nameId');
+            await settle(models.meanings as Movable, 'meaningId');
+            await record(models, considered(ledger, applied), transaction);
 
             return outcome;
         }
@@ -264,32 +284,60 @@ export const applyVerdict = async (
             outcome.published += 1;
         }
 
-        await move(
-            models.meanings as Movable,
-            'meaningId',
-            ledger,
-            transaction,
-        );
+        await settle(models.meanings as Movable, 'meaningId');
 
         const added = verdict.add?.trim();
 
         if (added && !candidate.readings.some(({ text }) => text === added)) {
+            outcome.added += 1;
+        }
+
+        if (applied && outcome.added) {
             await models.meanings.create(
                 {
                     nameId: candidate.rows[0].id,
-                    text: added.normalize('NFC'),
+                    text: (added as string).normalize('NFC'),
                     sourceId: await sourceFor(models, agent, transaction),
                     status: 'candidate',
                 },
                 { transaction },
             );
-            outcome.added += 1;
         }
 
-        await record(models, ledger, transaction);
+        await record(models, considered(ledger, applied), transaction);
+
+        // A verdict whose only act was proposing a reading moves nothing, so it
+        // builds no ledger entry. When the run also writes nothing there is
+        // then no trace it was ever asked — the cluster drops out of the run's
+        // own clusters, and a re-ask silently loses it.
+        if (!ledger.length && outcome.added && !applied) {
+            await record(
+                models,
+                [
+                    {
+                        nameId: candidate.rows[0].id,
+                        fromStatus: candidate.rows[0].status,
+                        toStatus: candidate.rows[0].status,
+                        reason: 'considered',
+                        agentId: agent.id,
+                        confidence: verdict.confidence,
+                        note: verdict.note,
+                        runId,
+                    },
+                ],
+                transaction,
+            );
+        }
 
         if (!ledger.length && !outcome.added) {
-            await abstain(models, agent, candidate, verdict, transaction);
+            await abstain(
+                models,
+                agent,
+                candidate,
+                verdict,
+                runId,
+                transaction,
+            );
 
             return { ...outcome, abstained: true };
         }
@@ -308,6 +356,7 @@ const abstain = async (
     agent: IAgent,
     candidate: Candidate,
     verdict: ReviewVerdict,
+    runId: number | null,
     transaction?: Transaction,
 ): Promise<void> => {
     const subject = candidate.rows[0];
@@ -323,11 +372,29 @@ const abstain = async (
                 agentId: agent.id,
                 confidence: verdict.confidence,
                 note: verdict.note,
+                runId,
             },
         ],
         transaction,
     );
 };
+
+/**
+ * The ledger as a run that writes nothing should record it: every entry left
+ * where it was, and `considered` in place of what it would have been. Returned
+ * unchanged for a run that does write.
+ */
+const considered = (
+    ledger: VerificationDraft[],
+    applied: boolean,
+): VerificationDraft[] =>
+    applied
+        ? ledger
+        : ledger.map((entry) => ({
+              ...entry,
+              toStatus: entry.fromStatus,
+              reason: 'considered' as const,
+          }));
 
 /**
  * The narrow slice of a model this needs. `names` and `meanings` have
