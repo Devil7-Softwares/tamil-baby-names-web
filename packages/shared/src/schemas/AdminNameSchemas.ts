@@ -3,6 +3,18 @@ import { z } from 'zod';
 import { GENDERS } from '../types/Gender.js';
 import { NAME_STATUSES } from '../types/NameStatus.js';
 
+/**
+ * One `attestations` row, as the queue shows it: where a source said this and
+ * the words it used. A reading two sources agree on carries one of these each,
+ * which is the point of showing them.
+ */
+export const AdminCitationSchema = z.object({
+    id: z.number().int().positive(),
+    source: z.string().nullable(),
+    locator: z.string(),
+    excerpt: z.string().nullable(),
+});
+
 /** One reading of a name, as the review queue shows it. */
 export const AdminMeaningSchema = z.object({
     id: z.number().int().positive(),
@@ -28,6 +40,16 @@ export const AdminClusterMemberSchema = z.object({
     source: z.string().nullable(),
     /** What the import recorded that no column could hold. */
     notes: z.string().nullable(),
+    /** Where each source listed this spelling. */
+    citations: z.array(AdminCitationSchema),
+});
+
+/**
+ * A reading with the evidence behind it. The queue carries this; a review's
+ * response carries the bare reading, because nothing it changes is evidence.
+ */
+export const AdminCitedMeaningSchema = AdminMeaningSchema.extend({
+    citations: z.array(AdminCitationSchema),
 });
 
 export const AdminClusterSchema = z.object({
@@ -40,7 +62,7 @@ export const AdminClusterSchema = z.object({
      * than once is where the readings disagree, which is the whole reason to
      * look at it.
      */
-    meanings: z.array(AdminMeaningSchema),
+    meanings: z.array(AdminCitedMeaningSchema),
 });
 
 /**
@@ -84,7 +106,9 @@ export const AdminMeaningsUpdateSchema = z.object({
     meanings: z.array(AdminMeaningSchema),
 });
 
+export type AdminCitation = z.infer<typeof AdminCitationSchema>;
 export type AdminMeaning = z.infer<typeof AdminMeaningSchema>;
+export type AdminCitedMeaning = z.infer<typeof AdminCitedMeaningSchema>;
 export type AdminClusterMember = z.infer<typeof AdminClusterMemberSchema>;
 export type AdminCluster = z.infer<typeof AdminClusterSchema>;
 export type AdminNamesQuery = z.infer<typeof AdminNamesQuerySchema>;

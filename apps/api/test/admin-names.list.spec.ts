@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { AdminNamesService } from '../src/admin/names/admin-names.service.js';
 import { LookupsService } from '../src/database/lookups.service.js';
 import {
+    AttestationsModel,
     ClustersModel,
     LookupModel,
     MeaningsModel,
@@ -44,24 +45,63 @@ const member = (
     status: 'published' as const,
 });
 
+const reading = (id: number, nameId: number, text: string) => ({
+    id,
+    nameId,
+    text,
+    status: 'candidate' as const,
+    sourceId: null,
+});
+
+/** A row of `attestations`, as the queue reads it back. */
+const citation = (
+    id: number,
+    subject: { nameId: number } | { meaningId: number },
+    sourceId: number,
+    locator: string,
+    excerpt: string | null = null,
+) => ({
+    id,
+    nameId: null,
+    meaningId: null,
+    ...subject,
+    sourceId,
+    locator,
+    excerpt,
+});
+
 const lookup = (rows: Array<{ id: number; name: string }>) =>
     ({ findAll: async () => rows }) as unknown as LookupModel;
 
-const build = (members: ReturnType<typeof member>[]) => {
+const rows = <T>(values: T[]) => ({
+    findAll: async () => values.map((value) => ({ dataValues: value })),
+});
+
+const build = (
+    members: ReturnType<typeof member>[],
+    catalogue: {
+        meanings?: ReturnType<typeof reading>[];
+        citations?: ReturnType<typeof citation>[];
+    } = {},
+) => {
     const service = new AdminNamesService(
         {} as unknown as Sequelize,
-        {
-            findAll: async () => members.map((row) => ({ dataValues: row })),
-        } as unknown as NamesModel,
-        { findAll: async () => [] } as unknown as MeaningsModel,
+        rows(members) as unknown as NamesModel,
+        rows(catalogue.meanings ?? []) as unknown as MeaningsModel,
         {
             findAndCountAll: async () => ({
                 rows: [{ dataValues: cluster }],
                 count: 1,
             }),
         } as unknown as ClustersModel,
-        { findAll: async () => [] } as unknown as SourcesModel,
+        {
+            findAll: async () => [
+                { id: 1, slug: 'nithra' },
+                { id: 2, slug: 'peyar' },
+            ],
+        } as unknown as SourcesModel,
         {} as unknown as VerificationsModel,
+        rows(catalogue.citations ?? []) as unknown as AttestationsModel,
         new LookupsService(
             lookup([{ id: 1, name: 'இந்து' }]),
             lookup([{ id: 4, name: 'தமிழ்' }]),
@@ -116,5 +156,60 @@ describe('the notes a row carries', () => {
         expect(page.items[0].members[0].notes).toBe(
             'Imported under "சிறப்பு" (special).',
         );
+    });
+});
+
+describe('the evidence behind a reading', () => {
+    it('hands the reviewer where a source said it', async () => {
+        const page = await build([member(10, 1, 4)], {
+            meanings: [reading(50, 10, 'அறிவு')],
+            citations: [
+                citation(1, { meaningId: 50 }, 1, 'p. 17', 'அறிவு, ஞானம்'),
+            ],
+        }).list({ page: 1, limit: 25 });
+
+        expect(page.items[0].meanings[0].citations).toEqual([
+            {
+                id: 1,
+                source: 'nithra',
+                locator: 'p. 17',
+                excerpt: 'அறிவு, ஞானம்',
+            },
+        ]);
+    });
+
+    // Two sources landing on one reading is agreement, and a reviewer deciding
+    // between readings is exactly who that is worth showing.
+    it('keeps both sources where they agree', async () => {
+        const page = await build([member(10, 1, 4)], {
+            meanings: [reading(50, 10, 'அறிவு')],
+            citations: [
+                citation(1, { meaningId: 50 }, 1, 'p. 17'),
+                citation(2, { meaningId: 50 }, 2, '#4021'),
+            ],
+        }).list({ page: 1, limit: 25 });
+
+        expect(
+            page.items[0].meanings[0].citations.map(({ source }) => source),
+        ).toEqual(['nithra', 'peyar']);
+    });
+
+    it('cites the spelling on the row, not on its readings', async () => {
+        const page = await build([member(10, 1, 4)], {
+            meanings: [reading(50, 10, 'அறிவு')],
+            citations: [citation(1, { nameId: 10 }, 1, 'p. 17')],
+        }).list({ page: 1, limit: 25 });
+
+        expect(page.items[0].members[0].citations).toHaveLength(1);
+        expect(page.items[0].meanings[0].citations).toEqual([]);
+    });
+
+    it('says nothing for a reading nothing cites', async () => {
+        const page = await build([member(10, 1, 4)], {
+            meanings: [reading(50, 10, 'அறிவு')],
+        }).list({ page: 1, limit: 25 });
+
+        expect(page.items[0].meanings[0].citations).toEqual([]);
+        expect(page.items[0].members[0].citations).toEqual([]);
     });
 });

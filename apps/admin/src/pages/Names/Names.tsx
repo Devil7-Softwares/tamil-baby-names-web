@@ -1,3 +1,4 @@
+import FormatQuoteOutlinedIcon from '@mui/icons-material/FormatQuoteOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {
     Alert,
@@ -23,9 +24,10 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+    AdminCitation,
+    AdminCitedMeaning,
     AdminCluster,
     AdminClusterMember,
-    AdminMeaning,
     GENDERS,
     NAME_STATUSES,
     NameStatus,
@@ -81,6 +83,44 @@ const StatusChip: React.FC<{
     );
 };
 
+/**
+ * Where the sources said it. A reviewer choosing between two readings is
+ * choosing between what is behind them, and the slug alone does not say.
+ */
+const Citations: React.FC<{ citations: AdminCitation[] }> = ({ citations }) => {
+    if (!citations.length) {
+        return null;
+    }
+
+    return (
+        <Tooltip
+            title={
+                <Stack spacing={0.5}>
+                    {citations.map((citation) => (
+                        <Box key={citation.id}>
+                            <Typography
+                                variant='caption'
+                                sx={{ display: 'block', fontWeight: 600 }}
+                            >
+                                {citation.source ?? 'Unknown source'} ·{' '}
+                                {citation.locator}
+                            </Typography>
+
+                            {citation.excerpt && (
+                                <Typography variant='caption'>
+                                    “{citation.excerpt}”
+                                </Typography>
+                            )}
+                        </Box>
+                    ))}
+                </Stack>
+            }
+        >
+            <FormatQuoteOutlinedIcon fontSize='small' color='action' />
+        </Tooltip>
+    );
+};
+
 /** Whatever the import recorded about a row, and nothing where it did not. */
 const filedAs = ({ religion, language }: AdminClusterMember): string =>
     [religion, language].filter(Boolean).join(' · ');
@@ -118,13 +158,15 @@ const Members: React.FC<{
                 <Typography variant='body2' color='text.secondary'>
                     {member.source ?? '—'}
                 </Typography>
+
+                <Citations citations={member.citations} />
             </Stack>
         ))}
     </Stack>
 );
 
 const Meanings: React.FC<{
-    meanings: AdminMeaning[];
+    meanings: AdminCitedMeaning[];
     disabled: boolean;
     onChange: (id: number, status: NameStatus) => void;
 }> = ({ meanings, disabled, onChange }) => {
@@ -152,6 +194,8 @@ const Meanings: React.FC<{
                         disabled={disabled}
                         onChange={(status) => onChange(meaning.id, status)}
                     />
+
+                    <Citations citations={meaning.citations} />
                 </Stack>
             ))}
         </Stack>

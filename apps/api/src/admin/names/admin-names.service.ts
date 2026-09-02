@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+    AdminCitation,
     AdminClustersPage,
     AdminMeaning,
     AdminMeaningsUpdate,
@@ -10,6 +11,7 @@ import {
 import { Op, Sequelize, Transaction } from 'sequelize';
 
 import {
+    ATTESTATIONS_MODEL,
     CLUSTERS_MODEL,
     MEANINGS_MODEL,
     NAMES_MODEL,
@@ -19,6 +21,7 @@ import {
 } from '../../database/database.constants.js';
 import { LookupsService } from '../../database/lookups.service.js';
 import {
+    AttestationsModel,
     ClustersModel,
     IMeaning,
     ISource,
@@ -37,6 +40,9 @@ import {
 
 /** A meaning before its source id is resolved to the slug the client sees. */
 type StoredMeaning = Omit<AdminMeaning, 'source'> & { sourceId: number | null };
+
+/** A citation before the same resolution. Its source is never null. */
+type StoredCitation = Omit<AdminCitation, 'source'> & { sourceId: number };
 
 /** Reads a name off a lookup, for the rows the import gave one. */
 const labelReader =
@@ -59,6 +65,8 @@ export class AdminNamesService {
         @Inject(SOURCES_MODEL) private readonly sources: SourcesModel,
         @Inject(VERIFICATIONS_MODEL)
         private readonly verifications: VerificationsModel,
+        @Inject(ATTESTATIONS_MODEL)
+        private readonly attestations: AttestationsModel,
         private readonly lookups: LookupsService,
         private readonly sortCollation: SortCollationService,
     ) {}
@@ -80,15 +88,33 @@ export class AdminNamesService {
             rows.map(({ dataValues }) => dataValues.id),
         );
 
+        const nameIds = [...members.values()].flat().map(({ id }) => id);
+
         const [meanings, slugs, labels] = await Promise.all([
-            this.meaningsFor([...members.values()].flat().map(({ id }) => id)),
+            this.meaningsFor(nameIds),
             this.sourceSlugs(),
             this.lookups.labels(),
         ]);
 
+        // After the readings, because a reading is one of the two things a
+        // source is cited for.
+        const cited = await this.citationsFor(
+            nameIds,
+            [...meanings.values()].flat().map(({ id }) => id),
+        );
+
         const slug = labelReader(slugs);
         const religion = labelReader(labels.religions);
         const language = labelReader(labels.languages);
+
+        const citations = (
+            from: Map<number, StoredCitation[]>,
+            id: number,
+        ): AdminCitation[] =>
+            (from.get(id) ?? []).map(({ sourceId, ...citation }) => ({
+                ...citation,
+                source: slug(sourceId),
+            }));
 
         return {
             items: rows.map(({ dataValues: cluster }) => {
@@ -105,6 +131,7 @@ export class AdminNamesService {
                         status: row.status,
                         source: slug(row.sourceId),
                         notes: row.notes,
+                        citations: citations(cited.byName, row.id),
                     })),
                     // Pooled across the cluster's rows and re-sorted: gathering
                     // them row by row would order by row before status.
@@ -114,6 +141,7 @@ export class AdminNamesService {
                         .map(({ sourceId, ...meaning }) => ({
                             ...meaning,
                             source: slug(sourceId),
+                            citations: citations(cited.byMeaning, meaning.id),
                         })),
                 };
             }),
@@ -341,6 +369,58 @@ export class AdminNamesService {
         }
 
         return byName;
+    }
+
+    /**
+     * What cites the rows and readings on this page. A source that names a page
+     * number is worth more to a reviewer than a slug on its own, and two
+     * sources citing the same reading is the agreement they are looking for.
+     */
+    private async citationsFor(
+        nameIds: number[],
+        meaningIds: number[],
+    ): Promise<{
+        byName: Map<number, StoredCitation[]>;
+        byMeaning: Map<number, StoredCitation[]>;
+    }> {
+        const byName = new Map<number, StoredCitation[]>();
+        const byMeaning = new Map<number, StoredCitation[]>();
+
+        const subjects = [
+            ...(nameIds.length ? [{ nameId: { [Op.in]: nameIds } }] : []),
+            ...(meaningIds.length
+                ? [{ meaningId: { [Op.in]: meaningIds } }]
+                : []),
+        ];
+
+        if (!subjects.length) {
+            return { byName, byMeaning };
+        }
+
+        const rows = await this.attestations.findAll({
+            where: { [Op.or]: subjects },
+            order: ['id'],
+        });
+
+        for (const { dataValues } of rows) {
+            // 0012's exclusive arc: a citation has one subject or the other.
+            const [into, subject] =
+                typeof dataValues.nameId === 'number'
+                    ? [byName, dataValues.nameId]
+                    : [byMeaning, dataValues.meaningId as number];
+
+            into.set(subject, [
+                ...(into.get(subject) ?? []),
+                {
+                    id: dataValues.id,
+                    locator: dataValues.locator,
+                    excerpt: dataValues.excerpt,
+                    sourceId: dataValues.sourceId,
+                },
+            ]);
+        }
+
+        return { byName, byMeaning };
     }
 
     private async sourceSlugs(): Promise<Map<number, string>> {
