@@ -27,6 +27,17 @@ export const ImportSourceSchema = z.object({
 });
 
 /**
+ * Where in the source the record was found. `locator` is whatever lets somebody
+ * go and check — a URL, a page number, a record id — and `excerpt` is the
+ * source's own words, so a reviewer can read what a reading is based on rather
+ * than trusting the source's name.
+ */
+export const ImportAttestationSchema = z.object({
+    locator: text(2000),
+    excerpt: text(4000).nullish(),
+});
+
+/**
  * One name as a source gives it.
  *
  * `religion` and `language` are the lookup slugs the catalogue already filters
@@ -47,6 +58,7 @@ export const ImportNameSchema = z.object({
     meanings: z.array(text(2000)).default([]),
     /** What the source recorded that no column holds. */
     notes: text(1000).nullish(),
+    attestation: ImportAttestationSchema.nullish(),
 });
 
 /**
@@ -76,6 +88,8 @@ export const ImportReportSchema = z.object({
     clusters: z.number().int().min(0),
     names: z.number().int().min(0),
     meanings: z.number().int().min(0),
+    /** Citations written, which a record without one contributes none of. */
+    attestations: z.number().int().min(0),
     /** Records the catalogue already held in full. */
     unchanged: z.number().int().min(0),
     rejected: z.array(ImportRejectionSchema),
@@ -98,6 +112,7 @@ export const ImportRequestSchema = z.object({
     dryRun: z.boolean().default(false),
 });
 
+export type ImportAttestationInput = z.output<typeof ImportAttestationSchema>;
 export type ImportRejection = z.output<typeof ImportRejectionSchema>;
 export type ImportReport = z.output<typeof ImportReportSchema>;
 export type ImportRequest = z.output<typeof ImportRequestSchema>;

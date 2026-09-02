@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { AdminImportService } from '../src/admin/import/admin-import.service.js';
 import {
+    AttestationsModel,
     ClustersModel,
     LookupModel,
     MeaningsModel,
@@ -63,6 +64,10 @@ const build = () => {
             },
         } as unknown as SourcesModel,
         {
+            findAll: async () => [],
+            bulkCreate: async () => [],
+        } as unknown as AttestationsModel,
+        {
             findAll: async () => [{ id: 1, slug: 'hindu', name: 'இந்து' }],
         } as unknown as LookupModel,
         {
@@ -88,6 +93,7 @@ describe('AdminImportService', () => {
                 clusters: 1,
                 names: 1,
                 meanings: 1,
+                attestations: 0,
                 unchanged: 0,
                 rejected: [],
             },

@@ -10,6 +10,7 @@ import { AdminBootstrapService } from '../src/admin/users/admin-bootstrap.servic
 import { validateEnv } from '../src/config/env.js';
 import {
     ADMIN_USERS_MODEL,
+    ATTESTATIONS_MODEL,
     CLUSTERS_MODEL,
     LANGUAGES_MODEL,
     MEANINGS_MODEL,
@@ -57,6 +58,7 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
         LANGUAGES_MODEL,
         SOURCES_MODEL,
         VERIFICATIONS_MODEL,
+        ATTESTATIONS_MODEL,
     ];
 
     @Global()

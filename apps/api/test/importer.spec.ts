@@ -1,9 +1,10 @@
 import { ImportFileInput } from '@tbn/shared';
-import { Sequelize } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import { describe, expect, it } from 'vitest';
 
 import { ImporterModels, importNames } from '../src/database/importer.js';
 import {
+    AttestationsModel,
     ClustersModel,
     LookupModel,
     MeaningsModel,
@@ -36,6 +37,15 @@ interface Reading {
     status: string;
 }
 
+interface Citation {
+    id: number;
+    nameId?: number | null;
+    meaningId?: number | null;
+    sourceId: number;
+    locator: string;
+    excerpt: string | null;
+}
+
 const build = ({
     clusters = [] as Cluster[],
     names = [] as NameRow[],
@@ -45,6 +55,7 @@ const build = ({
         clusters: [...clusters],
         names: [...names],
         readings: [...readings],
+        citations: [] as Citation[],
     };
 
     let next = 100;
@@ -59,6 +70,7 @@ const build = ({
                     clusters: [...store.clusters],
                     names: [...store.names],
                     readings: [...store.readings],
+                    citations: [...store.citations],
                 };
 
                 try {
@@ -117,9 +129,21 @@ const build = ({
             },
         } as unknown as NamesModel,
         meanings: {
-            findAll: async ({ where }: { where: { clusterId: number } }) =>
+            findAll: async ({
+                where,
+            }: {
+                where: {
+                    clusterId: number;
+                    text?: { [Op.in]: string[] };
+                };
+            }) =>
                 store.readings
-                    .filter(({ clusterId }) => clusterId === where.clusterId)
+                    .filter(
+                        (row) =>
+                            row.clusterId === where.clusterId &&
+                            (!where.text ||
+                                where.text[Op.in].includes(row.text)),
+                    )
                     .map((dataValues) => ({ dataValues })),
             bulkCreate: async (drafts: Array<Record<string, unknown>>) => {
                 for (const draft of drafts) {
@@ -143,6 +167,30 @@ const build = ({
             findOrCreate: async () => [{ dataValues: { id: SOURCE_ID } }, true],
             update: async () => [1],
         } as unknown as SourcesModel,
+        attestations: {
+            // Filtered by source and locator only. The importer keys what comes
+            // back by subject, so a superset changes nothing and the `Op.or`
+            // over two columns does not have to be reimplemented here.
+            findAll: async ({
+                where,
+            }: {
+                where: { sourceId: number; locator: string };
+            }) =>
+                store.citations
+                    .filter(
+                        (row) =>
+                            row.sourceId === where.sourceId &&
+                            row.locator === where.locator,
+                    )
+                    .map((dataValues) => ({ dataValues })),
+            bulkCreate: async (drafts: Array<Record<string, unknown>>) => {
+                for (const draft of drafts) {
+                    store.citations.push({ ...draft, id: id() } as Citation);
+                }
+
+                return [];
+            },
+        } as unknown as AttestationsModel,
         religions: {
             findAll: async () => [
                 { id: 1, slug: 'hindu', name: 'இந்து' },
@@ -161,6 +209,8 @@ const file = (names: unknown[]): ImportFileInput => ({
     source: { slug: 'nithra', kind: 'app' },
     names,
 });
+
+const cited = { locator: 'page 42', excerpt: 'அறிவு — knowledge' };
 
 const record = (over: Record<string, unknown> = {}) => ({
     name: 'அறிவு',
@@ -182,6 +232,7 @@ describe('importing names', () => {
             clusters: 1,
             names: 1,
             meanings: 1,
+            attestations: 0,
             unchanged: 0,
             rejected: [],
         });
@@ -336,6 +387,88 @@ describe('importing names', () => {
         expect(report.names).toBe(0);
         expect(report.rejected[0]).toMatchObject({ at: 0, name: 'அறிவு' });
         expect(report.rejected[0].reason).toContain('gender');
+    });
+
+    it('cites the row and every reading of a record that says where it came from', async () => {
+        const { models, store } = build();
+
+        const report = await importNames(
+            models,
+            file([
+                record({
+                    meanings: ['அறிவு', 'ஞானம்'],
+                    attestation: cited,
+                }),
+            ]),
+        );
+
+        expect(report.attestations).toBe(3);
+        expect(store.citations).toHaveLength(3);
+        expect(
+            store.citations.every(
+                ({ locator, excerpt, sourceId }) =>
+                    locator === cited.locator &&
+                    excerpt === cited.excerpt &&
+                    sourceId === SOURCE_ID,
+            ),
+        ).toBe(true);
+        expect(store.citations.filter(({ nameId }) => nameId)).toHaveLength(1);
+    });
+
+    // Agreement between sources, which is the strongest thing the catalogue can
+    // say about a reading — and only visible if both cite the same row.
+    it('cites the reading another source already published', async () => {
+        const { models, store } = build({
+            clusters: [
+                { id: 9, name: 'அறிவு', gender: 'boy', sortKey: 'arivu' },
+            ],
+            names: [{ id: 5, clusterId: 9, sourceId: 1 }],
+            readings: [
+                {
+                    id: 50,
+                    nameId: 5,
+                    clusterId: 9,
+                    text: 'அறிவு',
+                    sourceId: 1,
+                    status: 'published',
+                },
+            ],
+        });
+
+        const report = await importNames(
+            models,
+            file([record({ attestation: cited })]),
+        );
+
+        expect(report.meanings).toBe(0);
+        expect(
+            store.citations.map(({ meaningId }) => meaningId).filter(Boolean),
+        ).toEqual([50]);
+    });
+
+    it('cites nothing for a record that does not say where it came from', async () => {
+        const { models, store } = build();
+
+        const report = await importNames(models, file([record()]));
+
+        expect(report.attestations).toBe(0);
+        expect(store.citations).toEqual([]);
+    });
+
+    it('does not cite the same thing twice when the batch is re-run', async () => {
+        const { models, store } = build();
+        const batch = file([record({ attestation: cited })]);
+
+        await importNames(models, batch);
+        const again = await importNames(models, batch);
+
+        expect(again).toMatchObject({
+            names: 0,
+            meanings: 0,
+            attestations: 0,
+            unchanged: 1,
+        });
+        expect(store.citations).toHaveLength(2);
     });
 
     it('says what it would do on a dry run, and writes none of it', async () => {

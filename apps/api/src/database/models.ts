@@ -149,6 +149,25 @@ export interface IVerification {
 export type VerificationDraft = Pick<IVerification, 'fromStatus' | 'toStatus'> &
     Partial<Pick<IVerification, 'nameId' | 'meaningId' | 'reason' | 'actorId'>>;
 
+/**
+ * Where in a source a row or a reading was found. The subject is the same
+ * exclusive arc the ledger uses, and `locator` is free text because sources
+ * have nothing in common: a URL, a page, a record id.
+ */
+export interface IAttestation {
+    id: number;
+    nameId: number | null;
+    meaningId: number | null;
+    sourceId: number;
+    locator: string;
+    /** The source's own words, where there are any worth quoting. */
+    excerpt: string | null;
+    createdAt: Date;
+}
+
+export type AttestationDraft = Pick<IAttestation, 'sourceId' | 'locator'> &
+    Partial<Pick<IAttestation, 'nameId' | 'meaningId' | 'excerpt'>>;
+
 export type NamesModel = ModelStatic<Model<NamesRow, NameDraft>>;
 export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
 export type MeaningsModel = ModelStatic<Model<IMeaning, MeaningDraft>>;
@@ -157,6 +176,9 @@ export type LookupModel = ModelStatic<Model<ILookup, LookupDraft>>;
 export type SourcesModel = ModelStatic<Model<ISource, SourceDraft>>;
 export type VerificationsModel = ModelStatic<
     Model<IVerification, VerificationDraft>
+>;
+export type AttestationsModel = ModelStatic<
+    Model<IAttestation, AttestationDraft>
 >;
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 
@@ -351,6 +373,32 @@ export const defineVerifications = (sequelize: Sequelize): VerificationsModel =>
             tableName: 'verifications',
             // Written once and never revised, so there is nothing an
             // `updated_at` could say that `created_at` does not.
+            timestamps: true,
+            updatedAt: false,
+            underscored: true,
+        },
+    );
+
+export const defineAttestations = (sequelize: Sequelize): AttestationsModel =>
+    sequelize.define<Model<IAttestation, AttestationDraft>>(
+        'Attestations',
+        {
+            id,
+            nameId: { type: DataTypes.INTEGER, field: 'name_id' },
+            meaningId: { type: DataTypes.INTEGER, field: 'meaning_id' },
+            sourceId: {
+                type: DataTypes.INTEGER,
+                field: 'source_id',
+                allowNull: false,
+            },
+            locator: { type: DataTypes.TEXT, allowNull: false },
+            excerpt: DataTypes.TEXT,
+            createdAt: DataTypes.DATE,
+        },
+        {
+            ...table,
+            tableName: 'attestations',
+            // Written once and never revised, as the ledger is.
             timestamps: true,
             updatedAt: false,
             underscored: true,

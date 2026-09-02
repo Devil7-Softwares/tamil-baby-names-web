@@ -5,6 +5,7 @@ import { Sequelize } from 'sequelize';
 import { DatabaseBootstrap } from './database.bootstrap.js';
 import {
     ADMIN_USERS_MODEL,
+    ATTESTATIONS_MODEL,
     CLUSTERS_MODEL,
     LANGUAGES_MODEL,
     MEANINGS_MODEL,
@@ -18,6 +19,7 @@ import {
 import { LookupsService } from './lookups.service.js';
 import {
     defineAdminUsers,
+    defineAttestations,
     defineClusters,
     defineLanguages,
     defineMeanings,
@@ -82,6 +84,11 @@ import { SortCollationService } from './sort-collation.service.js';
             inject: [SEQUELIZE],
         },
         {
+            provide: ATTESTATIONS_MODEL,
+            useFactory: defineAttestations,
+            inject: [SEQUELIZE],
+        },
+        {
             provide: ADMIN_USERS_MODEL,
             useFactory: defineAdminUsers,
             inject: [SEQUELIZE],
@@ -100,6 +107,7 @@ import { SortCollationService } from './sort-collation.service.js';
         LANGUAGES_MODEL,
         SOURCES_MODEL,
         VERIFICATIONS_MODEL,
+        ATTESTATIONS_MODEL,
         ADMIN_USERS_MODEL,
         DatabaseBootstrap,
         LookupsService,

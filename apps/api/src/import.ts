@@ -9,6 +9,7 @@ import { Sequelize } from 'sequelize';
 import { AppModule } from './app.module.js';
 import { DatabaseBootstrap } from './database/database.bootstrap.js';
 import {
+    ATTESTATIONS_MODEL,
     CLUSTERS_MODEL,
     LANGUAGES_MODEL,
     MEANINGS_MODEL,
@@ -92,6 +93,7 @@ const run = async (): Promise<void> => {
         meanings: context.get(MEANINGS_MODEL),
         clusters: context.get(CLUSTERS_MODEL),
         sources: context.get(SOURCES_MODEL),
+        attestations: context.get(ATTESTATIONS_MODEL),
         religions: context.get(RELIGIONS_MODEL),
         languages: context.get(LANGUAGES_MODEL),
     };
@@ -109,8 +111,9 @@ const run = async (): Promise<void> => {
     logger.log(
         `${dryRun ? 'Would add' : 'Added'} ${report.names} names in ` +
             `${report.clusters} new clusters with ${report.meanings} readings ` +
-            `from "${report.source}", as candidates. ${report.unchanged} were ` +
-            `already there and ${report.rejected.length} were refused.`,
+            `and ${report.attestations} citations from "${report.source}", as ` +
+            `candidates. ${report.unchanged} were already there and ` +
+            `${report.rejected.length} were refused.`,
     );
 
     await context.close();

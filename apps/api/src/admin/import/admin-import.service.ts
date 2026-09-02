@@ -5,6 +5,7 @@ import { ImportFileSchema, ImportReport, ImportRequest } from '@tbn/shared';
 import { Sequelize } from 'sequelize';
 
 import {
+    ATTESTATIONS_MODEL,
     CLUSTERS_MODEL,
     LANGUAGES_MODEL,
     MEANINGS_MODEL,
@@ -15,6 +16,7 @@ import {
 } from '../../database/database.constants.js';
 import { importNames } from '../../database/importer.js';
 import {
+    AttestationsModel,
     ClustersModel,
     LookupModel,
     MeaningsModel,
@@ -41,6 +43,8 @@ export class AdminImportService {
         @Inject(MEANINGS_MODEL) private readonly meanings: MeaningsModel,
         @Inject(CLUSTERS_MODEL) private readonly clusters: ClustersModel,
         @Inject(SOURCES_MODEL) private readonly sources: SourcesModel,
+        @Inject(ATTESTATIONS_MODEL)
+        private readonly attestations: AttestationsModel,
         @Inject(RELIGIONS_MODEL) private readonly religions: LookupModel,
         @Inject(LANGUAGES_MODEL) private readonly languages: LookupModel,
     ) {}
@@ -74,6 +78,7 @@ export class AdminImportService {
                 meanings: this.meanings,
                 clusters: this.clusters,
                 sources: this.sources,
+                attestations: this.attestations,
                 religions: this.religions,
                 languages: this.languages,
             },

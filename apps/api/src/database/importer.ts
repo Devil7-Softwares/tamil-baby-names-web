@@ -6,10 +6,12 @@ import {
     ImportSourceInput,
     sortKey,
 } from '@tbn/shared';
-import { Sequelize, Transaction } from 'sequelize';
+import { Op, Sequelize, Transaction } from 'sequelize';
 
 import { numerologyOf } from '../names/numerology-backfill.service.js';
 import {
+    AttestationDraft,
+    AttestationsModel,
     ClustersModel,
     ILookup,
     ISource,
@@ -25,6 +27,7 @@ export interface ImporterModels {
     meanings: MeaningsModel;
     clusters: ClustersModel;
     sources: SourcesModel;
+    attestations: AttestationsModel;
     religions: LookupModel;
     languages: LookupModel;
 }
@@ -42,6 +45,18 @@ class DryRun extends Error {
         super('dry run');
     }
 }
+
+/**
+ * Which side of the arc a citation is on, written the same way for a draft and
+ * for a row read back, so an absent id and a null one are one key.
+ */
+const subjectKey = ({
+    nameId,
+    meaningId,
+}: {
+    nameId?: number | null;
+    meaningId?: number | null;
+}): string => `${nameId ?? '-'}:${meaningId ?? '-'}`;
 
 /** For a rejection to name the record before it is known to have a name. */
 const nameOf = (record: unknown): string | null => {
@@ -125,6 +140,7 @@ const write = async (
         clusters: 0,
         names: 0,
         meanings: 0,
+        attestations: 0,
         unchanged: 0,
         rejected: [],
     };
@@ -152,7 +168,7 @@ const write = async (
             continue;
         }
 
-        const { name, gender, meanings, notes } = parsed.data;
+        const { name, gender, meanings, notes, attestation } = parsed.data;
         const religion = religions.get(parsed.data.religion);
         const language = languages.get(parsed.data.language);
 
@@ -212,37 +228,135 @@ const write = async (
                 { transaction },
             ));
 
-        report.names += existing ? 0 : 1;
+        const added = existing ? 0 : 1;
+
+        report.names += added;
 
         const known = await textsOf(models, clusterId, readings, transaction);
         // Deduplicated against itself as well as against the cluster: a source
         // that repeats a reading inside one record is still saying it once.
-        const fresh = [...new Set(meanings)].filter((text) => !known.has(text));
+        const wanted = [...new Set(meanings)];
+        const fresh = wanted.filter((text) => !known.has(text));
 
-        if (!fresh.length) {
-            report.unchanged += existing ? 1 : 0;
+        if (fresh.length) {
+            await models.meanings.bulkCreate(
+                fresh.map((text) => ({
+                    nameId: row.dataValues.id,
+                    text,
+                    sourceId: source.id,
+                    status: 'candidate' as const,
+                })),
+                { transaction },
+            );
 
-            continue;
+            for (const text of fresh) {
+                known.add(text);
+            }
+
+            report.meanings += fresh.length;
         }
 
-        await models.meanings.bulkCreate(
-            fresh.map((text) => ({
-                nameId: row.dataValues.id,
-                text,
-                sourceId: source.id,
-                status: 'candidate' as const,
-            })),
-            { transaction },
-        );
+        const cited = attestation
+            ? await cite(
+                  models,
+                  {
+                      sourceId: source.id,
+                      nameId: row.dataValues.id,
+                      clusterId,
+                      texts: wanted,
+                      ...attestation,
+                  },
+                  transaction,
+              )
+            : 0;
 
-        for (const text of fresh) {
-            known.add(text);
+        report.attestations += cited;
+
+        // Nothing at all: no row, no reading, no citation. Which is what a
+        // second run of the same file should report for every record in it.
+        if (!added && !fresh.length && !cited) {
+            report.unchanged += 1;
         }
-
-        report.meanings += fresh.length;
     }
 
     return report;
+};
+
+/**
+ * Cites the row and every reading of the record, and says how many citations
+ * were new.
+ *
+ * The readings are found by text across the cluster rather than by the ids this
+ * run wrote, so a source landing on a reading another source already published
+ * cites *that* row. Two sources agreeing is the opposite of a duplicate — it is
+ * the strongest thing the catalogue can say about a reading — and it is only
+ * visible if both citations reach the same row.
+ */
+const cite = async (
+    models: ImporterModels,
+    subject: {
+        sourceId: number;
+        nameId: number;
+        clusterId: number;
+        texts: string[];
+        locator: string;
+        excerpt?: string | null;
+    },
+    transaction: Transaction,
+): Promise<number> => {
+    const { sourceId, nameId, clusterId, texts, locator } = subject;
+    const excerpt = subject.excerpt ?? null;
+
+    const readings = texts.length
+        ? await models.meanings.findAll({
+              where: { clusterId, text: { [Op.in]: texts } },
+              attributes: ['id'],
+              transaction,
+          })
+        : [];
+
+    const drafts: AttestationDraft[] = [
+        { nameId, sourceId, locator, excerpt },
+        ...readings.map(({ dataValues }) => ({
+            meaningId: dataValues.id,
+            sourceId,
+            locator,
+            excerpt,
+        })),
+    ];
+
+    // Counted by what is missing rather than by what the insert returns:
+    // `ignoreDuplicates` cannot say which rows it skipped.
+    const already = await models.attestations.findAll({
+        where: {
+            sourceId,
+            locator,
+            [Op.or]: [
+                { nameId },
+                {
+                    meaningId: {
+                        [Op.in]: readings.map((r) => r.dataValues.id),
+                    },
+                },
+            ],
+        },
+        attributes: ['nameId', 'meaningId'],
+        transaction,
+    });
+
+    const cited = new Set(
+        already.map(({ dataValues }) => subjectKey(dataValues)),
+    );
+    const missing = drafts.filter((draft) => !cited.has(subjectKey(draft)));
+
+    if (missing.length) {
+        await models.attestations.bulkCreate(missing, {
+            ignoreDuplicates: true,
+            transaction,
+        });
+    }
+
+    return missing.length;
 };
 
 /** Every text the cluster already holds, whatever its status or its source. */

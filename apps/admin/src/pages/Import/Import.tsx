@@ -36,6 +36,7 @@ const COUNTS: Array<{ key: keyof ImportReport; one: string; many: string }> = [
     { key: 'names', one: 'name', many: 'names' },
     { key: 'clusters', one: 'new cluster', many: 'new clusters' },
     { key: 'meanings', one: 'reading', many: 'readings' },
+    { key: 'attestations', one: 'citation', many: 'citations' },
     { key: 'unchanged', one: 'already there', many: 'already there' },
 ];
 
