@@ -19,7 +19,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "review:names": "node dist/review.js"
+    "review:names": "node dist/review.js",
+    "scout:batch": "node dist/scout.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",
