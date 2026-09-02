@@ -1,5 +1,6 @@
 export * from './AdminNameSchemas.js';
 export * from './AdminOverviewSchemas.js';
+export * from './AgentSchemas.js';
 export * from './ImportSchemas.js';
 export * from './LoginSchema.js';
 export * from './MessageResponseSchema.js';

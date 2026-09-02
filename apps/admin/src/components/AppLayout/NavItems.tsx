@@ -1,4 +1,5 @@
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import SortByAlphaOutlinedIcon from '@mui/icons-material/SortByAlphaOutlined';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import { ReactNode } from 'react';
@@ -22,6 +23,12 @@ export const NavItems: NavItem[] = [
         label: 'Import',
         path: '/import',
         icon: <UploadFileOutlinedIcon />,
+        adminOnly: true,
+    },
+    {
+        label: 'Agents',
+        path: '/agents',
+        icon: <SmartToyOutlinedIcon />,
         adminOnly: true,
     },
 ];

@@ -3,6 +3,9 @@ import { REQUEST } from '@nestjs/core';
 import { ORPCModule } from '@orpc/nest';
 import { Request } from 'express';
 
+import { AgentsModule } from '../agents/agents.module.js';
+import { AdminAgentsController } from './agents/admin-agents.controller.js';
+import { AdminAgentsService } from './agents/admin-agents.service.js';
 import { AdminAuthController } from './auth/admin-auth.controller.js';
 import { AdminAuthGuard } from './auth/admin-auth.guard.js';
 import { AdminAuthService } from './auth/admin-auth.service.js';
@@ -29,14 +32,17 @@ declare module '@orpc/nest' {
             useFactory: (request: Request) => ({ context: { request } }),
             inject: [REQUEST],
         }),
+        AgentsModule,
     ],
     controllers: [
+        AdminAgentsController,
         AdminAuthController,
         AdminImportController,
         AdminNamesController,
         AdminOverviewController,
     ],
     providers: [
+        AdminAgentsService,
         AdminAuthGuard,
         AdminAuthService,
         AdminBootstrapService,
