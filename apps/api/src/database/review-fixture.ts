@@ -42,16 +42,6 @@ export const seedReviewFixture = async (
     { sequelize, names, meanings, sources }: FixtureModels,
     clusterLimit: number = DEFAULT_CLUSTERS,
 ): Promise<FixtureReport> => {
-    const [source] = await sources.findOrCreate({
-        where: { slug: FIXTURE_SOURCE },
-        defaults: {
-            slug: FIXTURE_SOURCE,
-            kind: 'fixture',
-            title: 'Development review fixture',
-            trust: 0,
-        },
-    });
-
     const clusterIds = (
         await sequelize.query<{ cluster_id: number }>(
             `SELECT "cluster_id" FROM "names"
@@ -76,7 +66,7 @@ export const seedReviewFixture = async (
         })
     ).map(({ dataValues }) => dataValues);
 
-    const drafts = [];
+    const missing: Array<{ nameId: number; text: string }> = [];
 
     for (const clusterId of clusterIds) {
         const members = rows.filter((row) => row.clusterId === clusterId);
@@ -94,20 +84,36 @@ export const seedReviewFixture = async (
 
             for (const text of texts) {
                 if (!already.has(text)) {
-                    drafts.push({
-                        nameId: member.id,
-                        text,
-                        sourceId: source.dataValues.id,
-                        status: 'candidate' as const,
-                    });
+                    missing.push({ nameId: member.id, text });
                 }
             }
         }
     }
 
-    await meanings.bulkCreate(drafts);
+    if (!missing.length) {
+        return { clusters: clusterIds.length, readings: 0 };
+    }
 
-    return { clusters: clusterIds.length, readings: drafts.length };
+    // Last, so a run that writes nothing leaves no source behind owning nothing.
+    const [source] = await sources.findOrCreate({
+        where: { slug: FIXTURE_SOURCE },
+        defaults: {
+            slug: FIXTURE_SOURCE,
+            kind: 'fixture',
+            title: 'Development review fixture',
+            trust: 0,
+        },
+    });
+
+    await meanings.bulkCreate(
+        missing.map((draft) => ({
+            ...draft,
+            sourceId: source.dataValues.id,
+            status: 'candidate' as const,
+        })),
+    );
+
+    return { clusters: clusterIds.length, readings: missing.length };
 };
 
 /**

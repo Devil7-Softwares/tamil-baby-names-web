@@ -42,6 +42,7 @@ const build = ({
     source = null as { id: number } | null,
 }) => {
     const created: Array<Partial<Reading>> = [];
+    const sourced: string[] = [];
     const destroyed: Array<Record<string, unknown>> = [];
     const updated: Array<{ values: unknown; where: unknown }> = [];
     let store = [...readings];
@@ -93,13 +94,17 @@ const build = ({
             },
         } as unknown as MeaningsModel,
         sources: {
-            findOrCreate: async () => [{ dataValues: { id: FIXTURE_ID } }],
+            findOrCreate: async (options: { where: { slug: string } }) => {
+                sourced.push(options.where.slug);
+
+                return [{ dataValues: { id: FIXTURE_ID } }];
+            },
             findOne: async () => (source ? { dataValues: source } : null),
             destroy: async () => 0,
         } as unknown as SourcesModel,
     };
 
-    return { models, created, destroyed, updated };
+    return { models, created, destroyed, updated, sourced };
 };
 
 const reading = (
@@ -112,7 +117,7 @@ const reading = (
 
 describe('the review fixture', () => {
     it('gives each row the reading its sibling disagrees with', async () => {
-        const { models, created } = build({
+        const { models, created, sourced } = build({
             rows: [
                 { id: 1, clusterId: 9 },
                 { id: 2, clusterId: 9 },
@@ -126,6 +131,7 @@ describe('the review fixture', () => {
         const report = await seedReviewFixture(models);
 
         expect(report).toEqual({ clusters: 1, readings: 2 });
+        expect(sourced).toEqual([FIXTURE_SOURCE]);
         expect(created).toEqual([
             {
                 nameId: 1,
@@ -259,5 +265,39 @@ describe('undoing the review fixture', () => {
 
     it('names the source it marks its readings with', () => {
         expect(FIXTURE_SOURCE).toBe('dev-fixture');
+    });
+});
+
+describe('a run with nothing to seed', () => {
+    // `--clusters=0`, or a database whose duplicated clusters agree, used to
+    // leave a `dev-fixture` source row behind that owned no reading.
+    it('leaves no source row behind when the rows agree', async () => {
+        const { models, created, sourced } = build({
+            rows: [
+                { id: 1, clusterId: 9 },
+                { id: 2, clusterId: 9 },
+            ],
+            readings: [
+                reading(10, 1, 'அழிப்பவர்'),
+                reading(11, 2, 'அழிப்பவர்'),
+            ],
+        });
+
+        expect(await seedReviewFixture(models)).toEqual({
+            clusters: 1,
+            readings: 0,
+        });
+        expect(created).toEqual([]);
+        expect(sourced).toEqual([]);
+    });
+
+    it('leaves no source row behind when there is no cluster to seed', async () => {
+        const { models, sourced } = build({ rows: [] });
+
+        expect(await seedReviewFixture(models)).toEqual({
+            clusters: 0,
+            readings: 0,
+        });
+        expect(sourced).toEqual([]);
     });
 });
