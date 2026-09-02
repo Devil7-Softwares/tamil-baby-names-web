@@ -31,10 +31,18 @@ export type AdminUserDraft = Omit<IAdminUser, 'id' | 'createdAt' | 'updatedAt'>;
  * per-method columns were added at runtime and never declared here, so
  * typescript could not see the columns the queries sorted on.
  */
-export interface NamesRow extends Omit<IName, 'meaning'> {
+export interface NamesRow extends Omit<
+    IName,
+    'meaning' | 'religion' | 'language'
+> {
     numerology: NameNumerology | null;
     sourceId: number | null;
     clusterId: number | null;
+    // Null where the source that brought the row filed it under nothing. The
+    // public shape keeps them required: a row reaches the site published, and
+    // by then a reviewer has decided.
+    religion: string | null;
+    language: string | null;
     religionId: number | null;
     languageId: number | null;
     /** What a reviewer needs to know about the row that no column says. */

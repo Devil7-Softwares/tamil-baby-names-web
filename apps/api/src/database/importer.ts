@@ -65,6 +65,17 @@ const nameOf = (record: unknown): string | null => {
     return typeof name === 'string' ? name : null;
 };
 
+/**
+ * The lookup row a slug names, `null` where the source filed the record under
+ * nothing, and `undefined` where it named a bucket the catalogue does not
+ * carry — which is the one of the three that is a rejection.
+ */
+const filed = (
+    slug: string | null | undefined,
+    lookup: Map<string, ILookup>,
+): ILookup | null | undefined =>
+    slug === null || slug === undefined ? null : lookup.get(slug);
+
 const slugged = async (
     model: LookupModel,
     transaction: Transaction,
@@ -169,16 +180,17 @@ const write = async (
         }
 
         const { name, gender, meanings, notes, attestation } = parsed.data;
-        const religion = religions.get(parsed.data.religion);
-        const language = languages.get(parsed.data.language);
+        const religion = filed(parsed.data.religion, religions);
+        const language = filed(parsed.data.language, languages);
 
-        if (!religion || !language) {
+        if (religion === undefined || language === undefined) {
             report.rejected.push({
                 at,
                 name,
-                reason: religion
-                    ? `unknown language "${parsed.data.language}"`
-                    : `unknown religion "${parsed.data.religion}"`,
+                reason:
+                    religion === undefined
+                        ? `unknown religion "${parsed.data.religion}"`
+                        : `unknown language "${parsed.data.language}"`,
             });
 
             continue;
@@ -214,14 +226,14 @@ const write = async (
                 {
                     name,
                     gender,
-                    religion: religion.name,
-                    language: language.name,
+                    religion: religion?.name ?? null,
+                    language: language?.name ?? null,
                     firstLetter: firstSyllable(name),
                     numerology: numerologyOf(name),
                     sourceId: source.id,
                     clusterId,
-                    religionId: religion.id,
-                    languageId: language.id,
+                    religionId: religion?.id ?? null,
+                    languageId: language?.id ?? null,
                     notes: notes ?? null,
                     status: 'candidate',
                 },

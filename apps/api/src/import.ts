@@ -32,8 +32,9 @@ const argument = (name: string): string | undefined =>
  * Adds a source's names to the catalogue, as candidates for review.
  *
  * The file is JSON: a `source` naming where the names came from, and `names`,
- * each with a spelling, a gender, the religion and language slugs the
- * catalogue filters on, and whatever readings the source gives.
+ * each with a spelling, a gender, whatever readings the source gives, and —
+ * where the source files its names at all — the religion and language slugs
+ * the catalogue filters on.
  *
  *     yarn workspace @tbn/api import:names --file=./batch.json [--dry-run]
  *

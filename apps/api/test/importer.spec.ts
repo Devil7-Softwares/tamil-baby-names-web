@@ -376,6 +376,27 @@ describe('importing names', () => {
         expect(store.names).toHaveLength(1);
     });
 
+    // A source that is a list of names and nothing else. Unfiled is a question
+    // for the queue; a bucket the catalogue does not carry is still a refusal.
+    it('takes a record the source filed under no religion or language', async () => {
+        const { models, store } = build();
+
+        const report = await importNames(
+            models,
+            file([record({ religion: null, language: undefined })]),
+        );
+
+        expect(report).toMatchObject({ names: 1, rejected: [] });
+        expect(store.names[0]).toMatchObject({
+            name: 'அறிவு',
+            religion: null,
+            language: null,
+            religionId: null,
+            languageId: null,
+            status: 'candidate',
+        });
+    });
+
     it('refuses a record the shape rejects, and names it', async () => {
         const { models } = build();
 

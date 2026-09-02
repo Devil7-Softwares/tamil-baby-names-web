@@ -140,9 +140,12 @@ export class NamesService {
         const values = rows.map(({ dataValues: row }) => ({
             id: row.id,
             gender: row.gender,
-            religion: row.religion,
+            // Empty rather than null, the same way an absent meaning is: a
+            // published row has been filed by a reviewer, and the site's shape
+            // should not carry a hole the review step is there to close.
+            religion: row.religion ?? '',
             firstLetter: row.firstLetter,
-            language: row.language,
+            language: row.language ?? '',
             name: row.name,
             meaning: meanings.get(`${row.clusterId}:1`) ?? '',
             nameNumber: resolveNameNumber(filters, row.name, row.numerology),

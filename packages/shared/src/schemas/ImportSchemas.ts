@@ -45,16 +45,18 @@ export const ImportAttestationSchema = z.object({
  * than created: which religions the catalogue carries is a decision, not
  * something a file gets to make in passing.
  *
- * Both are required, though most of the catalogue's own rows never recorded a
- * language. The site filters and shows them, so a row missing one is a row it
- * cannot display properly, and the import inheriting that gap is no reason to
- * keep adding to it.
+ * Both are optional, because plenty of sources are simply a list of names and
+ * do not file them at all. Omitting one lands the row unfiled, which is a
+ * question for the queue rather than a gap in the catalogue: nothing imported
+ * is published, so the site never has to display a row with no religion. A
+ * source that does say is taken at its word; one that does not is not guessed
+ * at on its behalf.
  */
 export const ImportNameSchema = z.object({
     name: text(255),
     gender: z.enum(GENDERS),
-    religion: text(64),
-    language: text(64),
+    religion: text(64).nullish(),
+    language: text(64).nullish(),
     meanings: z.array(text(2000)).default([]),
     /** What the source recorded that no column holds. */
     notes: text(1000).nullish(),
