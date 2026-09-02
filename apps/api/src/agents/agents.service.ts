@@ -16,6 +16,9 @@ import {
 const MAX_TOKENS = 4096;
 const TEMPERATURE = 0;
 
+/** Somebody is watching a check, so it gives up long before a run would. */
+const CHECK_TIMEOUT_MS = 30_000;
+
 @Injectable()
 export class AgentsService {
     private readonly logger = new Logger(AgentsService.name);
@@ -91,6 +94,11 @@ export class AgentsService {
      * run depends on them. The ceiling is generous rather than minimal: a
      * reasoning model spends tokens thinking before it writes a word, and a
      * check that fails for that reason would be reporting its own impatience.
+     *
+     * The deadline is the exception, and is much shorter than a run's. Somebody
+     * is watching this one, and "it does not answer" is the single most useful
+     * thing a check can find out — `gemini-3.7-flash` never answers here at
+     * all, and before this the button simply spun.
      */
     async check(
         agent: IAgent,
@@ -100,6 +108,7 @@ export class AgentsService {
                 system: 'Answer with one word.',
                 prompt: 'Reply with the word: ready',
                 maxTokens: 512,
+                timeoutMs: CHECK_TIMEOUT_MS,
             });
 
             return { ok: true };

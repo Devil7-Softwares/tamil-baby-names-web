@@ -63,10 +63,17 @@ const draftOf = (agent: AdminAgent): Draft => ({
     enabled: agent.enabled,
 });
 
-/** The dials each provider actually reads, as a starting point to edit. */
+/**
+ * The dials each provider actually reads, as a starting point to edit.
+ *
+ * Neither of these is safe to suggest more widely than it is: `effort` is
+ * refused by Haiku though Sonnet and Opus take it, and `temperature` is refused
+ * by every current OpenAI model though a self-hosted server usually wants one.
+ * So the hint names the one dial that works everywhere.
+ */
 const OPTIONS_HINT: Record<AgentProviderId, string> = {
     anthropic: '{ "effort": "high" }',
-    openai: '{ "temperature": 0 }',
+    openai: '{ "timeout": 60000 }',
     ollama: '{ "think": false, "temperature": 0 }',
 };
 

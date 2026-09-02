@@ -3,6 +3,7 @@ import {
     AgentConfig,
     AgentProvider,
     AgentReply,
+    deadlineFor,
     endpointOf,
     extraHeaders,
     post,
@@ -87,7 +88,7 @@ export const openai: AgentProvider = {
                     : {}),
                 ...(config.options.body as object | undefined),
             }),
-            request.signal,
+            deadlineFor(config, request),
         )) as ChatReply;
 
         return {

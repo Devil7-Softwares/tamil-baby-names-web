@@ -226,6 +226,64 @@ describe('the OpenAI-compatible provider', () => {
     });
 });
 
+describe('giving up on a provider that does not answer', () => {
+    // Found by running it: gemini-3.7-flash never answers through the
+    // OpenAI-compatible endpoint, and with no deadline that was not an error —
+    // it was a request that never ended.
+    it('says so, rather than waiting forever', async () => {
+        vi.stubGlobal(
+            'fetch',
+            (_url: string, init: RequestInit) =>
+                new Promise((_resolve, reject) => {
+                    init.signal?.addEventListener('abort', () =>
+                        reject(new Error('This operation was aborted')),
+                    );
+                }),
+        );
+
+        await expect(
+            openai.complete(config(), { ...ask, timeoutMs: 20 }),
+        ).rejects.toThrow(/did not answer within/);
+    });
+
+    it('lets the agent ask for longer', async () => {
+        const sent = stubFetch({ choices: [{ message: { content: 'ok' } }] });
+
+        await openai.complete(config({ options: { timeout: 90_000 } }), {
+            ...ask,
+            timeoutMs: 20,
+        });
+
+        // It answered rather than being cut off at 20ms.
+        expect(sent).toHaveLength(1);
+    });
+
+    // A person pressing Stop is not the same as a model being slow, and the
+    // message has to say which happened.
+    it('keeps the caller’s own cancel separate from the deadline', async () => {
+        const stop = new AbortController();
+
+        vi.stubGlobal(
+            'fetch',
+            (_url: string, init: RequestInit) =>
+                new Promise((_resolve, reject) => {
+                    init.signal?.addEventListener('abort', () =>
+                        reject(new Error('This operation was aborted')),
+                    );
+                }),
+        );
+
+        const call = openai.complete(config(), {
+            ...ask,
+            signal: stop.signal,
+        });
+
+        stop.abort();
+
+        await expect(call).rejects.toThrow(/Could not reach/);
+    });
+});
+
 describe('the Ollama provider', () => {
     it('asks localhost for one answer rather than a stream', async () => {
         const sent = stubFetch({

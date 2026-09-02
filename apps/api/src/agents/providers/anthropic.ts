@@ -5,6 +5,9 @@ import {
     AgentConfig,
     AgentProvider,
     AgentReply,
+    AgentRequest,
+    deadlineFor,
+    expired,
     extraHeaders,
     text,
 } from './provider.js';
@@ -39,6 +42,8 @@ export const anthropic: AgentProvider = {
             defaultHeaders: extraHeaders(config.options),
         });
 
+        const deadline = deadlineFor(config, request);
+
         try {
             const response = await client.messages.create(
                 {
@@ -46,22 +51,9 @@ export const anthropic: AgentProvider = {
                     max_tokens: request.maxTokens,
                     system: request.system,
                     messages: [{ role: 'user', content: request.prompt }],
-                    // One `output_config`, not two: spreading a second would
-                    // replace the first, and the schema would go silently
-                    // missing on exactly the agents that ask for effort.
-                    output_config: {
-                        ...(request.schema
-                            ? {
-                                  format: {
-                                      type: 'json_schema' as const,
-                                      schema: request.schema.json,
-                                  },
-                              }
-                            : {}),
-                        ...effortOf(config.options),
-                    },
+                    ...outputConfig(config, request),
                 },
-                { signal: request.signal },
+                { signal: deadline.signal },
             );
 
             // A refusal is an answer, not a transport failure: it arrives 200
@@ -91,6 +83,10 @@ export const anthropic: AgentProvider = {
                 throw error;
             }
 
+            if (deadline.expired()) {
+                throw new AgentCallError(expired('Claude', deadline.ms));
+            }
+
             if (error instanceof Anthropic.APIError) {
                 throw new AgentCallError(
                     `Claude answered ${error.status ?? 'nothing'}: ${error.message}`,
@@ -115,3 +111,30 @@ const isEffort = (value: unknown): value is Effort =>
 
 const effortOf = ({ effort }: Record<string, unknown>): { effort?: Effort } =>
     isEffort(effort) ? { effort } : {};
+
+/**
+ * One `output_config`, and only where there is something to put in it.
+ *
+ * Two spreads replaced each other, so an agent asking for effort lost its
+ * schema without saying so. An empty one is left out entirely: not every model
+ * takes every dial — Haiku refuses `effort` — and a bare `{}` is a request to
+ * be refused for no reason.
+ */
+const outputConfig = (
+    config: AgentConfig,
+    request: AgentRequest,
+): { output_config?: Record<string, unknown> } => {
+    const output_config = {
+        ...(request.schema
+            ? {
+                  format: {
+                      type: 'json_schema' as const,
+                      schema: request.schema.json,
+                  },
+              }
+            : {}),
+        ...effortOf(config.options),
+    };
+
+    return Object.keys(output_config).length ? { output_config } : {};
+};

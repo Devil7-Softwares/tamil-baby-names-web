@@ -3,6 +3,7 @@ import {
     AgentConfig,
     AgentProvider,
     AgentReply,
+    deadlineFor,
     dial,
     endpointOf,
     extraHeaders,
@@ -62,7 +63,7 @@ export const ollama: AgentProvider = {
                 },
                 ...(config.options.body as object | undefined),
             },
-            request.signal,
+            deadlineFor(config, request),
         )) as ChatReply;
 
         const answer = body.message?.content ?? '';
