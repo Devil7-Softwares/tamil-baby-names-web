@@ -72,7 +72,7 @@ const OPTIONS_HINT: Record<AgentProviderId, string> = {
 
 const MODEL_HINT: Record<AgentProviderId, string> = {
     anthropic: 'claude-opus-5',
-    openai: 'gpt-4o-mini',
+    openai: 'gpt-5.6-terra',
     ollama: 'qwen3:8b',
 };
 

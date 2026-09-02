@@ -44,12 +44,48 @@ export const ReviewVerdictSchema = z.object({
 });
 
 /**
+ * Numeric bounds, taken back out of a generated schema.
+ *
+ * Providers accept a *subset* of JSON Schema for structured output, and the
+ * ranges zod emits are outside it: `.positive()` becomes `exclusiveMinimum` and
+ * `.int()` adds a `maximum` of 2^53-1, and Claude answers
+ * `400 … For 'integer' type, properties exclusiveMinimum, maximum are not
+ * supported`. Nothing is actually loosened by dropping them — the answer is
+ * parsed with `ReviewVerdictSchema`, which still enforces every bound — and the
+ * one range worth stating, that confidence runs 0 to 100, is in the prompt
+ * where the model will actually read it.
+ */
+const unbounded = (node: unknown): unknown => {
+    if (Array.isArray(node)) {
+        return node.map(unbounded);
+    }
+
+    if (!node || typeof node !== 'object') {
+        return node;
+    }
+
+    return Object.fromEntries(
+        Object.entries(node as Record<string, unknown>)
+            .filter(
+                ([key]) =>
+                    ![
+                        'minimum',
+                        'maximum',
+                        'exclusiveMinimum',
+                        'exclusiveMaximum',
+                    ].includes(key),
+            )
+            .map(([key, value]) => [key, unbounded(value)]),
+    );
+};
+
+/**
  * The same schema as JSON Schema, which is what every provider's structured
  * output wants — Claude's `output_config.format`, an OpenAI `json_schema`
  * response format, and Ollama's `format`. Generated rather than written twice.
  */
-export const REVIEW_VERDICT_JSON_SCHEMA = z.toJSONSchema(
-    ReviewVerdictSchema,
+export const REVIEW_VERDICT_JSON_SCHEMA = unbounded(
+    z.toJSONSchema(ReviewVerdictSchema),
 ) as Record<string, unknown>;
 
 /** Below this a verdict is recorded but nothing is changed. */

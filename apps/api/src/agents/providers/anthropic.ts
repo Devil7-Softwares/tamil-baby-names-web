@@ -46,17 +46,20 @@ export const anthropic: AgentProvider = {
                     max_tokens: request.maxTokens,
                     system: request.system,
                     messages: [{ role: 'user', content: request.prompt }],
-                    ...(request.schema
-                        ? {
-                              output_config: {
+                    // One `output_config`, not two: spreading a second would
+                    // replace the first, and the schema would go silently
+                    // missing on exactly the agents that ask for effort.
+                    output_config: {
+                        ...(request.schema
+                            ? {
                                   format: {
                                       type: 'json_schema' as const,
                                       schema: request.schema.json,
                                   },
-                              },
-                          }
-                        : {}),
-                    ...effortOf(config.options),
+                              }
+                            : {}),
+                        ...effortOf(config.options),
+                    },
                 },
                 { signal: request.signal },
             );
@@ -110,7 +113,5 @@ type Effort = (typeof EFFORTS)[number];
 const isEffort = (value: unknown): value is Effort =>
     typeof value === 'string' && (EFFORTS as readonly string[]).includes(value);
 
-const effortOf = ({
-    effort,
-}: Record<string, unknown>): { output_config?: { effort: Effort } } =>
-    isEffort(effort) ? { output_config: { effort } } : {};
+const effortOf = ({ effort }: Record<string, unknown>): { effort?: Effort } =>
+    isEffort(effort) ? { effort } : {};

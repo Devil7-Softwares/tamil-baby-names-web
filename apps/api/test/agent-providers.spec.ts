@@ -1,3 +1,4 @@
+import { REVIEW_VERDICT_JSON_SCHEMA } from '@tbn/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -86,6 +87,48 @@ describe('the registry', () => {
     });
 });
 
+describe('the verdict schema every provider is held to', () => {
+    // Claude answers 400 for these on an integer, and nothing is lost by
+    // leaving them out: the reply is parsed with the zod schema, which still
+    // enforces every bound.
+    it('carries no numeric ranges a provider would refuse', () => {
+        const found: string[] = [];
+        const walk = (node: unknown): void => {
+            if (Array.isArray(node)) {
+                node.forEach(walk);
+            } else if (node && typeof node === 'object') {
+                for (const [key, value] of Object.entries(node)) {
+                    if (
+                        ['minimum', 'maximum'].includes(
+                            key.replace(/^exclusive/, '').toLowerCase(),
+                        )
+                    ) {
+                        found.push(key);
+                    }
+
+                    walk(value);
+                }
+            }
+        };
+
+        walk(REVIEW_VERDICT_JSON_SCHEMA);
+
+        expect(found).toEqual([]);
+        // Still a schema, not something the stripping hollowed out.
+        expect(REVIEW_VERDICT_JSON_SCHEMA).toMatchObject({
+            type: 'object',
+            required: [
+                'publish',
+                'reject',
+                'rejectName',
+                'add',
+                'confidence',
+                'note',
+            ],
+        });
+    });
+});
+
 describe('the OpenAI-compatible provider', () => {
     it('sends the system prompt as a message and reads the choice back', async () => {
         const sent = stubFetch({
@@ -136,6 +179,36 @@ describe('the OpenAI-compatible provider', () => {
         expect(sent[0].body.temperature).toBe(0.7);
         expect(sent[0].headers['x-tenant']).toBe('tbn');
         expect(sent[0].headers['x-bad']).toBeUndefined();
+    });
+
+    // Every current OpenAI model is a reasoning model, and those reject both
+    // `max_tokens` and a temperature they were not asked for.
+    it('asks for a completion ceiling by its current name, and no temperature', async () => {
+        const sent = stubFetch({ choices: [{ message: { content: 'ok' } }] });
+
+        await openai.complete(config(), ask);
+
+        expect(sent[0].body.max_completion_tokens).toBe(64);
+        expect(sent[0].body).not.toHaveProperty('max_tokens');
+        expect(sent[0].body).not.toHaveProperty('temperature');
+    });
+
+    // A self-hosted server that only knows the old spelling, reachable without
+    // a code change.
+    it('lets a null in the agent’s body drop a field', async () => {
+        const sent = stubFetch({ choices: [{ message: { content: 'ok' } }] });
+
+        await openai.complete(
+            config({
+                options: {
+                    body: { max_completion_tokens: null, max_tokens: 800 },
+                },
+            }),
+            ask,
+        );
+
+        expect(sent[0].body).not.toHaveProperty('max_completion_tokens');
+        expect(sent[0].body.max_tokens).toBe(800);
     });
 
     it('keeps the provider’s own words when it refuses', async () => {
