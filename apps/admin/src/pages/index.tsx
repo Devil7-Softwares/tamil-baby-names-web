@@ -8,6 +8,7 @@ const Dashboard = lazy(() => import('./Dashboard/Dashboard'));
 const Names = lazy(() => import('./Names/Names'));
 const ImportPage = lazy(() => import('./Import/Import'));
 const Agents = lazy(() => import('./Agents/Agents'));
+const Review = lazy(() => import('./Review/Review'));
 
 export const Pages: React.FC = () => (
     <Suspense fallback={<LoadingOverlay />}>
@@ -25,6 +26,7 @@ export const Pages: React.FC = () => (
                 <Route element={<AppLayout />}>
                     <Route path='/import' element={<ImportPage />} />
                     <Route path='/agents' element={<Agents />} />
+                    <Route path='/review' element={<Review />} />
                 </Route>
             </Route>
 

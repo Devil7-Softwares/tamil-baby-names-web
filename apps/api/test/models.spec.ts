@@ -7,6 +7,7 @@ import {
     defineMeanings,
     defineNames,
     defineReligions,
+    defineReviewRuns,
     defineSources,
     defineTwinNames,
     defineVerifications,
@@ -19,6 +20,7 @@ const meanings = defineMeanings(sequelize);
 const clusters = defineClusters(sequelize);
 const sources = defineSources(sequelize);
 const verifications = defineVerifications(sequelize);
+const reviewRuns = defineReviewRuns(sequelize);
 const religions = defineReligions(sequelize);
 const languages = defineLanguages(sequelize);
 
@@ -182,5 +184,46 @@ describe('models', () => {
         expect(sources.tableName).toBe('sources');
         expect(sources.getAttributes().scannedAt.field).toBe('scanned_at');
         expect(sources.getAttributes().trust.defaultValue).toBe(50);
+    });
+});
+
+describe('a review run', () => {
+    // Sequelize writes `field` into the attribute definition it is handed, so
+    // seven counters sharing one object literal all end up pointing at the last
+    // column defined — every count reads the same number and none of them
+    // persist. Found on screen: a run reporting 1 of everything.
+    it('gives every counter a column of its own', () => {
+        const attributes = reviewRuns.getAttributes() as unknown as Record<
+            string,
+            { field?: string }
+        >;
+
+        const counters = [
+            'total',
+            'reviewed',
+            'abstained',
+            'published',
+            'rejected',
+            'added',
+            'dropped',
+            'failed',
+        ];
+
+        const fields = counters.map((name) => attributes[name].field ?? name);
+
+        expect(new Set(fields).size).toBe(counters.length);
+        expect(fields).toEqual(counters);
+    });
+
+    it('names the columns the migration made', () => {
+        const attributes = reviewRuns.getAttributes() as unknown as Record<
+            string,
+            { field?: string }
+        >;
+
+        expect(reviewRuns.tableName).toBe('review_runs');
+        expect(attributes.agentId.field).toBe('agent_id');
+        expect(attributes.startedAt.field).toBe('started_at');
+        expect(attributes.finishedAt.field).toBe('finished_at');
     });
 });

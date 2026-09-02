@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AdminModule } from '../src/admin/admin.module.js';
 import { AdminBootstrapService } from '../src/admin/users/admin-bootstrap.service.js';
 import { validateEnv } from '../src/config/env.js';
+import { DatabaseBootstrap } from '../src/database/database.bootstrap.js';
 import {
     ADMIN_USERS_MODEL,
     AGENTS_MODEL,
@@ -17,6 +18,7 @@ import {
     MEANINGS_MODEL,
     NAMES_MODEL,
     RELIGIONS_MODEL,
+    REVIEW_RUNS_MODEL,
     SEQUELIZE,
     SOURCES_MODEL,
     VERIFICATIONS_MODEL,
@@ -56,6 +58,7 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
         MEANINGS_MODEL,
         CLUSTERS_MODEL,
         RELIGIONS_MODEL,
+        REVIEW_RUNS_MODEL,
         LANGUAGES_MODEL,
         SOURCES_MODEL,
         VERIFICATIONS_MODEL,
@@ -69,11 +72,17 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
             { provide: ADMIN_USERS_MODEL, useValue: usersModel(row) },
             ...catalogue.map((token) => ({ provide: token, useValue: {} })),
             { provide: SortCollationService, useValue: { order: () => [] } },
+            // The run sweep waits on the migrations before it touches a table.
+            {
+                provide: DatabaseBootstrap,
+                useValue: { ready: Promise.resolve() },
+            },
             LookupsService,
         ],
         exports: [
             ADMIN_USERS_MODEL,
             ...catalogue,
+            DatabaseBootstrap,
             LookupsService,
             SortCollationService,
         ],

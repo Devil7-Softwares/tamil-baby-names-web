@@ -4,6 +4,7 @@ export * from './NameStatus.js';
 export * from './Numerology.js';
 export * from './Panjangam.js';
 export * from './Religion.js';
+export * from './ReviewRunStatus.js';
 export * from './UserRole.js';
 export * from './VerificationReason.js';
 export * from './WithFilter.js';

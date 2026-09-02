@@ -1,4 +1,5 @@
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import SortByAlphaOutlinedIcon from '@mui/icons-material/SortByAlphaOutlined';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
@@ -29,6 +30,12 @@ export const NavItems: NavItem[] = [
         label: 'Agents',
         path: '/agents',
         icon: <SmartToyOutlinedIcon />,
+        adminOnly: true,
+    },
+    {
+        label: 'LLM review',
+        path: '/review',
+        icon: <RateReviewOutlinedIcon />,
         adminOnly: true,
     },
 ];

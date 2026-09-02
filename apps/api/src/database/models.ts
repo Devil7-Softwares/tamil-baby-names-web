@@ -5,6 +5,8 @@ import {
     NAME_STATUSES,
     NameNumerology,
     NameStatus,
+    REVIEW_RUN_STATUSES,
+    ReviewRunStatus,
     USER_ROLES,
     UserRole,
     VERIFICATION_REASONS,
@@ -232,8 +234,32 @@ export type VerificationsModel = ModelStatic<
 export type AttestationsModel = ModelStatic<
     Model<IAttestation, AttestationDraft>
 >;
+/** One run of an agent over the queue, and the counts as it goes. */
+export interface IReviewRun {
+    id: number;
+    agentId: number;
+    status: ReviewRunStatus;
+    /** The batch size asked for; `total` is what the queue actually held. */
+    requested: number;
+    total: number;
+    reviewed: number;
+    abstained: number;
+    published: number;
+    rejected: number;
+    added: number;
+    dropped: number;
+    failed: number;
+    error: string | null;
+    startedAt: Date;
+    finishedAt: Date | null;
+}
+
+export type ReviewRunDraft = Pick<IReviewRun, 'agentId' | 'requested'> &
+    Partial<Omit<IReviewRun, 'id' | 'agentId' | 'requested'>>;
+
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 export type AgentsModel = ModelStatic<Model<IAgent, AgentDraft>>;
+export type ReviewRunsModel = ModelStatic<Model<IReviewRun, ReviewRunDraft>>;
 
 const table = {
     timestamps: false,
@@ -491,6 +517,53 @@ export const defineAgents = (sequelize: Sequelize): AgentsModel =>
             ...table,
             tableName: 'agents',
             timestamps: true,
+            underscored: true,
+        },
+    );
+
+/**
+ * A fresh object each time, never one shared between columns: Sequelize writes
+ * `field` and `fieldName` into the definition it is given, so seven attributes
+ * sharing one literal all end up naming the last column to be defined.
+ */
+const counter = () => ({
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+});
+
+export const defineReviewRuns = (sequelize: Sequelize): ReviewRunsModel =>
+    sequelize.define<Model<IReviewRun, ReviewRunDraft>>(
+        'ReviewRuns',
+        {
+            id,
+            agentId: {
+                type: DataTypes.INTEGER,
+                field: 'agent_id',
+                allowNull: false,
+            },
+            status: {
+                type: DataTypes.ENUM(...REVIEW_RUN_STATUSES),
+                allowNull: false,
+                defaultValue: 'running',
+            },
+            requested: { type: DataTypes.INTEGER, allowNull: false },
+            total: counter(),
+            reviewed: counter(),
+            abstained: counter(),
+            published: counter(),
+            rejected: counter(),
+            added: counter(),
+            dropped: counter(),
+            failed: counter(),
+            error: DataTypes.TEXT,
+            startedAt: { type: DataTypes.DATE, field: 'started_at' },
+            finishedAt: { type: DataTypes.DATE, field: 'finished_at' },
+        },
+        {
+            ...table,
+            tableName: 'review_runs',
+            timestamps: false,
             underscored: true,
         },
     );

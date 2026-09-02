@@ -4,6 +4,7 @@ import { ORPCModule } from '@orpc/nest';
 import { Request } from 'express';
 
 import { AgentsModule } from '../agents/agents.module.js';
+import { ReviewModule } from '../review/review.module.js';
 import { AdminAgentsController } from './agents/admin-agents.controller.js';
 import { AdminAgentsService } from './agents/admin-agents.service.js';
 import { AdminAuthController } from './auth/admin-auth.controller.js';
@@ -15,6 +16,8 @@ import { AdminNamesController } from './names/admin-names.controller.js';
 import { AdminNamesService } from './names/admin-names.service.js';
 import { AdminOverviewController } from './overview/admin-overview.controller.js';
 import { AdminOverviewService } from './overview/admin-overview.service.js';
+import { AdminReviewController } from './review/admin-review.controller.js';
+import { AdminReviewService } from './review/admin-review.service.js';
 import { AdminBootstrapService } from './users/admin-bootstrap.service.js';
 import { UsersService } from './users/users.service.js';
 
@@ -33,6 +36,7 @@ declare module '@orpc/nest' {
             inject: [REQUEST],
         }),
         AgentsModule,
+        ReviewModule,
     ],
     controllers: [
         AdminAgentsController,
@@ -40,6 +44,7 @@ declare module '@orpc/nest' {
         AdminImportController,
         AdminNamesController,
         AdminOverviewController,
+        AdminReviewController,
     ],
     providers: [
         AdminAgentsService,
@@ -49,6 +54,7 @@ declare module '@orpc/nest' {
         AdminImportService,
         AdminNamesService,
         AdminOverviewService,
+        AdminReviewService,
         UsersService,
     ],
     exports: [AdminAuthGuard, AdminAuthService, UsersService],
