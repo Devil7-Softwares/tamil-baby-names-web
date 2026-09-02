@@ -1,3 +1,4 @@
+export * from './AgentProvider.js';
 export * from './Gender.js';
 export * from './NameStatus.js';
 export * from './Numerology.js';

@@ -1,4 +1,5 @@
 import {
+    AgentProviderId,
     IName,
     ITwinName,
     NAME_STATUSES,
@@ -168,6 +169,39 @@ export interface IAttestation {
 export type AttestationDraft = Pick<IAttestation, 'sourceId' | 'locator'> &
     Partial<Pick<IAttestation, 'nameId' | 'meaningId' | 'excerpt'>>;
 
+/**
+ * A configured model endpoint. The three key columns are one sealed value and
+ * are null together; `agents/agent-keys.ts` is the only thing that reads them.
+ */
+export interface IAgent {
+    id: number;
+    slug: string;
+    name: string;
+    provider: AgentProviderId;
+    baseUrl: string | null;
+    model: string;
+    keyCiphertext: Buffer | null;
+    keyIv: Buffer | null;
+    keyTag: Buffer | null;
+    options: Record<string, unknown>;
+    enabled: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type AgentDraft = Pick<IAgent, 'slug' | 'name' | 'provider' | 'model'> &
+    Partial<
+        Pick<
+            IAgent,
+            | 'baseUrl'
+            | 'keyCiphertext'
+            | 'keyIv'
+            | 'keyTag'
+            | 'options'
+            | 'enabled'
+        >
+    >;
+
 export type NamesModel = ModelStatic<Model<NamesRow, NameDraft>>;
 export type TwinNamesModel = ModelStatic<Model<TwinNamesRow>>;
 export type MeaningsModel = ModelStatic<Model<IMeaning, MeaningDraft>>;
@@ -181,6 +215,7 @@ export type AttestationsModel = ModelStatic<
     Model<IAttestation, AttestationDraft>
 >;
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
+export type AgentsModel = ModelStatic<Model<IAgent, AgentDraft>>;
 
 const table = {
     timestamps: false,
@@ -401,6 +436,40 @@ export const defineAttestations = (sequelize: Sequelize): AttestationsModel =>
             // Written once and never revised, as the ledger is.
             timestamps: true,
             updatedAt: false,
+            underscored: true,
+        },
+    );
+
+export const defineAgents = (sequelize: Sequelize): AgentsModel =>
+    sequelize.define<Model<IAgent, AgentDraft>>(
+        'Agents',
+        {
+            id,
+            slug: { type: DataTypes.TEXT, allowNull: false, unique: true },
+            name: { type: DataTypes.TEXT, allowNull: false },
+            provider: { type: DataTypes.TEXT, allowNull: false },
+            baseUrl: { type: DataTypes.TEXT, field: 'base_url' },
+            model: { type: DataTypes.TEXT, allowNull: false },
+            keyCiphertext: { type: DataTypes.BLOB, field: 'key_ciphertext' },
+            keyIv: { type: DataTypes.BLOB, field: 'key_iv' },
+            keyTag: { type: DataTypes.BLOB, field: 'key_tag' },
+            options: {
+                type: DataTypes.JSONB,
+                allowNull: false,
+                defaultValue: {},
+            },
+            enabled: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: true,
+            },
+            createdAt: DataTypes.DATE,
+            updatedAt: DataTypes.DATE,
+        },
+        {
+            ...table,
+            tableName: 'agents',
+            timestamps: true,
             underscored: true,
         },
     );

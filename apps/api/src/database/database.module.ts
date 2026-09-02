@@ -5,6 +5,7 @@ import { Sequelize } from 'sequelize';
 import { DatabaseBootstrap } from './database.bootstrap.js';
 import {
     ADMIN_USERS_MODEL,
+    AGENTS_MODEL,
     ATTESTATIONS_MODEL,
     CLUSTERS_MODEL,
     LANGUAGES_MODEL,
@@ -19,6 +20,7 @@ import {
 import { LookupsService } from './lookups.service.js';
 import {
     defineAdminUsers,
+    defineAgents,
     defineAttestations,
     defineClusters,
     defineLanguages,
@@ -93,6 +95,11 @@ import { SortCollationService } from './sort-collation.service.js';
             useFactory: defineAdminUsers,
             inject: [SEQUELIZE],
         },
+        {
+            provide: AGENTS_MODEL,
+            useFactory: defineAgents,
+            inject: [SEQUELIZE],
+        },
         DatabaseBootstrap,
         LookupsService,
         SortCollationService,
@@ -109,6 +116,7 @@ import { SortCollationService } from './sort-collation.service.js';
         VERIFICATIONS_MODEL,
         ATTESTATIONS_MODEL,
         ADMIN_USERS_MODEL,
+        AGENTS_MODEL,
         DatabaseBootstrap,
         LookupsService,
         SortCollationService,

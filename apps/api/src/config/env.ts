@@ -12,6 +12,11 @@ export interface Env {
     POSTGRES_PASSWORD?: string;
     /** Signs admin session cookies. The admin area is offline while unset. */
     ADMIN_JWT_SECRET?: string;
+    /**
+     * Seals the API keys on `agents`, base64 or hex for 32 bytes. Agents that
+     * need a key cannot be used while this is unset; Ollama still can.
+     */
+    AGENT_KEY_SECRET?: string;
     BOOTSTRAP_ADMIN_EMAIL?: string;
     BOOTSTRAP_ADMIN_PASSWORD?: string;
     BOOTSTRAP_ADMIN_NAME?: string;
@@ -53,6 +58,7 @@ export function validateEnv(raw: Record<string, unknown>): Env {
         POSTGRES_USER: optional('POSTGRES_USER'),
         POSTGRES_PASSWORD: optional('POSTGRES_PASSWORD'),
         ADMIN_JWT_SECRET: optional('ADMIN_JWT_SECRET'),
+        AGENT_KEY_SECRET: optional('AGENT_KEY_SECRET'),
         BOOTSTRAP_ADMIN_EMAIL: optional('BOOTSTRAP_ADMIN_EMAIL'),
         BOOTSTRAP_ADMIN_PASSWORD: optional('BOOTSTRAP_ADMIN_PASSWORD'),
         BOOTSTRAP_ADMIN_NAME: optional('BOOTSTRAP_ADMIN_NAME'),
