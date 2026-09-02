@@ -1,4 +1,9 @@
-import { AdminNamesQuery, NAME_STATUSES, NameStatus } from '@tbn/shared';
+import {
+    AdminNamesQuery,
+    AgentReviewFilter,
+    NAME_STATUSES,
+    NameStatus,
+} from '@tbn/shared';
 import { literal, Op, Utils, WhereOptions } from 'sequelize';
 
 /**
@@ -33,6 +38,33 @@ const HAS_MEMBER: Record<NameStatus, Utils.Literal> = Object.fromEntries(
     ]),
 ) as Record<NameStatus, Utils.Literal>;
 
+/**
+ * A verdict is an agent's ledger entry about any row or reading of the cluster,
+ * so "has an agent looked at this" is one EXISTS over both arcs.
+ */
+const verdictExists = (extra = ''): string =>
+    `EXISTS (
+        SELECT 1 FROM "verifications" v
+        LEFT JOIN "names" vn ON vn."id" = v."name_id"
+        LEFT JOIN "meanings" vm ON vm."id" = v."meaning_id"
+        WHERE v."agent_id" IS NOT NULL
+          AND COALESCE(vn."cluster_id", vm."cluster_id") = "Clusters"."id"
+          ${extra}
+    )`;
+
+/**
+ * Built from the enum rather than assembled per request, so the subquery text
+ * can never contain anything that arrived with one.
+ */
+const AGENT_REVIEW: Record<AgentReviewFilter, Utils.Literal> = {
+    // Changed something and nobody has checked it.
+    decided: literal(verdictExists(`AND v."reason" <> 'abstained'`)),
+    // Looked and would not decide. Where a person is worth the most.
+    unsure: literal(verdictExists(`AND v."reason" = 'abstained'`)),
+    // The backlog no agent has reached.
+    none: literal(`NOT ${verdictExists()}`),
+};
+
 export const adminClustersWhere = (query: AdminNamesQuery): WhereOptions => {
     const clauses: WhereOptions[] = [];
 
@@ -52,6 +84,21 @@ export const adminClustersWhere = (query: AdminNamesQuery): WhereOptions => {
 
     if (query.duplicatesOnly) {
         clauses.push(DUPLICATED);
+    }
+
+    if (query.agentReview) {
+        clauses.push(AGENT_REVIEW[query.agentReview]);
+    }
+
+    if (query.maxConfidence !== undefined) {
+        // The number is bound, not pasted: it has come from the request.
+        clauses.push(
+            literal(
+                verdictExists(
+                    `AND v."confidence" IS NOT NULL AND v."confidence" <= :maxConfidence`,
+                ),
+            ),
+        );
     }
 
     return { [Op.and]: clauses };

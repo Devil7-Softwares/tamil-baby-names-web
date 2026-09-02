@@ -6,9 +6,10 @@ import {
     AdminMeaningsUpdate,
     AdminNamesQuery,
     AdminStatusUpdate,
+    AdminVerdict,
     NAME_STATUSES,
 } from '@tbn/shared';
-import { Op, Sequelize, Transaction } from 'sequelize';
+import { Op, QueryTypes, Sequelize, Transaction } from 'sequelize';
 
 import {
     ATTESTATIONS_MODEL,
@@ -82,6 +83,9 @@ export class AdminNamesService {
             order: this.sortCollation.order(['sort_key']),
             offset: (query.page - 1) * query.limit,
             limit: query.limit,
+            // Bound, because it arrived with the request. The rest of the
+            // clause text is built from enums.
+            replacements: { maxConfidence: query.maxConfidence ?? null },
         });
 
         const members = await this.membersFor(
@@ -101,6 +105,10 @@ export class AdminNamesService {
         const cited = await this.citationsFor(
             nameIds,
             [...meanings.values()].flat().map(({ id }) => id),
+        );
+
+        const verdicts = await this.verdictsFor(
+            rows.map(({ dataValues }) => dataValues.id),
         );
 
         const slug = labelReader(slugs);
@@ -143,6 +151,7 @@ export class AdminNamesService {
                             source: slug(sourceId),
                             citations: citations(cited.byMeaning, meaning.id),
                         })),
+                    verdict: verdicts.get(cluster.id) ?? null,
                 };
             }),
             total: count,
@@ -421,6 +430,60 @@ export class AdminNamesService {
         }
 
         return { byName, byMeaning };
+    }
+
+    /**
+     * The newest thing an agent said about each cluster on this page.
+     *
+     * Newest only: a run that changed its mind, or a second agent, should show
+     * what is true now rather than a history the queue has no room for. The
+     * whole history is in the ledger for anyone who wants it.
+     */
+    private async verdictsFor(
+        clusterIds: number[],
+    ): Promise<Map<number, AdminVerdict>> {
+        const found = new Map<number, AdminVerdict>();
+
+        if (!clusterIds.length) {
+            return found;
+        }
+
+        const rows = await this.sequelize.query<{
+            cluster_id: number;
+            agent: string | null;
+            confidence: number | null;
+            note: string | null;
+            reason: string;
+            created_at: Date;
+        }>(
+            `SELECT DISTINCT ON (COALESCE(vn."cluster_id", vm."cluster_id"))
+                    COALESCE(vn."cluster_id", vm."cluster_id") AS cluster_id,
+                    a."name" AS agent,
+                    v."confidence", v."note", v."reason", v."created_at"
+             FROM "verifications" v
+             LEFT JOIN "names" vn ON vn."id" = v."name_id"
+             LEFT JOIN "meanings" vm ON vm."id" = v."meaning_id"
+             LEFT JOIN "agents" a ON a."id" = v."agent_id"
+             WHERE v."agent_id" IS NOT NULL
+               AND COALESCE(vn."cluster_id", vm."cluster_id") IN (:clusterIds)
+             ORDER BY COALESCE(vn."cluster_id", vm."cluster_id"),
+                      v."created_at" DESC, v."id" DESC`,
+            { type: QueryTypes.SELECT, replacements: { clusterIds } },
+        );
+
+        for (const row of rows) {
+            found.set(row.cluster_id, {
+                // Null only if the agent was removed after it decided; the
+                // ledger nulls the reference rather than losing the verdict.
+                agent: row.agent ?? 'an agent since removed',
+                confidence: row.confidence,
+                note: row.note,
+                abstained: row.reason === 'abstained',
+                at: row.created_at.toISOString(),
+            });
+        }
+
+        return found;
     }
 
     private async sourceSlugs(): Promise<Map<number, string>> {

@@ -115,3 +115,55 @@ describe('meaningSubjectWhere', () => {
         ).toEqual({ twinNameId: 4, slot: 2 });
     });
 });
+
+describe('the second pass over what an agent did', () => {
+    it('finds clusters an agent changed', () => {
+        const [clause] = clauses({ ...base, agentReview: 'decided' });
+
+        expect(sql(clause)).toContain('"verifications"');
+        expect(sql(clause)).toContain(`v."agent_id" IS NOT NULL`);
+        expect(sql(clause)).toContain(`v."reason" <> 'abstained'`);
+        expect(sql(clause)).not.toMatch(/^\s*NOT /);
+    });
+
+    it('finds clusters an agent would not decide on', () => {
+        const [clause] = clauses({ ...base, agentReview: 'unsure' });
+
+        expect(sql(clause)).toContain(`v."reason" = 'abstained'`);
+    });
+
+    it('finds the backlog no agent has reached', () => {
+        const [clause] = clauses({ ...base, agentReview: 'none' });
+
+        expect(sql(clause).trimStart().startsWith('NOT ')).toBe(true);
+    });
+
+    // Both arcs: a verdict may be about a row or about one of its readings.
+    it('looks for a verdict on the cluster’s rows and its readings', () => {
+        const [clause] = clauses({ ...base, agentReview: 'decided' });
+
+        expect(sql(clause)).toContain(
+            'COALESCE(vn."cluster_id", vm."cluster_id")',
+        );
+    });
+
+    // The ceiling arrived with the request, so it is bound rather than pasted.
+    it('binds the confidence ceiling instead of writing it into the SQL', () => {
+        const [clause] = clauses({ ...base, maxConfidence: 60 });
+
+        expect(sql(clause)).toContain(':maxConfidence');
+        expect(sql(clause)).not.toContain('60');
+    });
+
+    it('composes with the filters that were already there', () => {
+        expect(
+            clauses({
+                ...base,
+                status: 'candidate',
+                gender: 'boy',
+                agentReview: 'unsure',
+                maxConfidence: 75,
+            }),
+        ).toHaveLength(4);
+    });
+});

@@ -52,6 +52,21 @@ export const AdminCitedMeaningSchema = AdminMeaningSchema.extend({
     citations: z.array(AdminCitationSchema),
 });
 
+/**
+ * What an agent last said about a cluster. This is what "reviewed by AI" is:
+ * not a flag on a name, but the newest entry an agent wrote in the ledger about
+ * anything in that cluster.
+ */
+export const AdminVerdictSchema = z.object({
+    agent: z.string(),
+    /** The agent's own 0–100. Read it sceptically; see `abstained`. */
+    confidence: z.number().int().min(0).max(100).nullable(),
+    note: z.string().nullable(),
+    /** It looked and would not decide, so nothing was changed. */
+    abstained: z.boolean(),
+    at: z.string(),
+});
+
 export const AdminClusterSchema = z.object({
     id: z.number().int().positive(),
     name: z.string(),
@@ -63,6 +78,8 @@ export const AdminClusterSchema = z.object({
      * look at it.
      */
     meanings: z.array(AdminCitedMeaningSchema),
+    /** Null where no agent has looked at this cluster yet. */
+    verdict: AdminVerdictSchema.nullable(),
 });
 
 /**
@@ -70,6 +87,10 @@ export const AdminClusterSchema = z.object({
  * cannot: it reads the string "false" as true.
  */
 const BooleanParam = z.union([z.boolean(), z.stringbool()]);
+
+export const AGENT_REVIEW_FILTERS = ['decided', 'unsure', 'none'] as const;
+
+export type AgentReviewFilter = (typeof AGENT_REVIEW_FILTERS)[number];
 
 export const AdminNamesQuerySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
@@ -82,6 +103,17 @@ export const AdminNamesQuerySchema = z.object({
      * a reviewer's time: their readings are the ones that disagree.
      */
     duplicatesOnly: BooleanParam.optional(),
+    /**
+     * The second pass. `decided` is what an agent changed and a person has not
+     * checked; `unsure` is what it looked at and would not decide, which is
+     * where a person is worth most; `none` is the backlog no agent has reached.
+     */
+    agentReview: z.enum(AGENT_REVIEW_FILTERS).optional(),
+    /**
+     * Only clusters an agent was at most this sure of. A small model's
+     * confidence runs high, so this is the dial that finds the ones to re-read.
+     */
+    maxConfidence: z.coerce.number().int().min(0).max(100).optional(),
 });
 
 export const AdminClustersPageSchema = z.object({
@@ -107,6 +139,7 @@ export const AdminMeaningsUpdateSchema = z.object({
 });
 
 export type AdminCitation = z.infer<typeof AdminCitationSchema>;
+export type AdminVerdict = z.infer<typeof AdminVerdictSchema>;
 export type AdminMeaning = z.infer<typeof AdminMeaningSchema>;
 export type AdminCitedMeaning = z.infer<typeof AdminCitedMeaningSchema>;
 export type AdminClusterMember = z.infer<typeof AdminClusterMemberSchema>;

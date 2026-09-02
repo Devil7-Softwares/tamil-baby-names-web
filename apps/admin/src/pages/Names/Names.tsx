@@ -1,5 +1,7 @@
 import FormatQuoteOutlinedIcon from '@mui/icons-material/FormatQuoteOutlined';
+import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import {
     Alert,
     Box,
@@ -28,6 +30,8 @@ import {
     AdminCitedMeaning,
     AdminCluster,
     AdminClusterMember,
+    AdminVerdict,
+    AgentReviewFilter,
     GENDERS,
     NAME_STATUSES,
     NameStatus,
@@ -39,6 +43,15 @@ import { orpc } from '~/api/orpc';
 import { STATUS_COLOUR, useDebounced } from '~/utils';
 
 const ANY = 'any';
+
+const AGENT_REVIEW: Array<{ value: AgentReviewFilter; label: string }> = [
+    { value: 'decided', label: 'An agent decided' },
+    { value: 'unsure', label: 'An agent was unsure' },
+    { value: 'none', label: 'No agent has looked' },
+];
+
+/** Ceilings, not thresholds: "show me what it was at most this sure of". */
+const CONFIDENCE = [90, 75, 60];
 
 /** The status, and the only control that changes it. */
 const StatusChip: React.FC<{
@@ -120,6 +133,54 @@ const Citations: React.FC<{ citations: AdminCitation[] }> = ({ citations }) => {
         </Tooltip>
     );
 };
+
+/**
+ * What an agent made of this cluster, and how sure it said it was.
+ *
+ * The confidence is shown as the model's own claim rather than as a fact,
+ * because it is one: a small model reports 85 on names it has never met. It is
+ * here so a person can decide what to re-read, not so they can trust it.
+ */
+const Verdict: React.FC<{ verdict: AdminVerdict }> = ({ verdict }) => (
+    <Tooltip
+        title={
+            <Stack spacing={0.5}>
+                <Typography variant='caption' sx={{ fontWeight: 600 }}>
+                    {verdict.agent}
+                    {verdict.confidence === null
+                        ? ''
+                        : ` · said ${verdict.confidence}% sure`}
+                </Typography>
+
+                {verdict.note && (
+                    <Typography variant='caption'>{verdict.note}</Typography>
+                )}
+
+                <Typography variant='caption' sx={{ opacity: 0.7 }}>
+                    {verdict.abstained
+                        ? 'It would not decide, so nothing was changed.'
+                        : 'It changed this. Nobody has checked it since.'}
+                </Typography>
+            </Stack>
+        }
+    >
+        <Chip
+            size='small'
+            variant='outlined'
+            color={verdict.abstained ? 'warning' : 'info'}
+            icon={
+                verdict.abstained ? (
+                    <HelpOutlineOutlinedIcon />
+                ) : (
+                    <SmartToyOutlinedIcon />
+                )
+            }
+            label={
+                verdict.confidence === null ? 'AI' : `AI ${verdict.confidence}`
+            }
+        />
+    </Tooltip>
+);
 
 /** Whatever the import recorded about a row, and nothing where it did not. */
 const filedAs = ({ religion, language }: AdminClusterMember): string =>
@@ -248,6 +309,8 @@ const ClusterRow: React.FC<{ cluster: AdminCluster }> = ({ cluster }) => {
                 >
                     <Typography variant='body2'>{cluster.name}</Typography>
 
+                    {cluster.verdict && <Verdict verdict={cluster.verdict} />}
+
                     {cluster.members.length > 1 && (
                         <Tooltip
                             title={`The import filed this name on ${cluster.members.length} rows`}
@@ -289,6 +352,12 @@ const Names: React.FC = () => {
     const [status, setStatus] = useState<NameStatus | typeof ANY>(ANY);
     const [gender, setGender] = useState<string>(ANY);
     const [duplicatesOnly, setDuplicatesOnly] = useState(false);
+    const [agentReview, setAgentReview] = useState<
+        AgentReviewFilter | typeof ANY
+    >(ANY);
+    const [maxConfidence, setMaxConfidence] = useState<number | typeof ANY>(
+        ANY,
+    );
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(25);
 
@@ -303,6 +372,8 @@ const Names: React.FC = () => {
                 ...(status === ANY ? {} : { status }),
                 ...(gender === ANY ? {} : { gender: gender as 'boy' | 'girl' }),
                 ...(duplicatesOnly ? { duplicatesOnly } : {}),
+                ...(agentReview === ANY ? {} : { agentReview }),
+                ...(maxConfidence === ANY ? {} : { maxConfidence }),
             },
             // Keeps the previous page on screen while the next one loads, so
             // the table does not collapse on every keystroke.
@@ -375,6 +446,48 @@ const Names: React.FC = () => {
                         {GENDERS.map((value) => (
                             <MenuItem key={value} value={value}>
                                 {value}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+
+                    <TextField
+                        select
+                        label='AI review'
+                        size='small'
+                        value={agentReview}
+                        onChange={(event) =>
+                            onFilterChange(setAgentReview)(
+                                event.target.value as AgentReviewFilter,
+                            )
+                        }
+                        sx={{ minWidth: 190 }}
+                    >
+                        <MenuItem value={ANY}>Any</MenuItem>
+                        {AGENT_REVIEW.map(({ value, label }) => (
+                            <MenuItem key={value} value={value}>
+                                {label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+
+                    <TextField
+                        select
+                        label='It was at most'
+                        size='small'
+                        value={maxConfidence}
+                        onChange={(event) =>
+                            onFilterChange(setMaxConfidence)(
+                                event.target.value === ANY
+                                    ? ANY
+                                    : Number(event.target.value),
+                            )
+                        }
+                        sx={{ minWidth: 150 }}
+                    >
+                        <MenuItem value={ANY}>Any sure</MenuItem>
+                        {CONFIDENCE.map((ceiling) => (
+                            <MenuItem key={ceiling} value={ceiling}>
+                                {ceiling}% sure
                             </MenuItem>
                         ))}
                     </TextField>

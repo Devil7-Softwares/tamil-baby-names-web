@@ -77,15 +77,37 @@ const rows = <T>(values: T[]) => ({
     findAll: async () => values.map((value) => ({ dataValues: value })),
 });
 
+/** A row of `verifications` written by an agent, as `verdictsFor` reads it. */
+const verdict = (
+    clusterId: number,
+    over: Partial<{
+        agent: string | null;
+        confidence: number | null;
+        note: string | null;
+        reason: string;
+    }> = {},
+) => ({
+    cluster_id: clusterId,
+    agent: 'Local qwen3',
+    confidence: 85,
+    note: 'From அமுதம், nectar.',
+    reason: 'decision',
+    created_at: new Date('2026-09-02T08:00:00Z'),
+    ...over,
+});
+
 const build = (
     members: ReturnType<typeof member>[],
     catalogue: {
         meanings?: ReturnType<typeof reading>[];
         citations?: ReturnType<typeof citation>[];
+        verdicts?: ReturnType<typeof verdict>[];
     } = {},
 ) => {
     const service = new AdminNamesService(
-        {} as unknown as Sequelize,
+        {
+            query: async () => catalogue.verdicts ?? [],
+        } as unknown as Sequelize,
         rows(members) as unknown as NamesModel,
         rows(catalogue.meanings ?? []) as unknown as MeaningsModel,
         {
@@ -211,5 +233,51 @@ describe('the evidence behind a reading', () => {
 
         expect(page.items[0].meanings[0].citations).toEqual([]);
         expect(page.items[0].members[0].citations).toEqual([]);
+    });
+});
+
+describe('what an agent made of a cluster', () => {
+    it('hands the reviewer the model’s own claim, not a fact', async () => {
+        const page = await build([member(10, 1, 4)], {
+            verdicts: [verdict(1)],
+        }).list({ page: 1, limit: 25 });
+
+        expect(page.items[0].verdict).toEqual({
+            agent: 'Local qwen3',
+            confidence: 85,
+            note: 'From அமுதம், nectar.',
+            abstained: false,
+            at: '2026-09-02T08:00:00.000Z',
+        });
+    });
+
+    it('marks the ones it would not decide on', async () => {
+        const page = await build([member(10, 1, 4)], {
+            verdicts: [verdict(1, { reason: 'abstained', confidence: 20 })],
+        }).list({ page: 1, limit: 25 });
+
+        expect(page.items[0].verdict).toMatchObject({
+            abstained: true,
+            confidence: 20,
+        });
+    });
+
+    // The ledger nulls the reference when an agent is removed rather than
+    // losing the verdict, so the queue has to say something for it.
+    it('still says a verdict happened when the agent is gone', async () => {
+        const page = await build([member(10, 1, 4)], {
+            verdicts: [verdict(1, { agent: null })],
+        }).list({ page: 1, limit: 25 });
+
+        expect(page.items[0].verdict?.agent).toBe('an agent since removed');
+    });
+
+    it('says nothing for a cluster no agent has looked at', async () => {
+        const page = await build([member(10, 1, 4)]).list({
+            page: 1,
+            limit: 25,
+        });
+
+        expect(page.items[0].verdict).toBeNull();
     });
 });
