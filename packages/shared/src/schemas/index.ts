@@ -4,4 +4,5 @@ export * from './AgentSchemas.js';
 export * from './ImportSchemas.js';
 export * from './LoginSchema.js';
 export * from './MessageResponseSchema.js';
+export * from './ReviewSchemas.js';
 export * from './UserSchema.js';

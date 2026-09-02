@@ -11,6 +11,12 @@ export interface AgentRequest {
      * and ask for depth through `effort` instead.
      */
     temperature: number;
+    /**
+     * A JSON Schema the answer must fit. Every provider has its own way of
+     * being held to one, so each expresses this natively rather than the
+     * caller begging for JSON in the prompt.
+     */
+    schema?: { name: string; json: Record<string, unknown> };
     /** Aborts a call that has stopped answering; a run cancels through this. */
     signal?: AbortSignal;
 }

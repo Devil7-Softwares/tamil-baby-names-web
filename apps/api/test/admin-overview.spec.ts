@@ -19,6 +19,9 @@ const entry = (overrides: Partial<IVerification>): IVerification => ({
     toStatus: 'published',
     reason: 'decision',
     actorId: null,
+    agentId: null,
+    confidence: null,
+    note: null,
     createdAt: new Date('2026-08-31T10:00:00Z'),
     ...overrides,
 });

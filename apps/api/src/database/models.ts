@@ -143,12 +143,30 @@ export interface IVerification {
     fromStatus: NameStatus;
     toStatus: NameStatus;
     reason: VerificationReason;
+    /** The person who decided. Null for an agent, and for the 0011 sweep. */
     actorId: number | null;
+    /** The agent that decided. Never set together with `actorId`. */
+    agentId: number | null;
+    /** The agent's own 0–100. Null for a person, who does not hedge a verdict. */
+    confidence: number | null;
+    /** The agent's one line of why, which is what a second pass reads. */
+    note: string | null;
     createdAt: Date;
 }
 
 export type VerificationDraft = Pick<IVerification, 'fromStatus' | 'toStatus'> &
-    Partial<Pick<IVerification, 'nameId' | 'meaningId' | 'reason' | 'actorId'>>;
+    Partial<
+        Pick<
+            IVerification,
+            | 'nameId'
+            | 'meaningId'
+            | 'reason'
+            | 'actorId'
+            | 'agentId'
+            | 'confidence'
+            | 'note'
+        >
+    >;
 
 /**
  * Where in a source a row or a reading was found. The subject is the same
@@ -401,6 +419,9 @@ export const defineVerifications = (sequelize: Sequelize): VerificationsModel =>
                 defaultValue: 'decision',
             },
             actorId: { type: DataTypes.INTEGER, field: 'actor_id' },
+            agentId: { type: DataTypes.INTEGER, field: 'agent_id' },
+            confidence: DataTypes.SMALLINT,
+            note: DataTypes.TEXT,
             createdAt: DataTypes.DATE,
         },
         {

@@ -52,6 +52,18 @@ export const openai: AgentProvider = {
                     { role: 'system', content: request.system },
                     { role: 'user', content: request.prompt },
                 ],
+                ...(request.schema
+                    ? {
+                          response_format: {
+                              type: 'json_schema',
+                              json_schema: {
+                                  name: request.schema.name,
+                                  schema: request.schema.json,
+                                  strict: true,
+                              },
+                          },
+                      }
+                    : {}),
                 ...(config.options.body as object | undefined),
             },
             request.signal,

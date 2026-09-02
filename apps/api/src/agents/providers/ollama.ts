@@ -47,6 +47,7 @@ export const ollama: AgentProvider = {
                 ...(typeof config.options.think === 'boolean'
                     ? { think: config.options.think }
                     : {}),
+                ...(request.schema ? { format: request.schema.json } : {}),
                 messages: [
                     { role: 'system', content: request.system },
                     { role: 'user', content: request.prompt },

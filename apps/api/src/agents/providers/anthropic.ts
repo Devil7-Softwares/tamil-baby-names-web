@@ -46,6 +46,16 @@ export const anthropic: AgentProvider = {
                     max_tokens: request.maxTokens,
                     system: request.system,
                     messages: [{ role: 'user', content: request.prompt }],
+                    ...(request.schema
+                        ? {
+                              output_config: {
+                                  format: {
+                                      type: 'json_schema' as const,
+                                      schema: request.schema.json,
+                                  },
+                              },
+                          }
+                        : {}),
                     ...effortOf(config.options),
                 },
                 { signal: request.signal },

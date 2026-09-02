@@ -129,11 +129,14 @@ describe('models', () => {
         expect(verifications.tableName).toBe('verifications');
         expect(Object.keys(verifications.getAttributes()).sort()).toEqual([
             'actorId',
+            'agentId',
+            'confidence',
             'createdAt',
             'fromStatus',
             'id',
             'meaningId',
             'nameId',
+            'note',
             'reason',
             'toStatus',
         ]);
