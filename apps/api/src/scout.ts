@@ -2,16 +2,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { Logger } from '@nestjs/common';
 
-import { parseScan, scoutBatch, ScoutBatchOptions } from './scout-batch.js';
+import { Mapping, parseScan, scoutBatch } from './scout-batch.js';
 
 /**
- * `x:0=girl,1=boy` — the `extra` field holding an app's own gender flag, and
- * what its values mean. Rejected rather than half-read: a mapping typed wrong
- * would file a whole catalogue under the wrong gender.
+ * `x:0=girl,1=boy` — an `extra` field the scan could not interpret, and what
+ * its values mean. Rejected rather than half-read: a mapping typed wrong would
+ * file a whole catalogue under the wrong gender, religion or language.
  */
-const genderMapping = (
-    given: string,
-): ScoutBatchOptions['gender'] | undefined => {
+const mapping = (given: string): Mapping | undefined => {
     if (!given) {
         return undefined;
     }
@@ -25,7 +23,7 @@ const genderMapping = (
     );
 
     if (!field || !Object.keys(values).length) {
-        throw new Error(`--gender-from should read like x:0=girl,1=boy`);
+        throw new Error(`a --*-from option should read like x:0=girl,1=boy`);
     }
 
     return { field, values };
@@ -44,7 +42,8 @@ const argument = (name: string): string | undefined =>
  *
  *     yarn workspace @tbn/api scout:batch --scan=./names-all.csv \
  *         --package=com.rmitms.namesBabyTamil --out=./batch.json [--title=…]
- *         [--gender-from=x:0=girl,1=boy] [--religion=muslim] [--language=tamil]
+ *         [--origin=baby_names.] [--gender-from=x:0=girl,1=boy]
+ *         [--religion-from=Religion:இந்து=hindu] [--language=tamil]
  *
  * Written out rather than imported directly, so the batch can be read before
  * anything is written: a scan is a decompiled app, and what it calls a name is
@@ -74,9 +73,12 @@ const run = async (): Promise<void> => {
         batch = scoutBatch(rows, {
             package: packageName,
             title: argument('title'),
-            gender: genderMapping(argument('gender-from') ?? ''),
-            religion: argument('religion'),
-            language: argument('language'),
+            gender: mapping(argument('gender-from') ?? ''),
+            religion: mapping(argument('religion-from') ?? ''),
+            language: mapping(argument('language-from') ?? ''),
+            religionSlug: argument('religion'),
+            languageSlug: argument('language'),
+            origin: argument('origin'),
         });
     } catch (error) {
         logger.error(`Could not read ${scan}.`, error);

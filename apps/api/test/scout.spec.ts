@@ -97,12 +97,99 @@ describe('batching a package', () => {
             [row({ package: 'bridleway.muslimtamilnames' })],
             {
                 package: 'bridleway.muslimtamilnames',
-                religion: 'muslim',
+                religionSlug: 'muslim',
             },
         );
 
         expect(batch.file.names).toMatchObject([
             { religion: 'muslim', language: null },
+        ]);
+    });
+
+    // nithra.babyname files every name itself, in its own Tamil labels.
+    it('files each name where the source filed it', () => {
+        const batch = scoutBatch(
+            [
+                row({ extra: '{"Religion": "இந்து", "languages": "தமிழ்"}' }),
+                row({
+                    name: 'அப்துல்',
+                    record: 'r2',
+                    extra: '{"Religion": "முஸ்லிம்", "languages": "-"}',
+                }),
+            ],
+            {
+                package: 'com.rmitms.namesBabyTamil',
+                religion: {
+                    field: 'Religion',
+                    values: { இந்து: 'hindu', முஸ்லிம்: 'muslim' },
+                },
+                language: { field: 'languages', values: { தமிழ்: 'tamil' } },
+            },
+        );
+
+        expect(batch.file.names).toMatchObject([
+            { religion: 'hindu', language: 'tamil' },
+            // "-" is not a language, and inventing one for it would be worse
+            // than leaving the row for a reviewer.
+            { religion: 'muslim', language: null },
+        ]);
+    });
+
+    // 13,351 of nithra's names carry "-" where a meaning would go. Importing
+    // that would put a dash on the site under every one of them.
+    it('reads a placeholder meaning as no meaning', () => {
+        const batch = scoutBatch(
+            [
+                row({ meaning: '-' }),
+                row({ name: 'அன்பு', record: 'r2', meaning: ' — ' }),
+            ],
+            { package: 'com.rmitms.namesBabyTamil' },
+        );
+
+        expect(batch.file.names).toMatchObject([
+            { meanings: [] },
+            { meanings: [] },
+        ]);
+    });
+
+    // One app's database is several tables and they are not all catalogues.
+    it('takes only the rows from the origin it was pointed at', () => {
+        const batch = scoutBatch(
+            [
+                row({ origin: 'baby.db#baby_names.Name' }),
+                row({
+                    name: 'பரணி',
+                    record: 'r2',
+                    origin: 'baby.db#star_use.star',
+                }),
+            ],
+            { package: 'com.rmitms.namesBabyTamil', origin: 'baby_names.' },
+        );
+
+        expect(batch.records).toBe(1);
+        expect(batch.file.names).toMatchObject([{ name: 'கணேஷ்' }]);
+    });
+
+    // twin_baby_names puts both children on one row, so one record id carries
+    // two names in the same script. Pairing them as spellings loses the second.
+    it('reads two rows of one script as two names, not two spellings', () => {
+        const batch = scoutBatch(
+            [
+                row({ name: 'ஆச்சார்யா', record: 'twins:0' }),
+                row({ name: 'ஆத்ரேயா', record: 'twins:0' }),
+                row({ name: 'Acharya', record: 'twins:0', script: 'latin' }),
+            ],
+            { package: 'com.rmitms.namesBabyTamil' },
+        );
+
+        expect(batch.records).toBe(2);
+        expect(batch.file.names).toMatchObject([
+            // The Latin row pairs with the first Tamil one, as a spelling.
+            {
+                name: 'ஆச்சார்யா',
+                notes: 'The source spells it "Acharya" in Latin script.',
+            },
+            { name: 'ஆத்ரேயா', notes: null },
         ]);
     });
 

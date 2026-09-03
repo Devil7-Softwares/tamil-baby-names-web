@@ -18,6 +18,20 @@ export interface ScoutRow {
     extra: string;
 }
 
+/**
+ * A field of the scan's `extra`, and what its values mean here.
+ *
+ * The scan records what an app stored without interpreting it, because a column
+ * of `0` and `1` is as likely to be a favourite as a gender and guessing is how
+ * a catalogue fills with confident nonsense. The reading comes from whoever
+ * checked it. A value the mapping does not cover is left unanswered rather than
+ * guessed at.
+ */
+export interface Mapping {
+    field: string;
+    values: Record<string, string>;
+}
+
 /** A record the batch leaves behind, and what the scan did not say about it. */
 export interface ScoutSkip {
     record: string;
@@ -46,15 +60,29 @@ export interface ScoutBatchOptions {
      * guessing is how a catalogue fills with confident nonsense. So the mapping
      * comes from whoever checked it, rather than being inferred here.
      */
-    gender?: { field: string; values: Record<string, string> };
+    gender?: Mapping;
+    /**
+     * The same, for the lookup slugs. `nithra.babyname` carries both per row in
+     * its own Tamil labels, so `{ field: 'Religion', values: { 'இந்து': 'hindu' } }`
+     * files each name where the source filed it.
+     */
+    religion?: Mapping;
+    language?: Mapping;
     /**
      * The lookup slugs every name in the package is filed under, where the
      * source says so of its whole catalogue — an app called "Muslim Tamil
-     * Names" is stating a religion, even though no column holds it. Left out
-     * for a source that is just a list of names.
+     * Names" is stating a religion, even though no column holds it. Ignored
+     * for a field the mapping above already answered.
      */
-    religion?: string;
-    language?: string;
+    religionSlug?: string;
+    languageSlug?: string;
+    /**
+     * Only rows whose `origin` contains this. One app's database is several
+     * tables, and they are not all catalogues: `nithra.babyname` keeps its
+     * names in `baby_names` and `twin_baby_names` and its nakshatras in
+     * `star_use`, which are not names anybody is called.
+     */
+    origin?: string;
 }
 
 const COLUMNS = [
@@ -162,28 +190,48 @@ const parseExtra = (extra: string): Record<string, string> => {
     }
 };
 
-/** What the scan read as a gender, else what the app's own flag was declared
- * to mean. */
-const genderOf = (
+/** What a declared `extra` field says about this record, if anything. */
+const mapped = (
     group: ScoutRow[],
-    mapping: ScoutBatchOptions['gender'],
-): ImportNameInput['gender'] | undefined => {
-    const said = GENDERS[group.find(({ gender }) => gender)?.gender ?? ''];
-
-    if (said || !mapping) {
-        return said;
+    mapping: Mapping | undefined,
+): string | undefined => {
+    if (!mapping) {
+        return undefined;
     }
 
     for (const { extra } of group) {
-        const flag = parseExtra(extra)[mapping.field];
+        const value = parseExtra(extra)[mapping.field];
 
-        if (flag !== undefined) {
-            return GENDERS[mapping.values[flag] ?? ''];
+        if (value !== undefined) {
+            return mapping.values[value.trim()];
         }
     }
 
     return undefined;
 };
+
+/** What the scan read as a gender, else what the app's own flag was declared
+ * to mean. */
+const genderOf = (
+    group: ScoutRow[],
+    mapping: Mapping | undefined,
+): ImportNameInput['gender'] | undefined =>
+    GENDERS[group.find(({ gender }) => gender)?.gender ?? ''] ??
+    GENDERS[mapped(group, mapping) ?? ''];
+
+/**
+ * A reading, or nothing where the source wrote a placeholder.
+ *
+ * `nithra.babyname` stores `-` for the 13,351 names it has no meaning for, and
+ * importing that as a reading would put a dash on the site under 13,351 names.
+ * An empty field and a field holding only punctuation say the same thing.
+ */
+const PLACEHOLDER = /^[\s\-–—.·?]*$/;
+
+const meaningOf = (group: ScoutRow[]): string | undefined =>
+    group
+        .map(({ meaning }) => meaning.trim())
+        .find((meaning) => meaning && !PLACEHOLDER.test(meaning));
 
 /**
  * Turns one package of a scan into a batch the importer takes.
@@ -202,15 +250,27 @@ export const scoutBatch = (
     rows: ScoutRow[],
     options: ScoutBatchOptions,
 ): ScoutBatch => {
-    const here = rows.filter((row) => row.package === options.package);
+    const here = rows.filter(
+        (row) =>
+            row.package === options.package &&
+            (!options.origin || row.origin.includes(options.origin)),
+    );
     const records = new Map<string, ScoutRow[]>();
+    const seen = new Map<string, number>();
 
     for (const [at, row] of here.entries()) {
         // A scan that records no id per record still has one row per name, so
         // its position stands in — grouping every row of it under `''` would
         // collapse the package into a single record.
-        const key = row.record || `#${at}`;
+        const id = row.record || `#${at}`;
+        // A record groups the *scripts* of one name, so two rows in the same
+        // script are two names and not two spellings. `twin_baby_names` puts
+        // both children on one row, and without this the second of every pair
+        // is silently dropped — 349 names in `nithra.babyname` alone.
+        const nth = seen.get(`${id} ${row.script}`) ?? 0;
+        const key = nth ? `${id} ${nth}` : id;
 
+        seen.set(`${id} ${row.script}`, nth + 1);
         records.set(key, [...(records.get(key) ?? []), row]);
     }
 
@@ -222,7 +282,7 @@ export const scoutBatch = (
         const latin = group.find(({ script }) => script === 'latin');
         const spelling = tamil ?? latin ?? group[0];
         const gender = genderOf(group, options.gender);
-        const meaning = group.find(({ meaning }) => meaning.trim())?.meaning;
+        const meaning = meaningOf(group);
 
         if (!spelling?.name.trim()) {
             skipped.push({ record, name: null, reason: 'no spelling' });
@@ -245,8 +305,10 @@ export const scoutBatch = (
         names.push({
             name: spelling.name,
             gender,
-            religion: options.religion ?? null,
-            language: options.language ?? null,
+            religion:
+                mapped(group, options.religion) ?? options.religionSlug ?? null,
+            language:
+                mapped(group, options.language) ?? options.languageSlug ?? null,
             meanings: meaning ? [meaning] : [],
             notes: transliteration
                 ? `The source spells it "${transliteration}" in Latin script.`
