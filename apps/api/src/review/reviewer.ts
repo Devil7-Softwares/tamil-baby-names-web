@@ -1,6 +1,8 @@
 import {
     CONFIDENT_ENOUGH,
     NameStatus,
+    ReviewBatch,
+    ReviewBatchSchema,
     ReviewOutcome,
     ReviewSubject,
     ReviewVerdict,
@@ -131,6 +133,43 @@ export interface VerdictOptions {
      */
     applied?: boolean;
 }
+
+/** A batch answer, or what was wrong with the one that could not be read. */
+export type ParsedBatch = { batch: ReviewBatch } | { unreadable: string };
+
+/**
+ * The same forgiveness `parseVerdict` extends, for a list of verdicts.
+ *
+ * Held to the schema by the provider where it can be, but a model still wraps
+ * its answer in a fence or a sentence, and reading the outermost object out of
+ * the text costs little.
+ */
+export const parseBatch = (text: string): ParsedBatch => {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+
+    if (start < 0 || end < start) {
+        return { unreadable: 'The model did not answer with JSON.' };
+    }
+
+    let raw: unknown;
+
+    try {
+        raw = JSON.parse(text.slice(start, end + 1)) as unknown;
+    } catch {
+        return { unreadable: 'The model’s JSON could not be parsed.' };
+    }
+
+    const parsed = ReviewBatchSchema.safeParse(raw);
+
+    return parsed.success
+        ? { batch: parsed.data }
+        : {
+              unreadable: parsed.error.issues
+                  .map(({ path, message }) => `${path.join('.')}: ${message}`)
+                  .join('; '),
+          };
+};
 
 /**
  * Applies one verdict, in one transaction.

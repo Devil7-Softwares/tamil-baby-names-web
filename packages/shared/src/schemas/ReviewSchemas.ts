@@ -88,6 +88,25 @@ export const REVIEW_VERDICT_JSON_SCHEMA = unbounded(
     z.toJSONSchema(ReviewVerdictSchema),
 ) as Record<string, unknown>;
 
+/**
+ * Several verdicts in one answer, each saying which name it is about.
+ *
+ * Keyed rather than positional: a model that returns nine of ten, or returns
+ * them out of order, would otherwise have every verdict after the gap applied
+ * to the wrong name — silently, and with the confidence of the one before it.
+ */
+export const ReviewBatchSchema = z.object({
+    verdicts: z.array(
+        ReviewVerdictSchema.extend({ at: z.number().int().positive() }),
+    ),
+});
+
+export const REVIEW_BATCH_JSON_SCHEMA = unbounded(
+    z.toJSONSchema(ReviewBatchSchema),
+) as Record<string, unknown>;
+
+export type ReviewBatch = z.output<typeof ReviewBatchSchema>;
+
 /** Below this a verdict is recorded but nothing is changed. */
 export const CONFIDENT_ENOUGH = 55;
 

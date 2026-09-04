@@ -54,6 +54,8 @@ export interface StartOptions {
     applied?: boolean;
     /** Only names that hold no reading at all — writing, not choosing. */
     unwritten?: boolean;
+    /** Clusters per request. 1 asks about each on its own, as before. */
+    batch?: number;
 }
 
 const seen = (run: IReviewRun, agent: string): AdminReviewRun => ({
@@ -74,6 +76,7 @@ const seen = (run: IReviewRun, agent: string): AdminReviewRun => ({
     error: run.error,
     compareWith: run.compareWith,
     applied: run.applied,
+    batch: run.batch,
     startedAt: run.startedAt.toISOString(),
     finishedAt: run.finishedAt?.toISOString() ?? null,
 });
@@ -178,6 +181,7 @@ export class ReviewRunsService implements OnApplicationBootstrap {
             compareWith = null,
             applied = true,
             unwritten = false,
+            batch = 1,
         }: StartOptions = {},
     ): Promise<AdminReviewRun> {
         const agent = await this.agents.findByPk(agentId);
@@ -225,6 +229,7 @@ export class ReviewRunsService implements OnApplicationBootstrap {
             total: Math.min(requested, waiting),
             compareWith,
             applied,
+            batch,
             startedAt: new Date(),
         });
 
@@ -240,6 +245,7 @@ export class ReviewRunsService implements OnApplicationBootstrap {
             compareWith,
             applied,
             unwritten,
+            batch,
         }).catch((error: unknown) => this.logger.error(String(error)));
 
         return this.get(id) as Promise<AdminReviewRun>;
@@ -271,9 +277,28 @@ export class ReviewRunsService implements OnApplicationBootstrap {
         agent: IAgent,
         requested: number,
         stop: AbortController,
-        { compareWith, applied, unwritten }: Required<StartOptions>,
+        { compareWith, applied, unwritten, batch }: Required<StartOptions>,
     ): Promise<void> {
         const counts = { ...ZERO };
+        // Progress writes are chained rather than fired and forgotten. One
+        // cluster at a time they landed in order anyway; with concurrency and
+        // batching ten finish at once, and a straggler carrying an older
+        // snapshot lands last and overwrites the newer counts — a run whose
+        // ledger held all 20 verdicts reported 16 reviewed. `settle` waits for
+        // the chain, so the final write is the final word.
+        let writing: Promise<unknown> = Promise.resolve();
+
+        const flush = (): Promise<unknown> => {
+            const snapshot = { ...counts };
+
+            writing = writing.then(() =>
+                this.runs
+                    .update(snapshot, { where: { id } })
+                    .catch(() => undefined),
+            );
+
+            return writing;
+        };
 
         try {
             await this.review.run(agent, {
@@ -282,24 +307,26 @@ export class ReviewRunsService implements OnApplicationBootstrap {
                 compareWith,
                 applied,
                 unwritten,
+                batch,
                 signal: stop.signal,
                 onProgress: (outcome) => {
                     tally(counts, outcome);
 
-                    // Not awaited: the next cluster should not wait on a
-                    // progress write, and a lost one is corrected by the next.
-                    void this.runs
-                        .update(counts, { where: { id } })
-                        .catch(() => undefined);
+                    // Still not awaited — the next cluster should not wait on a
+                    // progress write — but queued behind the last one so they
+                    // cannot land out of order.
+                    void flush();
                 },
             });
 
+            await writing;
             await this.settle(
                 id,
                 stop.signal.aborted ? 'cancelled' : 'finished',
                 counts,
             );
         } catch (error) {
+            await writing.catch(() => undefined);
             await this.settle(id, 'failed', counts, String(error));
         } finally {
             this.running.delete(id);

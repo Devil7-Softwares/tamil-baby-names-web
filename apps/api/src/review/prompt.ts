@@ -51,8 +51,18 @@ Answer with JSON only.`;
 
 const NOT_RECORDED = 'not recorded';
 
-/** The cluster as a person would read it aloud, which is what the model gets. */
-export const render = (subject: ReviewSubject): string => {
+/** The answer's shape, which is the same whether one name is asked or many. */
+const ANSWER = [
+    '- publish: the number of the reading to publish, or null if none is right.',
+    '- reject: the numbers of readings that are wrong. May be empty.',
+    '- rejectName: true only if this is not a name at all.',
+    '- add: a better reading in Tamil, if every one above is wrong. Otherwise null.',
+    '- confidence: 0-100.',
+    '- note: one line, in English, saying why.',
+];
+
+/** One cluster, without the instructions — the part a batch repeats. */
+const body = (subject: ReviewSubject): string[] => {
     const lines = [
         `Name: ${subject.name}`,
         `Gender: ${subject.gender}`,
@@ -75,16 +85,40 @@ export const render = (subject: ReviewSubject): string => {
         lines.push('No reading has been recorded for it.');
     }
 
-    lines.push(
-        '',
-        'Answer with:',
-        '- publish: the number of the reading to publish, or null if none is right.',
-        '- reject: the numbers of readings that are wrong. May be empty.',
-        '- rejectName: true only if this is not a name at all.',
-        '- add: a better reading in Tamil, if every one above is wrong. Otherwise null.',
-        '- confidence: 0-100.',
-        '- note: one line, in English, saying why.',
-    );
-
-    return lines.join('\n');
+    return lines;
 };
+
+/** The cluster as a person would read it aloud, which is what the model gets. */
+export const render = (subject: ReviewSubject): string =>
+    [...body(subject), '', 'Answer with:', ...ANSWER].join('\n');
+
+/**
+ * Several clusters in one request.
+ *
+ * The saving is real — the standing instructions are ~410 tokens and the whole
+ * of a request about a name with no reading is barely 40 more, so asking about
+ * ten at once is roughly six times less input. What it costs is independence:
+ * a model filling ten slots in one answer has a pull towards filling all ten,
+ * and declining is the answer that matters most on names nobody has written a
+ * meaning for. Hence the instruction to judge each on its own, and hence this
+ * being something asked for per run rather than the default.
+ *
+ * Each block is numbered and the answer is keyed by that number, so a model
+ * that returns them out of order, or skips one, still lands on the right
+ * cluster instead of quietly shifting every verdict by one.
+ */
+export const renderBatch = (subjects: ReviewSubject[]): string =>
+    [
+        `You are given ${subjects.length} names, numbered. Judge each entirely on`,
+        'its own: they are unrelated, and being unsure about one says nothing',
+        'about any other. Answer for every number, and leave out none.',
+        '',
+        ...subjects.flatMap((subject, at) => [
+            `--- ${at + 1} ---`,
+            ...body(subject),
+            '',
+        ]),
+        'Answer with a list, one entry per name, each carrying:',
+        '- at: the number of the name above that this entry is about.',
+        ...ANSWER,
+    ].join('\n');

@@ -58,6 +58,7 @@ export class AdminReviewController {
                         compareWith: input.compareWith,
                         applied: input.applied,
                         unwritten: input.unwritten,
+                        batch: input.batch,
                     });
                 } catch (error) {
                     // Every refusal here is something the person can act on:

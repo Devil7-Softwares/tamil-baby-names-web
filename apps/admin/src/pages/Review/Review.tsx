@@ -30,6 +30,13 @@ import { orpc } from '~/api/orpc';
 
 const BATCHES = [10, 25, 100, 500, 2000];
 
+/**
+ * Clusters per request. Off is one at a time, which is how every calibration
+ * figure behind the model comparison was measured — so it stays the default
+ * and anything else is a deliberate choice.
+ */
+const PER_REQUEST = [1, 5, 10, 25];
+
 /** While anything is moving, ask again; otherwise leave the server alone. */
 const POLL = 1500;
 
@@ -86,6 +93,7 @@ const Progress: React.FC<{ run: AdminReviewRun; onStop: () => void }> = ({
                     Run #{run.id} · {run.agent}
                     {run.compareWith ? ` · re-asking #${run.compareWith}` : ''}
                     {run.applied ? '' : ' · changing nothing'}
+                    {run.batch > 1 ? ` · ${run.batch} per request` : ''}
                 </Typography>
 
                 <Typography variant='body2' color='text.secondary'>
@@ -120,6 +128,7 @@ const Review: React.FC = () => {
     const [compareWith, setCompareWith] = useState<number | ''>('');
     const [applied, setApplied] = useState(true);
     const [unwritten, setUnwritten] = useState(false);
+    const [batch, setBatch] = useState(1);
 
     const queryClient = useQueryClient();
 
@@ -263,6 +272,25 @@ const Review: React.FC = () => {
                         ))}
                     </TextField>
 
+                    <Tooltip title='How many names go in one request. The standing instructions are most of a request, so asking together costs far less — and buys it by making each name a slot in a list rather than a question of its own. Every measurement of how these models behave was taken one at a time.'>
+                        <TextField
+                            select
+                            label='Per request'
+                            size='small'
+                            value={batch}
+                            onChange={(event) =>
+                                setBatch(Number(event.target.value))
+                            }
+                            sx={{ minWidth: 130 }}
+                        >
+                            {PER_REQUEST.map((size) => (
+                                <MenuItem key={size} value={size}>
+                                    {size === 1 ? 'One at a time' : size}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </Tooltip>
+
                     <Tooltip title='Only names that hold no reading at all. A different job from choosing between rival readings — the model is being asked to write one — and the queue would not reach them for a long time otherwise.'>
                         <FormControlLabel
                             control={
@@ -308,6 +336,7 @@ const Review: React.FC = () => {
                                 compareWith: compareWith || null,
                                 applied,
                                 unwritten,
+                                batch,
                             })
                         }
                     >
@@ -347,6 +376,15 @@ const Review: React.FC = () => {
                                 <TableRow key={run.id} hover>
                                     <TableCell>
                                         #{run.id}
+                                        {run.batch > 1 && (
+                                            <Typography
+                                                variant='caption'
+                                                color='text.secondary'
+                                                sx={{ display: 'block' }}
+                                            >
+                                                {run.batch} per request
+                                            </Typography>
+                                        )}
                                         {run.compareWith && (
                                             <Typography
                                                 variant='caption'

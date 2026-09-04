@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
+    REVIEW_BATCH_JSON_SCHEMA,
     REVIEW_VERDICT_JSON_SCHEMA,
     ReviewOutcome,
     ReviewReport,
@@ -27,10 +28,11 @@ import {
     SourcesModel,
     VerificationsModel,
 } from '../database/models.js';
-import { render, SYSTEM } from './prompt.js';
+import { render, renderBatch, SYSTEM } from './prompt.js';
 import {
     applyVerdict,
     Candidate,
+    parseBatch,
     parseVerdict,
     ReviewModels,
     subjectOf,
@@ -47,6 +49,8 @@ export interface RunOptions {
     compareWith?: number | null;
     /** False records what the agent would have done and changes nothing. */
     applied?: boolean;
+    /** Clusters per request. 1 asks about each on its own, as before. */
+    batch?: number;
     /** Only clusters that hold no reading at all — see `UNWRITTEN`. */
     unwritten?: boolean;
     /** Called after each cluster, so a caller can show progress or stop. */
@@ -183,10 +187,22 @@ export class ReviewService {
         // take wildly different times — a model abstains in a second and
         // reasons for twenty — and slicing would leave most workers idle
         // waiting for the slowest.
-        const queue = candidates[Symbol.iterator]();
+        // Batches, not clusters, are what a worker pulls. At a batch of one
+        // this is the old loop exactly — same prompt, same schema — because
+        // every calibration figure behind the model comparison was measured
+        // that way and a "no batching" run must not quietly become something
+        // else.
+        const size = Math.max(1, options.batch ?? 1);
+        const batches: Candidate[][] = [];
+
+        for (let at = 0; at < candidates.length; at += size) {
+            batches.push(candidates.slice(at, at + size));
+        }
+
+        const queue = batches[Symbol.iterator]();
         const width = Math.max(
             1,
-            Math.min(this.agents.concurrencyOf(agent), candidates.length),
+            Math.min(this.agents.concurrencyOf(agent), batches.length),
         );
 
         const worker = async (): Promise<void> => {
@@ -203,13 +219,102 @@ export class ReviewService {
 
                 // Tallied as each finishes, so the counts and the progress the
                 // page polls stay in step with what has actually been decided.
-                tally(await this.one(agent, config, next.value, options));
+                const outcomes =
+                    next.value.length === 1
+                        ? [
+                              await this.one(
+                                  agent,
+                                  config,
+                                  next.value[0],
+                                  options,
+                              ),
+                          ]
+                        : await this.many(agent, config, next.value, options);
+
+                outcomes.forEach(tally);
             }
         };
 
         await Promise.all(Array.from({ length: width }, worker));
 
         return report;
+    }
+
+    /**
+     * Several clusters in one request, and one outcome back for every one of
+     * them — a null where the model said nothing about it.
+     *
+     * The saving is the standing instructions, which are most of a request and
+     * are sent once instead of once per name. What it costs is independence:
+     * the model is filling a list rather than answering a question, and on
+     * names with no reading yet, declining is the answer that matters most.
+     *
+     * A verdict names the cluster it is about rather than relying on order, so
+     * a model that returns nine of ten does not shift every later verdict onto
+     * the wrong name. Anything it left out is a failure for that cluster and
+     * not a silent skip: an unanswered name must come round again.
+     */
+    private async many(
+        agent: IAgent,
+        config: ReturnType<AgentsService['configOf']>,
+        batch: Candidate[],
+        options: RunOptions,
+    ): Promise<Array<ReviewOutcome | null>> {
+        let answer: string;
+
+        try {
+            const reply = await this.agents.ask(config, {
+                system: SYSTEM,
+                prompt: renderBatch(batch.map(subjectOf)),
+                // Every verdict needs its own note, so the ceiling has to grow
+                // with the batch or the last few arrive truncated.
+                maxTokens: MAX_TOKENS * batch.length,
+                schema: {
+                    name: 'review_verdicts',
+                    json: REVIEW_BATCH_JSON_SCHEMA,
+                },
+                signal: options.signal,
+            });
+
+            answer = reply.text;
+        } catch (error) {
+            this.logger.warn(
+                `${batch.length} names: ${(error as AgentCallError).message}`,
+            );
+
+            return batch.map(() => null);
+        }
+
+        const parsed = parseBatch(answer);
+
+        if ('unreadable' in parsed) {
+            // One malformed answer costs the whole batch, which is the price of
+            // asking together and worth saying out loud in the log.
+            this.logger.warn(`${batch.length} names: ${parsed.unreadable}`);
+
+            return batch.map(() => null);
+        }
+
+        const byIndex = new Map(
+            parsed.batch.verdicts.map((verdict) => [verdict.at, verdict]),
+        );
+
+        return Promise.all(
+            batch.map(async (candidate, at) => {
+                const verdict = byIndex.get(at + 1);
+
+                if (!verdict) {
+                    this.logger.warn(`${candidate.name}: no verdict returned.`);
+
+                    return null;
+                }
+
+                return applyVerdict(this.models, agent, candidate, verdict, {
+                    runId: options.runId,
+                    applied: options.applied,
+                });
+            }),
+        );
     }
 
     /** One cluster. Returns null when the model could not be asked or read. */

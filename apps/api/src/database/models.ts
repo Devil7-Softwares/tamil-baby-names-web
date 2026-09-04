@@ -277,6 +277,9 @@ export interface IReviewRun {
     compareWith: number | null;
     /** False for a run that records what it would have done and writes nothing. */
     applied: boolean;
+    /** Clusters per request. 1 is one at a time, which is how all the
+     * calibration behind the model comparison was measured. */
+    batch: number;
     startedAt: Date;
     finishedAt: Date | null;
 }
@@ -593,6 +596,11 @@ export const defineReviewRuns = (sequelize: Sequelize): ReviewRunsModel =>
                 type: DataTypes.BOOLEAN,
                 allowNull: false,
                 defaultValue: true,
+            },
+            batch: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 1,
             },
             startedAt: { type: DataTypes.DATE, field: 'started_at' },
             finishedAt: { type: DataTypes.DATE, field: 'finished_at' },

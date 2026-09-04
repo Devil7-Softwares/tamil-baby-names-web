@@ -54,6 +54,74 @@ const drive = async (
     return { report, peak, order };
 };
 
+describe('running clusters in batches', () => {
+    const sizes = async (clusters: number, batch: number) => {
+        const seen: number[] = [];
+        const service = Object.create(ReviewService.prototype) as ReviewService;
+
+        Object.assign(service, {
+            agents: { configOf: () => ({}), concurrencyOf: () => 1 },
+            candidates: async () =>
+                Array.from({ length: clusters }, (_, at) => ({
+                    clusterId: at,
+                })),
+            one: async () => {
+                seen.push(1);
+
+                return null;
+            },
+            many: async (
+                _a: unknown,
+                _c: unknown,
+                group: { clusterId: number }[],
+            ) => {
+                seen.push(group.length);
+
+                return group.map(() => null);
+            },
+        });
+
+        await service.run({ id: 1, slug: 'a' } as never, {
+            limit: clusters,
+            batch,
+        });
+
+        return seen;
+    };
+
+    it('splits the queue into requests of the size asked for', async () => {
+        expect(await sizes(25, 10)).toEqual([10, 10, 5]);
+    });
+
+    // A batch of one has to stay the old path exactly: every calibration figure
+    // behind the model comparison was measured one cluster per request.
+    it('asks one at a time when the batch is one', async () => {
+        expect(await sizes(4, 1)).toEqual([1, 1, 1, 1]);
+    });
+
+    it('treats no batch at all as one at a time', async () => {
+        const seen: number[] = [];
+        const service = Object.create(ReviewService.prototype) as ReviewService;
+
+        Object.assign(service, {
+            agents: { configOf: () => ({}), concurrencyOf: () => 1 },
+            candidates: async () => [{ clusterId: 1 }, { clusterId: 2 }],
+            one: async () => {
+                seen.push(1);
+
+                return null;
+            },
+            many: async () => {
+                throw new Error('should not batch');
+            },
+        });
+
+        await service.run({ id: 1, slug: 'a' } as never, { limit: 2 });
+
+        expect(seen).toEqual([1, 1]);
+    });
+});
+
 describe('running clusters concurrently', () => {
     it('keeps the configured number in flight and no more', async () => {
         const { report, peak } = await drive(30, 4);

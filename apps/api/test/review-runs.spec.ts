@@ -235,6 +235,29 @@ describe('starting a run', () => {
 
         expect(store[0]).toMatchObject({ reviewed: 1, failed: 1 });
     });
+
+    // Found by batching: ten clusters finishing at once fired ten un-awaited
+    // updates, and a straggler carrying an older snapshot landed after the
+    // final one. The run reported 16 reviewed while its ledger held all 20.
+    it('does not let a late progress write undo the final counts', async () => {
+        const { service, store, updates } = build({
+            outcomes: Array.from({ length: 8 }, () => outcome()),
+        });
+
+        await service.start(3, 8);
+        await settle();
+
+        const run = store[0];
+
+        expect(run.reviewed).toBe(8);
+        expect(run.status).toBe('finished');
+        // Every write carried a count no lower than the one before it.
+        const seen = updates
+            .map((u) => u.reviewed)
+            .filter((n): n is number => typeof n === 'number');
+
+        expect(seen).toEqual([...seen].sort((a, b) => a - b));
+    });
 });
 
 describe('a run that should not start', () => {

@@ -30,6 +30,8 @@ export const AdminReviewRunSchema = z.object({
      * The counts then read as "would have", which is what the page says.
      */
     applied: z.boolean(),
+    /** Clusters per request; 1 is one at a time. */
+    batch: z.number().int().min(1),
     startedAt: z.string(),
     finishedAt: z.string().nullable(),
 });
@@ -50,6 +52,9 @@ export const ReviewOverviewSchema = z.object({
     agents: z.array(ReviewAgentSchema),
     runs: z.array(AdminReviewRunSchema),
 });
+
+/** More than this in one answer and the last verdicts arrive truncated. */
+export const REVIEW_BATCH_PER_REQUEST_MAX = 25;
 
 /** How many clusters one run may look at. */
 export const REVIEW_BATCH_MAX = 5000;
@@ -77,6 +82,13 @@ export const ReviewStartSchema = z.object({
      * for a very long time.
      */
     unwritten: z.boolean().default(false),
+    /**
+     * Clusters to put in one request. The standing instructions are most of a
+     * request, so asking about several at once costs far less — and buys it by
+     * making each name a slot in a list rather than a question of its own,
+     * which is why it is asked for per run and defaults to off.
+     */
+    batch: z.number().int().min(1).max(REVIEW_BATCH_PER_REQUEST_MAX).default(1),
 });
 
 export const ReviewRunIdSchema = z.object({
