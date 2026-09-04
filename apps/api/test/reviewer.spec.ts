@@ -426,6 +426,26 @@ describe('a run that is told to change nothing', () => {
         });
     });
 
+    // Comparing models on a name with no reading means comparing their prose,
+    // and a run that writes nothing used to throw that prose away.
+    it('keeps the reading it would have written', async () => {
+        const { models, ledger, created } = build();
+
+        const outcome = await applyVerdict(
+            models,
+            agent,
+            candidate(),
+            verdict({ publish: null, reject: [], add: 'ஒரு புதிய பொருள்' }),
+            { applied: false },
+        );
+
+        expect(outcome.added).toBe(1);
+        expect(created).toEqual([]);
+        expect(ledger).toEqual([
+            expect.objectContaining({ proposed: 'ஒரு புதிய பொருள்' }),
+        ]);
+    });
+
     it('stamps the run on a verdict it did apply', async () => {
         const { models, ledger } = build();
 
@@ -467,6 +487,7 @@ describe('a model that is not sure', () => {
                 confidence: 40,
                 note: 'I do not know this name.',
                 runId: null,
+                proposed: null,
             },
         ]);
     });

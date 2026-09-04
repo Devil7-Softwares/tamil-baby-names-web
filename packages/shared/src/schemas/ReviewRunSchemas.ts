@@ -68,6 +68,13 @@ export const ReviewStartSchema = z.object({
      * the answers are about the models rather than about who ran first.
      */
     applied: z.boolean().default(true),
+    /**
+     * Only names that hold no reading at all. A different job from choosing
+     * between rival readings — there is nothing to weigh, and the model is
+     * being asked to write one — and the queue's id order would not reach them
+     * for a very long time.
+     */
+    unwritten: z.boolean().default(false),
 });
 
 export const ReviewRunIdSchema = z.object({

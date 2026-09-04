@@ -163,6 +163,12 @@ export interface IVerification {
     note: string | null;
     /** The run that wrote it, which is how a run's clusters are re-asked. */
     runId: number | null;
+    /**
+     * The reading the verdict would have written, where it proposed one. The
+     * only record of it on a run that wrote nothing, and what makes two models
+     * comparable on a name that has no reading yet.
+     */
+    proposed: string | null;
     createdAt: Date;
 }
 
@@ -178,6 +184,7 @@ export type VerificationDraft = Pick<IVerification, 'fromStatus' | 'toStatus'> &
             | 'confidence'
             | 'note'
             | 'runId'
+            | 'proposed'
         >
     >;
 
@@ -467,6 +474,7 @@ export const defineVerifications = (sequelize: Sequelize): VerificationsModel =>
             confidence: DataTypes.SMALLINT,
             note: DataTypes.TEXT,
             runId: { type: DataTypes.INTEGER, field: 'run_id' },
+            proposed: DataTypes.TEXT,
             createdAt: DataTypes.DATE,
         },
         {

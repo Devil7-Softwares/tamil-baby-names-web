@@ -23,6 +23,7 @@ const entry = (overrides: Partial<IVerification>): IVerification => ({
     confidence: null,
     note: null,
     runId: null,
+    proposed: null,
     createdAt: new Date('2026-08-31T10:00:00Z'),
     ...overrides,
 });

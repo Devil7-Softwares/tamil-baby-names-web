@@ -139,6 +139,7 @@ describe('models', () => {
             'meaningId',
             'nameId',
             'note',
+            'proposed',
             'reason',
             'runId',
             'toStatus',

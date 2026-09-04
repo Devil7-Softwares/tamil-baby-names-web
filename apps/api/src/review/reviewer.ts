@@ -174,11 +174,19 @@ export const applyVerdict = async (
 
     return models.sequelize.transaction(async (transaction) => {
         const ledger: VerificationDraft[] = [];
+        const added = verdict.add?.trim();
+        const proposed =
+            added && !candidate.readings.some(({ text }) => text === added)
+                ? added
+                : null;
         const stamp = {
             agentId: agent.id,
             confidence: verdict.confidence,
             note: verdict.note,
             runId,
+            // Stamped like the note, so what a verdict would have written
+            // survives a run that wrote nothing.
+            proposed,
         };
 
         // A run that only records still builds the whole ledger — the decision
@@ -287,17 +295,15 @@ export const applyVerdict = async (
 
         await settle(models.meanings as Movable, 'meaningId');
 
-        const added = verdict.add?.trim();
-
-        if (added && !candidate.readings.some(({ text }) => text === added)) {
+        if (proposed) {
             outcome.added += 1;
         }
 
-        if (applied && outcome.added) {
+        if (applied && proposed) {
             await models.meanings.create(
                 {
                     nameId: candidate.rows[0].id,
-                    text: (added as string).normalize('NFC'),
+                    text: proposed.normalize('NFC'),
                     sourceId: await sourceFor(models, agent, transaction),
                     status: 'candidate',
                 },
@@ -320,10 +326,7 @@ export const applyVerdict = async (
                         fromStatus: candidate.rows[0].status,
                         toStatus: candidate.rows[0].status,
                         reason: 'considered',
-                        agentId: agent.id,
-                        confidence: verdict.confidence,
-                        note: verdict.note,
-                        runId,
+                        ...stamp,
                     },
                 ],
                 transaction,
@@ -386,6 +389,10 @@ const record_ = async (
                 confidence: verdict.confidence,
                 note: verdict.note,
                 runId,
+                // What it wanted to write, even where it was not sure enough
+                // to write it — which is exactly what a person re-reading a
+                // low-confidence verdict wants to see.
+                proposed: verdict.add?.trim() || null,
             },
         ],
         transaction,

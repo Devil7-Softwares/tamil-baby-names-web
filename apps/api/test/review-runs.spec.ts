@@ -147,8 +147,13 @@ const build = ({
 
     const asked: Array<Record<string, unknown>> = [];
 
+    const asked_: unknown[] = [];
     const review = {
-        pending: async () => pending,
+        pending: async (_id: number, unwritten?: boolean) => {
+            asked_.push(unwritten);
+
+            return pending;
+        },
         reAskable: async () => reAskable,
         run: async (
             _agent: IAgent,
@@ -319,13 +324,28 @@ describe('asking two agents the same question', () => {
         );
     });
 
+    // The queue is ordered by cluster id and the names with no reading arrived
+    // last, so a run would not reach them without asking.
+    it('can ask for only the names nobody has written a reading for', async () => {
+        const { service, asked } = build();
+
+        await service.start(3, 25, { unwritten: true });
+        await settle();
+
+        expect(asked[0]).toMatchObject({ unwritten: true });
+    });
+
     it('still applies by default', async () => {
         const { service, asked } = build();
 
         await service.start(3, 25);
         await settle();
 
-        expect(asked[0]).toMatchObject({ applied: true, compareWith: null });
+        expect(asked[0]).toMatchObject({
+            applied: true,
+            compareWith: null,
+            unwritten: false,
+        });
     });
 });
 

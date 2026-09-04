@@ -52,6 +52,8 @@ export interface StartOptions {
     compareWith?: number | null;
     /** False records what the agent would have done and changes nothing. */
     applied?: boolean;
+    /** Only names that hold no reading at all — writing, not choosing. */
+    unwritten?: boolean;
 }
 
 const seen = (run: IReviewRun, agent: string): AdminReviewRun => ({
@@ -172,7 +174,11 @@ export class ReviewRunsService implements OnApplicationBootstrap {
     async start(
         agentId: number,
         requested: number,
-        { compareWith = null, applied = true }: StartOptions = {},
+        {
+            compareWith = null,
+            applied = true,
+            unwritten = false,
+        }: StartOptions = {},
     ): Promise<AdminReviewRun> {
         const agent = await this.agents.findByPk(agentId);
 
@@ -202,7 +208,7 @@ export class ReviewRunsService implements OnApplicationBootstrap {
 
         const waiting =
             compareWith === null
-                ? await this.review.pending(agentId)
+                ? await this.review.pending(agentId, unwritten)
                 : await this.review.reAskable(compareWith);
 
         if (!waiting) {
@@ -233,6 +239,7 @@ export class ReviewRunsService implements OnApplicationBootstrap {
         void this.drive(id, agent.dataValues, requested, stop, {
             compareWith,
             applied,
+            unwritten,
         }).catch((error: unknown) => this.logger.error(String(error)));
 
         return this.get(id) as Promise<AdminReviewRun>;
@@ -264,7 +271,7 @@ export class ReviewRunsService implements OnApplicationBootstrap {
         agent: IAgent,
         requested: number,
         stop: AbortController,
-        { compareWith, applied }: Required<StartOptions>,
+        { compareWith, applied, unwritten }: Required<StartOptions>,
     ): Promise<void> {
         const counts = { ...ZERO };
 
@@ -274,6 +281,7 @@ export class ReviewRunsService implements OnApplicationBootstrap {
                 runId: id,
                 compareWith,
                 applied,
+                unwritten,
                 signal: stop.signal,
                 onProgress: (outcome) => {
                     tally(counts, outcome);

@@ -57,6 +57,7 @@ export class AdminReviewController {
                     return await this.runs.start(input.agentId, input.limit, {
                         compareWith: input.compareWith,
                         applied: input.applied,
+                        unwritten: input.unwritten,
                     });
                 } catch (error) {
                     // Every refusal here is something the person can act on:

@@ -47,6 +47,8 @@ export interface RunOptions {
     compareWith?: number | null;
     /** False records what the agent would have done and changes nothing. */
     applied?: boolean;
+    /** Only clusters that hold no reading at all — see `UNWRITTEN`. */
+    unwritten?: boolean;
     /** Called after each cluster, so a caller can show progress or stop. */
     onProgress?: (outcome: ReviewOutcome | null) => void;
     signal?: AbortSignal;
@@ -82,9 +84,9 @@ export class ReviewService {
      * How many clusters this agent has left to look at. The dashboard shows it
      * before a run so "review the queue" has a number attached.
      */
-    async pending(agentId: number): Promise<number> {
+    async pending(agentId: number, unwritten = false): Promise<number> {
         const [row] = await this.sequelize.query<{ count: string }>(
-            `SELECT count(*)::text AS count FROM (${UNREVIEWED}) AS pending`,
+            `SELECT count(*)::text AS count FROM (${queue(unwritten)}) AS pending`,
             { type: QueryTypes.SELECT, replacements: { agentId, limit: null } },
         );
 
@@ -116,9 +118,10 @@ export class ReviewService {
         agentId: number,
         limit: number,
         compareWith?: number | null,
+        unwritten = false,
     ): Promise<Candidate[]> {
         const rows = await this.sequelize.query<{ cluster_id: number }>(
-            compareWith ? RE_ASK : UNREVIEWED,
+            compareWith ? RE_ASK : queue(unwritten),
             {
                 type: QueryTypes.SELECT,
                 replacements: compareWith
@@ -156,6 +159,7 @@ export class ReviewService {
             agent.id,
             options.limit,
             options.compareWith,
+            options.unwritten,
         );
 
         for (const candidate of candidates) {
@@ -309,6 +313,21 @@ const RE_ASK = `
     LIMIT COALESCE(:limit, 2147483647)
 `;
 
+/**
+ * Names with no reading at all, which is a different job from choosing between
+ * rival ones: there is nothing to weigh, and the model is being asked to write.
+ *
+ * Worth asking for on its own because the queue is ordered by cluster id and
+ * these arrived last — 12,562 of them from `nithra.babyname`, sitting behind
+ * every older cluster that an import has since given a new candidate row. A
+ * run would not reach them for a very long time.
+ */
+const UNWRITTEN = `
+    AND NOT EXISTS (
+        SELECT 1 FROM "meanings" m2 WHERE m2."cluster_id" = c."id"
+    )
+`;
+
 const UNREVIEWED = `
     SELECT c."id" AS cluster_id
     FROM "clusters" c
@@ -329,6 +348,11 @@ const UNREVIEWED = `
         WHERE v."agent_id" = :agentId
           AND COALESCE(vn."cluster_id", vm."cluster_id") = c."id"
     )
+    /* unwritten */
     ORDER BY c."id"
     LIMIT COALESCE(:limit, 2147483647)
 `;
+
+/** The unreviewed queue, narrowed to names nobody has written a reading for. */
+const queue = (unwritten: boolean): string =>
+    UNREVIEWED.replace('/* unwritten */', unwritten ? UNWRITTEN : '');
