@@ -5,11 +5,13 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    Divider,
     FormControlLabel,
     MenuItem,
     Stack,
     Switch,
     TextField,
+    Typography,
 } from '@mui/material';
 import {
     AdminAgent,
@@ -18,6 +20,25 @@ import {
     AgentProviderSummary,
 } from '@tbn/shared';
 import { useState } from 'react';
+
+/**
+ * The form asks three separate questions — which model, how to reach it, how to
+ * call it — and as one flat column of eight controls they all looked alike.
+ */
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
+    title,
+    children,
+}) => (
+    <Stack spacing={2}>
+        <Divider textAlign='left'>
+            <Typography variant='overline' color='text.secondary'>
+                {title}
+            </Typography>
+        </Divider>
+
+        {children}
+    </Stack>
+);
 
 /** What the form holds. `options` stays text until it is saved. */
 interface Draft {
@@ -149,7 +170,7 @@ export const AgentDialog: React.FC<{
     const incomplete = !draft.name.trim() || !draft.model.trim();
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth='sm'>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth='md'>
             <DialogTitle>{agent ? agent.name : 'Add an agent'}</DialogTitle>
 
             <DialogContent>
@@ -166,141 +187,176 @@ export const AgentDialog: React.FC<{
                         }
                     />
 
-                    <TextField
-                        select
-                        label='API'
-                        size='small'
-                        value={draft.provider}
-                        // Changing it would strand the key and the endpoint,
-                        // and an agent's slug is already attached to its work.
-                        disabled={!!agent}
-                        onChange={(event) =>
-                            set(
-                                'provider',
-                                event.target.value as AgentProviderId,
-                            )
-                        }
-                        helperText={
-                            agent
-                                ? 'Add another agent to use a different API.'
-                                : undefined
-                        }
-                    >
-                        {providers.map((provider) => (
-                            <MenuItem
-                                key={provider.id}
-                                value={provider.id}
-                                disabled={!provider.usable}
+                    <Section title='Where it lives'>
+                        <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={2}
+                        >
+                            <TextField
+                                select
+                                label='API'
+                                size='small'
+                                sx={{ flex: 1 }}
+                                value={draft.provider}
+                                // Changing it would strand the key and the endpoint,
+                                // and an agent's slug is already attached to its work.
+                                disabled={!!agent}
+                                onChange={(event) =>
+                                    set(
+                                        'provider',
+                                        event.target.value as AgentProviderId,
+                                    )
+                                }
+                                helperText={
+                                    agent
+                                        ? 'Add another agent to use a different API.'
+                                        : undefined
+                                }
                             >
-                                {AGENT_PROVIDER_LABELS[provider.id]}
-                                {provider.usable
-                                    ? ''
-                                    : ' — needs AGENT_KEY_SECRET'}
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                                {providers.map((provider) => (
+                                    <MenuItem
+                                        key={provider.id}
+                                        value={provider.id}
+                                        disabled={!provider.usable}
+                                    >
+                                        {AGENT_PROVIDER_LABELS[provider.id]}
+                                        {provider.usable
+                                            ? ''
+                                            : ' — needs AGENT_KEY_SECRET'}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
 
-                    <TextField
-                        label='Model'
-                        size='small'
-                        value={draft.model}
-                        onChange={(event) => set('model', event.target.value)}
-                        placeholder={MODEL_HINT[draft.provider]}
-                    />
+                            <TextField
+                                label='Model'
+                                size='small'
+                                sx={{ flex: 1 }}
+                                value={draft.model}
+                                onChange={(event) =>
+                                    set('model', event.target.value)
+                                }
+                                placeholder={MODEL_HINT[draft.provider]}
+                                helperText='Exactly as the provider names it.'
+                            />
+                        </Stack>
 
-                    <TextField
-                        label='Endpoint'
-                        size='small'
-                        value={draft.baseUrl}
-                        onChange={(event) => set('baseUrl', event.target.value)}
-                        placeholder={chosen?.defaultBaseUrl}
-                        helperText='Leave empty for the provider’s own endpoint. Set it for a gateway, a proxy, or an Ollama elsewhere.'
-                    />
-
-                    {chosen?.needsKey && (
                         <TextField
-                            label='API key'
+                            label='Endpoint'
                             size='small'
-                            type='password'
-                            autoComplete='off'
-                            value={draft.apiKey}
+                            value={draft.baseUrl}
                             onChange={(event) =>
-                                set('apiKey', event.target.value)
+                                set('baseUrl', event.target.value)
                             }
+                            placeholder={chosen?.defaultBaseUrl}
+                            helperText='Leave empty for the provider’s own endpoint. Set it for a gateway, a proxy, or an Ollama elsewhere.'
+                        />
+
+                        {chosen?.needsKey && (
+                            <TextField
+                                label='API key'
+                                size='small'
+                                type='password'
+                                autoComplete='off'
+                                value={draft.apiKey}
+                                onChange={(event) =>
+                                    set('apiKey', event.target.value)
+                                }
+                                helperText={
+                                    agent?.hasKey
+                                        ? 'A key is saved. Type a new one to replace it — it cannot be read back.'
+                                        : 'Sealed before it is stored, and never shown again.'
+                                }
+                            />
+                        )}
+                    </Section>
+
+                    <Section title='How it is called'>
+                        <TextField
+                            label='Options'
+                            size='small'
+                            multiline
+                            minRows={2}
+                            value={draft.options}
+                            onChange={(event) => {
+                                set('options', event.target.value);
+                                setBadOptions(null);
+                            }}
+                            placeholder={OPTIONS_HINT[draft.provider]}
+                            error={!!badOptions}
                             helperText={
-                                agent?.hasKey
-                                    ? 'A key is saved. Type a new one to replace it — it cannot be read back.'
-                                    : 'Sealed before it is stored, and never shown again.'
+                                badOptions ??
+                                `JSON, passed to the provider. For ${AGENT_PROVIDER_LABELS[draft.provider]}: ${OPTIONS_HINT[draft.provider]}`
                             }
                         />
-                    )}
 
-                    <TextField
-                        label='Options'
-                        size='small'
-                        multiline
-                        minRows={2}
-                        value={draft.options}
-                        onChange={(event) => {
-                            set('options', event.target.value);
-                            setBadOptions(null);
-                        }}
-                        placeholder={OPTIONS_HINT[draft.provider]}
-                        error={!!badOptions}
-                        helperText={
-                            badOptions ??
-                            `JSON, passed to the provider. For ${AGENT_PROVIDER_LABELS[draft.provider]}: ${OPTIONS_HINT[draft.provider]}`
-                        }
-                    />
+                        <Stack spacing={0.5}>
+                            <Stack
+                                direction='row'
+                                spacing={2}
+                                sx={{ alignItems: 'center' }}
+                            >
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={draft.parallel}
+                                            onChange={(event) =>
+                                                set(
+                                                    'parallel',
+                                                    event.target.checked,
+                                                )
+                                            }
+                                        />
+                                    }
+                                    label='Ask about several at once'
+                                    sx={{ mr: 0 }}
+                                />
 
-                    <Stack
-                        direction='row'
-                        spacing={2}
-                        sx={{ alignItems: 'center' }}
-                    >
+                                <TextField
+                                    label='At most'
+                                    size='small'
+                                    type='number'
+                                    disabled={!draft.parallel}
+                                    value={draft.concurrency}
+                                    onChange={(event) =>
+                                        set('concurrency', event.target.value)
+                                    }
+                                    placeholder={String(
+                                        chosen?.concurrency ?? 1,
+                                    )}
+                                    slotProps={{
+                                        htmlInput: { min: 1, max: 32 },
+                                    }}
+                                    sx={{ width: 120 }}
+                                />
+                            </Stack>
+
+                            {/* One line under both, so the switch and the field sit
+                            on the same baseline instead of the field being
+                            pushed up by helper text only it carries. */}
+                            <Typography
+                                variant='caption'
+                                color='text.secondary'
+                            >
+                                {draft.parallel
+                                    ? `How many clusters a run may have in flight at once. Blank uses ${AGENT_PROVIDER_LABELS[draft.provider]}'s own ${chosen?.concurrency ?? 1}.`
+                                    : 'One request at a time, which is what a model on this machine wants.'}
+                            </Typography>
+                        </Stack>
+                    </Section>
+
+                    <Section title='Availability'>
                         <FormControlLabel
                             control={
                                 <Switch
-                                    checked={draft.parallel}
+                                    checked={draft.enabled}
                                     onChange={(event) =>
-                                        set('parallel', event.target.checked)
+                                        set('enabled', event.target.checked)
                                     }
                                 />
                             }
-                            label='Ask about several at once'
+                            label='Available to run reviews'
                         />
-
-                        <TextField
-                            label='At most'
-                            size='small'
-                            type='number'
-                            disabled={!draft.parallel}
-                            value={draft.concurrency}
-                            onChange={(event) =>
-                                set('concurrency', event.target.value)
-                            }
-                            placeholder={String(chosen?.concurrency ?? 1)}
-                            slotProps={{ htmlInput: { min: 1, max: 32 } }}
-                            sx={{ width: 210 }}
-                            helperText={
-                                draft.parallel
-                                    ? `Blank uses the provider's ${chosen?.concurrency ?? 1}`
-                                    : 'One at a time'
-                            }
-                        />
-                    </Stack>
-
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={draft.enabled}
-                                onChange={(event) =>
-                                    set('enabled', event.target.checked)
-                                }
-                            />
-                        }
-                        label='Available to run reviews'
-                    />
+                    </Section>
 
                     {chosen && !chosen.usable && (
                         <Alert severity='warning'>
