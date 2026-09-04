@@ -42,6 +42,8 @@ export const ReviewAgentSchema = z.object({
     model: z.string(),
     enabled: z.boolean(),
     pending: z.number().int().nonnegative(),
+    /** Of those, the ones holding no reading at all — writing, not choosing. */
+    unwritten: z.number().int().nonnegative(),
 });
 
 export const ReviewOverviewSchema = z.object({

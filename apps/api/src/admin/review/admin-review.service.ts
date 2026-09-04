@@ -34,6 +34,7 @@ export class AdminReviewService {
                 model: dataValues.model,
                 enabled: dataValues.enabled,
                 pending: await this.review.pending(dataValues.id),
+                unwritten: await this.review.pending(dataValues.id, true),
             })),
         );
 

@@ -119,6 +119,7 @@ const Review: React.FC = () => {
     const [limit, setLimit] = useState(25);
     const [compareWith, setCompareWith] = useState<number | ''>('');
     const [applied, setApplied] = useState(true);
+    const [unwritten, setUnwritten] = useState(false);
 
     const queryClient = useQueryClient();
 
@@ -168,7 +169,9 @@ const Review: React.FC = () => {
         ? 'Pick an agent to see what is waiting for it.'
         : source
           ? `${counted(source.reviewed, 'cluster', 'clusters')} run #${source.id} looked at`
-          : `${chosen.pending.toLocaleString()} clusters waiting on this agent`;
+          : unwritten
+            ? `${chosen.unwritten.toLocaleString()} of them hold no reading at all`
+            : `${chosen.pending.toLocaleString()} clusters waiting on this agent`;
 
     return (
         <Stack spacing={2}>
@@ -260,6 +263,21 @@ const Review: React.FC = () => {
                         ))}
                     </TextField>
 
+                    <Tooltip title='Only names that hold no reading at all. A different job from choosing between rival readings — the model is being asked to write one — and the queue would not reach them for a long time otherwise.'>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={unwritten}
+                                    disabled={!!compareWith}
+                                    onChange={(event) =>
+                                        setUnwritten(event.target.checked)
+                                    }
+                                />
+                            }
+                            label='Only unwritten'
+                        />
+                    </Tooltip>
+
                     <Tooltip title='Record what the agent would do and change nothing, so another agent can be asked the same question from the same starting point.'>
                         <FormControlLabel
                             control={
@@ -289,6 +307,7 @@ const Review: React.FC = () => {
                                 limit,
                                 compareWith: compareWith || null,
                                 applied,
+                                unwritten,
                             })
                         }
                     >
