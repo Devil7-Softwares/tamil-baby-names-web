@@ -30,6 +30,7 @@ export const anthropic: AgentProvider = {
     id: 'anthropic',
     defaultBaseUrl: 'https://api.anthropic.com',
     needsKey: true,
+    concurrency: 4,
 
     async complete(config: AgentConfig, request): Promise<AgentReply> {
         if (!config.apiKey) {

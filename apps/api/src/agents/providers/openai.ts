@@ -52,6 +52,7 @@ export const openai: AgentProvider = {
     id: 'openai',
     defaultBaseUrl: 'https://api.openai.com/v1',
     needsKey: true,
+    concurrency: 4,
 
     async complete(config: AgentConfig, request): Promise<AgentReply> {
         if (!config.apiKey) {

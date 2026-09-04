@@ -5,6 +5,16 @@ import { AGENT_PROVIDERS } from '../types/AgentProvider.js';
 const text = (max: number) => z.string().trim().min(1).max(max);
 
 /**
+ * How many clusters a run may have in flight against this agent at once.
+ *
+ * Null means the provider's own figure — 1 for a model on this machine, more
+ * for a hosted one. Not part of `options`: that column is per-provider dials
+ * the provider reads, and how many requests we choose to open is our
+ * scheduling decision, not the API's.
+ */
+const ConcurrencySchema = z.number().int().min(1).max(32);
+
+/**
  * An agent as the dashboard sees it. There is no key here and there never will
  * be: a saved key is write-only, and `hasKey` is the whole of what can be said
  * about it afterwards.
@@ -19,6 +29,10 @@ export const AdminAgentSchema = z.object({
     model: z.string(),
     hasKey: z.boolean(),
     options: z.record(z.string(), z.unknown()),
+    /** Null where the agent defers to its provider. */
+    concurrency: ConcurrencySchema.nullable(),
+    /** What the provider would do, so the form can show what null means. */
+    providerConcurrency: z.number().int().min(1),
     enabled: z.boolean(),
 });
 
@@ -31,6 +45,8 @@ export const AgentProviderSummarySchema = z.object({
     label: z.string(),
     defaultBaseUrl: z.string(),
     needsKey: z.boolean(),
+    /** Requests it will take at once before an agent overrides it. */
+    concurrency: z.number().int().min(1),
     /** False while `AGENT_KEY_SECRET` is unset, which only stops keyed ones. */
     usable: z.boolean(),
 });
@@ -73,6 +89,7 @@ export const AgentCreateSchema = z.object({
     /** Sealed on arrival and never read back. */
     apiKey: z.string().min(1).max(500).nullish(),
     options: OptionsSchema,
+    concurrency: ConcurrencySchema.nullish(),
     enabled: z.boolean().default(true),
 });
 
@@ -88,6 +105,7 @@ export const AgentUpdateSchema = z.object({
     baseUrl: BaseUrlSchema.optional(),
     apiKey: z.string().min(1).max(500).nullish(),
     options: z.record(z.string(), z.unknown()).optional(),
+    concurrency: ConcurrencySchema.nullish(),
     enabled: z.boolean().optional(),
 });
 

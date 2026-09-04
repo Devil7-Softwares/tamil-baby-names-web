@@ -37,6 +37,7 @@ export const ollama: AgentProvider = {
     id: 'ollama',
     defaultBaseUrl: 'http://127.0.0.1:11434',
     needsKey: false,
+    concurrency: 1,
 
     async complete(config: AgentConfig, request): Promise<AgentReply> {
         const body = (await post(

@@ -41,11 +41,13 @@ export const providerSummaries = (): Array<{
     id: AgentProviderId;
     defaultBaseUrl: string;
     needsKey: boolean;
+    concurrency: number;
 }> =>
     AGENT_PROVIDERS.map((id) => ({
         id,
         defaultBaseUrl: REGISTRY[id].defaultBaseUrl,
         needsKey: REGISTRY[id].needsKey,
+        concurrency: REGISTRY[id].concurrency,
     }));
 
 export * from './provider.js';

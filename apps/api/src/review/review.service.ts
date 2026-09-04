@@ -162,13 +162,7 @@ export class ReviewService {
             options.unwritten,
         );
 
-        for (const candidate of candidates) {
-            if (options.signal?.aborted) {
-                break;
-            }
-
-            const outcome = await this.one(agent, config, candidate, options);
-
+        const tally = (outcome: ReviewOutcome | null): void => {
             if (!outcome) {
                 report.failed += 1;
             } else {
@@ -183,7 +177,37 @@ export class ReviewService {
             }
 
             options.onProgress?.(outcome);
-        }
+        };
+
+        // Workers pulling from one queue rather than fixed slices: the clusters
+        // take wildly different times — a model abstains in a second and
+        // reasons for twenty — and slicing would leave most workers idle
+        // waiting for the slowest.
+        const queue = candidates[Symbol.iterator]();
+        const width = Math.max(
+            1,
+            Math.min(this.agents.concurrencyOf(agent), candidates.length),
+        );
+
+        const worker = async (): Promise<void> => {
+            for (;;) {
+                if (options.signal?.aborted) {
+                    return;
+                }
+
+                const next = queue.next();
+
+                if (next.done) {
+                    return;
+                }
+
+                // Tallied as each finishes, so the counts and the progress the
+                // page polls stay in step with what has actually been decided.
+                tally(await this.one(agent, config, next.value, options));
+            }
+        };
+
+        await Promise.all(Array.from({ length: width }, worker));
 
         return report;
     }

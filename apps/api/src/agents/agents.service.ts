@@ -90,6 +90,14 @@ export class AgentsService {
     }
 
     /**
+     * How many requests a run may have open against this agent, from the agent
+     * where it says so and the provider where it does not.
+     */
+    concurrencyOf(agent: IAgent): number {
+        return agent.concurrency ?? requireProvider(agent.provider).concurrency;
+    }
+
+    /**
      * Proves the endpoint, the model name and the key are all right before a
      * run depends on them. The ceiling is generous rather than minimal: a
      * reasoning model spends tokens thinking before it writes a word, and a

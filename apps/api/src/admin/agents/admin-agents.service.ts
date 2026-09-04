@@ -10,7 +10,10 @@ import {
 
 import { AgentKeyError } from '../../agents/agent-keys.js';
 import { AgentsService } from '../../agents/agents.service.js';
-import { providerSummaries } from '../../agents/providers/index.js';
+import {
+    providerSummaries,
+    requireProvider,
+} from '../../agents/providers/index.js';
 import { AGENTS_MODEL } from '../../database/database.constants.js';
 import { AgentDraft, AgentsModel, IAgent } from '../../database/models.js';
 
@@ -36,6 +39,8 @@ const seen = (agent: IAgent): AdminAgent => ({
     model: agent.model,
     hasKey: !!agent.keyCiphertext,
     options: agent.options ?? {},
+    concurrency: agent.concurrency,
+    providerConcurrency: requireProvider(agent.provider).concurrency,
     enabled: agent.enabled,
 });
 

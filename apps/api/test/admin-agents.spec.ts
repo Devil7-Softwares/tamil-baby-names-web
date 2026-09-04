@@ -21,6 +21,7 @@ const agent = (over: Partial<IAgent> = {}): IAgent => ({
     keyIv: null,
     keyTag: null,
     options: {},
+    concurrency: null,
     enabled: true,
     createdAt: new Date(0),
     updatedAt: new Date(0),

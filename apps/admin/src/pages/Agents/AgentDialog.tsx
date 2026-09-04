@@ -27,6 +27,9 @@ interface Draft {
     baseUrl: string;
     apiKey: string;
     options: string;
+    /** Off means one at a time. `concurrency` is only read when this is on. */
+    parallel: boolean;
+    concurrency: string;
     enabled: boolean;
 }
 
@@ -38,6 +41,8 @@ export interface Saved {
     /** Undefined leaves a saved key alone; a string replaces it. */
     apiKey?: string;
     options: Record<string, unknown>;
+    /** Null defers to the provider's own figure. */
+    concurrency: number | null;
     enabled: boolean;
 }
 
@@ -48,6 +53,8 @@ const blank = (provider: AgentProviderId): Draft => ({
     baseUrl: '',
     apiKey: '',
     options: '',
+    parallel: true,
+    concurrency: '',
     enabled: true,
 });
 
@@ -60,6 +67,15 @@ const draftOf = (agent: AdminAgent): Draft => ({
     options: Object.keys(agent.options).length
         ? JSON.stringify(agent.options, null, 2)
         : '',
+    // One at a time *is* a concurrency of one, so the switch and the number are
+    // one stored value rather than two that can disagree. Read through to the
+    // provider's figure, or an Ollama agent left on the default shows the
+    // switch on while actually running one at a time.
+    parallel: (agent.concurrency ?? agent.providerConcurrency) !== 1,
+    concurrency:
+        agent.concurrency && agent.concurrency !== 1
+            ? String(agent.concurrency)
+            : '',
     enabled: agent.enabled,
 });
 
@@ -125,6 +141,7 @@ export const AgentDialog: React.FC<{
             baseUrl: draft.baseUrl.trim(),
             ...(draft.apiKey ? { apiKey: draft.apiKey } : {}),
             options,
+            concurrency: draft.parallel ? Number(draft.concurrency) || null : 1,
             enabled: draft.enabled,
         });
     };
@@ -235,6 +252,43 @@ export const AgentDialog: React.FC<{
                             `JSON, passed to the provider. For ${AGENT_PROVIDER_LABELS[draft.provider]}: ${OPTIONS_HINT[draft.provider]}`
                         }
                     />
+
+                    <Stack
+                        direction='row'
+                        spacing={2}
+                        sx={{ alignItems: 'center' }}
+                    >
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={draft.parallel}
+                                    onChange={(event) =>
+                                        set('parallel', event.target.checked)
+                                    }
+                                />
+                            }
+                            label='Ask about several at once'
+                        />
+
+                        <TextField
+                            label='At most'
+                            size='small'
+                            type='number'
+                            disabled={!draft.parallel}
+                            value={draft.concurrency}
+                            onChange={(event) =>
+                                set('concurrency', event.target.value)
+                            }
+                            placeholder={String(chosen?.concurrency ?? 1)}
+                            slotProps={{ htmlInput: { min: 1, max: 32 } }}
+                            sx={{ width: 210 }}
+                            helperText={
+                                draft.parallel
+                                    ? `Blank uses the provider's ${chosen?.concurrency ?? 1}`
+                                    : 'One at a time'
+                            }
+                        />
+                    </Stack>
 
                     <FormControlLabel
                         control={

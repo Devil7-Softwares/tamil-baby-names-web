@@ -222,6 +222,8 @@ export interface IAgent {
     keyIv: Buffer | null;
     keyTag: Buffer | null;
     options: Record<string, unknown>;
+    /** Requests in flight at once. Null defers to the provider's own figure. */
+    concurrency: number | null;
     enabled: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -527,6 +529,7 @@ export const defineAgents = (sequelize: Sequelize): AgentsModel =>
             keyCiphertext: { type: DataTypes.BLOB, field: 'key_ciphertext' },
             keyIv: { type: DataTypes.BLOB, field: 'key_iv' },
             keyTag: { type: DataTypes.BLOB, field: 'key_tag' },
+            concurrency: DataTypes.INTEGER,
             options: {
                 type: DataTypes.JSONB,
                 allowNull: false,

@@ -54,6 +54,14 @@ export interface AgentProvider {
     readonly defaultBaseUrl: string;
     /** False for a provider that runs locally and authenticates nothing. */
     readonly needsKey: boolean;
+    /**
+     * Requests this provider is happy to answer at once, before an agent says
+     * otherwise. One for a model on this machine: it has a single set of
+     * weights, and asking four questions at once only makes each of them
+     * slower. More for a hosted one, where the wait is the network and the
+     * queue rather than the hardware.
+     */
+    readonly concurrency: number;
     complete(config: AgentConfig, request: AgentRequest): Promise<AgentReply>;
 }
 
