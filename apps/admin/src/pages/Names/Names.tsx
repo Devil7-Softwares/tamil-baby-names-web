@@ -1,3 +1,4 @@
+import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
 import FormatQuoteOutlinedIcon from '@mui/icons-material/FormatQuoteOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -30,6 +31,7 @@ import {
     AdminCitedMeaning,
     AdminCluster,
     AdminClusterMember,
+    AdminProposal,
     AdminVerdict,
     AgentReviewFilter,
     GENDERS,
@@ -49,6 +51,7 @@ const AGENT_REVIEW: Array<{ value: AgentReviewFilter; label: string }> = [
     { value: 'unsure', label: 'An agent was unsure' },
     { value: 'unchanged', label: 'An agent found it already right' },
     { value: 'considered', label: 'An agent only gave an opinion' },
+    { value: 'suggested', label: 'Two or more suggested a meaning' },
     { value: 'none', label: 'No agent has looked' },
 ];
 
@@ -356,10 +359,57 @@ const ClusterRow: React.FC<{ cluster: AdminCluster }> = ({ cluster }) => {
                         meaningStatus.mutate({ id, status })
                     }
                 />
+
+                {cluster.proposals.length > 0 && (
+                    <Proposals proposals={cluster.proposals} />
+                )}
             </TableCell>
         </TableRow>
     );
 };
+
+/**
+ * What agents said they would write, where nothing was written.
+ *
+ * Shown as a list rather than reduced to an "they agree" flag: deciding by
+ * machine whether two Tamil paraphrases mean the same thing is exactly the
+ * guess that would quietly mislead, and two lines side by side let a person see
+ * it in a second. Greyed where the agent was below the bar — it is still worth
+ * reading, but it is not a second opinion.
+ */
+const Proposals: React.FC<{ proposals: AdminProposal[] }> = ({ proposals }) => (
+    <Stack spacing={0.5} sx={{ mt: 1 }}>
+        {proposals.map((proposal) => (
+            <Stack
+                key={proposal.agent}
+                direction='row'
+                spacing={1}
+                sx={{ alignItems: 'baseline' }}
+            >
+                <Chip
+                    size='small'
+                    variant='outlined'
+                    color={proposal.confident ? 'info' : 'default'}
+                    icon={<EditNoteOutlinedIcon />}
+                    label={
+                        proposal.confidence === null
+                            ? proposal.agent
+                            : `${proposal.agent} ${proposal.confidence}`
+                    }
+                />
+
+                <Typography
+                    variant='body2'
+                    color={
+                        proposal.confident ? 'text.primary' : 'text.secondary'
+                    }
+                >
+                    {proposal.text}
+                </Typography>
+            </Stack>
+        ))}
+    </Stack>
+);
 
 const Names: React.FC = () => {
     const [search, setSearch] = useState('');

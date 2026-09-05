@@ -69,6 +69,17 @@ const AGENT_REVIEW: Record<AgentReviewFilter, Utils.Literal> = {
     unchanged: literal(verdictExists(`AND v."reason" = 'unchanged'`)),
     // Decided on a run that was told to write nothing: an opinion, not an act.
     considered: literal(verdictExists(`AND v."reason" = 'considered'`)),
+    // Two or more agents said what they would write. One is an opinion; two is
+    // something a person can weigh, because the interesting question is whether
+    // they landed on the same meaning.
+    suggested: literal(`(
+        SELECT count(DISTINCT v."agent_id") FROM "verifications" v
+        LEFT JOIN "names" vn ON vn."id" = v."name_id"
+        LEFT JOIN "meanings" vm ON vm."id" = v."meaning_id"
+        WHERE v."agent_id" IS NOT NULL
+          AND v."proposed" IS NOT NULL
+          AND COALESCE(vn."cluster_id", vm."cluster_id") = "Clusters"."id"
+    ) >= 2`),
     // The backlog no agent has reached.
     none: literal(`NOT ${verdictExists()}`),
 };

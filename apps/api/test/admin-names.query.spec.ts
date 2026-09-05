@@ -140,6 +140,16 @@ describe('the second pass over what an agent did', () => {
         expect(sql(right)).toContain(`v."reason" = 'unchanged'`);
     });
 
+    // One proposal is an opinion; two is something a person can weigh, which is
+    // the whole point on a name nobody has written a meaning for.
+    it('finds clusters two or more agents suggested a meaning for', () => {
+        const [clause] = clauses({ ...base, agentReview: 'suggested' });
+
+        expect(sql(clause)).toContain('count(DISTINCT v."agent_id")');
+        expect(sql(clause)).toContain('v."proposed" IS NOT NULL');
+        expect(sql(clause)).toContain('>= 2');
+    });
+
     // A comparison run's verdict is an opinion the catalogue never acted on,
     // so it answers its own filter and not "an agent decided".
     it('keeps an opinion out of what an agent decided', () => {

@@ -75,6 +75,24 @@ export const AdminVerdictSchema = z.object({
     at: z.string(),
 });
 
+/**
+ * A reading an agent said it would write, from a run that was told not to.
+ *
+ * The verdict above is only ever the *newest* one, which is the right thing for
+ * "has an agent looked at this" and useless for the question these answer:
+ * several models were asked the same name, and whether they landed on the same
+ * meaning is the strongest evidence available that it is right. Judging that is
+ * left to a person — deciding by machine whether two Tamil paraphrases mean the
+ * same thing is exactly the sort of guess that would quietly mislead.
+ */
+export const AdminProposalSchema = z.object({
+    agent: z.string(),
+    confidence: z.number().int().min(0).max(100).nullable(),
+    text: z.string(),
+    /** False where the agent was below the bar and would not have written it. */
+    confident: z.boolean(),
+});
+
 export const AdminClusterSchema = z.object({
     id: z.number().int().positive(),
     name: z.string(),
@@ -88,6 +106,11 @@ export const AdminClusterSchema = z.object({
     meanings: z.array(AdminCitedMeaningSchema),
     /** Null where no agent has looked at this cluster yet. */
     verdict: AdminVerdictSchema.nullable(),
+    /**
+     * What agents would have written for it, newest first, one per agent.
+     * Empty unless something has been asked without being allowed to write.
+     */
+    proposals: z.array(AdminProposalSchema),
 });
 
 /**
@@ -101,6 +124,14 @@ export const AGENT_REVIEW_FILTERS = [
     'unsure',
     'unchanged',
     'considered',
+    /**
+     * Two or more agents said what they would write. Where they landed on the
+     * same meaning that is the best evidence the catalogue can offer for a name
+     * nobody has written one for — and where they did not, it is a name to
+     * leave alone. Both are worth a person's time, which is why the filter is
+     * "two of them answered" rather than "two of them agreed".
+     */
+    'suggested',
     'none',
 ] as const;
 
@@ -158,6 +189,7 @@ export type AdminMeaning = z.infer<typeof AdminMeaningSchema>;
 export type AdminCitedMeaning = z.infer<typeof AdminCitedMeaningSchema>;
 export type AdminClusterMember = z.infer<typeof AdminClusterMemberSchema>;
 export type AdminCluster = z.infer<typeof AdminClusterSchema>;
+export type AdminProposal = z.infer<typeof AdminProposalSchema>;
 export type AdminNamesQuery = z.infer<typeof AdminNamesQuerySchema>;
 export type AdminClustersPage = z.infer<typeof AdminClustersPageSchema>;
 export type AdminStatusUpdate = z.infer<typeof AdminStatusUpdateSchema>;

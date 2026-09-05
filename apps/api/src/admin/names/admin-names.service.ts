@@ -5,8 +5,10 @@ import {
     AdminMeaning,
     AdminMeaningsUpdate,
     AdminNamesQuery,
+    AdminProposal,
     AdminStatusUpdate,
     AdminVerdict,
+    CONFIDENT_ENOUGH,
     NAME_STATUSES,
 } from '@tbn/shared';
 import { Op, QueryTypes, Sequelize, Transaction } from 'sequelize';
@@ -107,9 +109,11 @@ export class AdminNamesService {
             [...meanings.values()].flat().map(({ id }) => id),
         );
 
-        const verdicts = await this.verdictsFor(
-            rows.map(({ dataValues }) => dataValues.id),
-        );
+        const clusterIds = rows.map(({ dataValues }) => dataValues.id);
+        const [verdicts, proposals] = await Promise.all([
+            this.verdictsFor(clusterIds),
+            this.proposalsFor(clusterIds),
+        ]);
 
         const slug = labelReader(slugs);
         const religion = labelReader(labels.religions);
@@ -152,6 +156,7 @@ export class AdminNamesService {
                             citations: citations(cited.byMeaning, meaning.id),
                         })),
                     verdict: verdicts.get(cluster.id) ?? null,
+                    proposals: proposals.get(cluster.id) ?? [],
                 };
             }),
             total: count,
@@ -483,6 +488,67 @@ export class AdminNamesService {
                 considered: row.reason === 'considered',
                 at: row.created_at.toISOString(),
             });
+        }
+
+        return found;
+    }
+
+    /**
+     * What each agent said it would write for a cluster, one entry per agent.
+     *
+     * `DISTINCT ON (cluster, agent)` because an agent asked twice has answered
+     * twice and only its latest word is worth showing — but every *agent* is,
+     * which is the whole point: one proposal is an opinion, and two that agree
+     * are the strongest thing the catalogue can say about a name nobody has
+     * written a meaning for.
+     */
+    private async proposalsFor(
+        clusterIds: number[],
+    ): Promise<Map<number, AdminProposal[]>> {
+        const found = new Map<number, AdminProposal[]>();
+
+        if (!clusterIds.length) {
+            return found;
+        }
+
+        const rows = await this.sequelize.query<{
+            cluster_id: number;
+            agent: string | null;
+            confidence: number | null;
+            proposed: string;
+        }>(
+            `SELECT DISTINCT ON (
+                    COALESCE(vn."cluster_id", vm."cluster_id"), v."agent_id"
+                )
+                    COALESCE(vn."cluster_id", vm."cluster_id") AS cluster_id,
+                    a."name" AS agent, v."confidence", v."proposed"
+             FROM "verifications" v
+             LEFT JOIN "names" vn ON vn."id" = v."name_id"
+             LEFT JOIN "meanings" vm ON vm."id" = v."meaning_id"
+             LEFT JOIN "agents" a ON a."id" = v."agent_id"
+             WHERE v."agent_id" IS NOT NULL
+               AND v."proposed" IS NOT NULL
+               AND COALESCE(vn."cluster_id", vm."cluster_id") IN (:clusterIds)
+             ORDER BY COALESCE(vn."cluster_id", vm."cluster_id"), v."agent_id",
+                      v."created_at" DESC, v."id" DESC`,
+            { type: QueryTypes.SELECT, replacements: { clusterIds } },
+        );
+
+        for (const row of rows) {
+            found.set(row.cluster_id, [
+                ...(found.get(row.cluster_id) ?? []),
+                {
+                    agent: row.agent ?? 'an agent since removed',
+                    confidence: row.confidence,
+                    text: row.proposed,
+                    confident: (row.confidence ?? 0) >= CONFIDENT_ENOUGH,
+                },
+            ]);
+        }
+
+        // Most sure first, so two that agree sit together at the top.
+        for (const list of found.values()) {
+            list.sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
         }
 
         return found;
