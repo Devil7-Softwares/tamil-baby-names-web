@@ -272,7 +272,10 @@ const Review: React.FC = () => {
                         ))}
                     </TextField>
 
-                    <Tooltip title='How many names go in one request. The standing instructions are most of a request, so asking together costs far less — and buys it by making each name a slot in a list rather than a question of its own. Every measurement of how these models behave was taken one at a time.'>
+                    <Tooltip
+                        title='How many names go in one request. The standing instructions are most of a request, so asking together costs far less — and buys it by making each name a slot in a list rather than a question of its own. Every measurement of how these models behave was taken one at a time.'
+                        placement='top'
+                    >
                         <TextField
                             select
                             label='Per request'
