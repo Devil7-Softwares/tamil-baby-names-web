@@ -13,6 +13,7 @@ import {
     CLUSTERS_MODEL,
     MEANINGS_MODEL,
     NAMES_MODEL,
+    REVIEW_RUN_FAILURES_MODEL,
     SEQUELIZE,
     SOURCES_MODEL,
     VERIFICATIONS_MODEL,
@@ -25,6 +26,7 @@ import {
     MeaningsModel,
     NamesModel,
     NamesRow,
+    ReviewRunFailuresModel,
     SourcesModel,
     VerificationsModel,
 } from '../database/models.js';
@@ -70,6 +72,8 @@ export class ReviewService {
         @Inject(SOURCES_MODEL) private readonly sources: SourcesModel,
         @Inject(VERIFICATIONS_MODEL)
         private readonly verifications: VerificationsModel,
+        @Inject(REVIEW_RUN_FAILURES_MODEL)
+        private readonly failures: ReviewRunFailuresModel,
         private readonly agents: AgentsService,
         private readonly lookups: LookupsService,
     ) {}
@@ -241,6 +245,45 @@ export class ReviewService {
     }
 
     /**
+     * Which clusters a run could not ask about, and why.
+     *
+     * Not the ledger: `verifications` is what the queue reads to decide a
+     * cluster has been answered, and a failure written there would answer it
+     * and lose it. This says only that the run reached the cluster and got
+     * nothing back, which is what "1,050 failed" needs to be able to name.
+     *
+     * Never allowed to end a run. A run that stopped because it could not
+     * write down that it had failed would be a worse failure than the one it
+     * was recording.
+     */
+    private async noAnswer(
+        options: RunOptions,
+        clusters: Candidate[],
+        error: string,
+    ): Promise<void> {
+        const runId = options.runId;
+
+        if (!runId || !clusters.length) {
+            return;
+        }
+
+        try {
+            await this.failures.bulkCreate(
+                clusters.map((candidate) => ({
+                    runId,
+                    clusterId: candidate.clusterId,
+                    error,
+                })),
+                { ignoreDuplicates: true },
+            );
+        } catch (error_) {
+            this.logger.warn(
+                `Could not record the failure: ${(error_ as Error).message}`,
+            );
+        }
+    }
+
+    /**
      * Several clusters in one request, and one outcome back for every one of
      * them — a null where the model said nothing about it.
      *
@@ -278,9 +321,10 @@ export class ReviewService {
 
             answer = reply.text;
         } catch (error) {
-            this.logger.warn(
-                `${batch.length} names: ${(error as AgentCallError).message}`,
-            );
+            const message = (error as AgentCallError).message;
+
+            this.logger.warn(`${batch.length} names: ${message}`);
+            await this.noAnswer(options, batch, message);
 
             return batch.map(() => null);
         }
@@ -291,6 +335,7 @@ export class ReviewService {
             // One malformed answer costs the whole batch, which is the price of
             // asking together and worth saying out loud in the log.
             this.logger.warn(`${batch.length} names: ${parsed.unreadable}`);
+            await this.noAnswer(options, batch, parsed.unreadable);
 
             return batch.map(() => null);
         }
@@ -304,7 +349,10 @@ export class ReviewService {
                 const verdict = byIndex.get(at + 1);
 
                 if (!verdict) {
+                    const message = 'The batch came back without this one.';
+
                     this.logger.warn(`${candidate.name}: no verdict returned.`);
+                    await this.noAnswer(options, [candidate], message);
 
                     return null;
                 }
@@ -342,9 +390,10 @@ export class ReviewService {
         } catch (error) {
             // A refused or unreachable provider is the run's problem, not this
             // cluster's: it is left untouched and unreviewed, to be asked again.
-            this.logger.warn(
-                `${candidate.name}: ${(error as AgentCallError).message}`,
-            );
+            const message = (error as AgentCallError).message;
+
+            this.logger.warn(`${candidate.name}: ${message}`);
+            await this.noAnswer(options, [candidate], message);
 
             return null;
         }
@@ -353,6 +402,7 @@ export class ReviewService {
 
         if ('unreadable' in parsed) {
             this.logger.warn(`${candidate.name}: ${parsed.unreadable}`);
+            await this.noAnswer(options, [candidate], parsed.unreadable);
 
             return null;
         }

@@ -287,9 +287,30 @@ export interface IReviewRun {
 export type ReviewRunDraft = Pick<IReviewRun, 'agentId' | 'requested'> &
     Partial<Omit<IReviewRun, 'id' | 'agentId' | 'requested'>>;
 
+/**
+ * A cluster a run could not ask about. Not a verdict: the agent said nothing,
+ * so this lives beside the run rather than in the ledger the queue reads.
+ */
+export interface IReviewRunFailure {
+    id: number;
+    runId: number;
+    clusterId: number;
+    /** What the provider said, so a rate limit reads differently from a bug. */
+    error: string;
+    createdAt: Date;
+}
+
+export type ReviewRunFailureDraft = Pick<
+    IReviewRunFailure,
+    'runId' | 'clusterId' | 'error'
+>;
+
 export type AdminUsersModel = ModelStatic<Model<IAdminUser, AdminUserDraft>>;
 export type AgentsModel = ModelStatic<Model<IAgent, AgentDraft>>;
 export type ReviewRunsModel = ModelStatic<Model<IReviewRun, ReviewRunDraft>>;
+export type ReviewRunFailuresModel = ModelStatic<
+    Model<IReviewRunFailure, ReviewRunFailureDraft>
+>;
 
 const table = {
     timestamps: false,
@@ -608,6 +629,34 @@ export const defineReviewRuns = (sequelize: Sequelize): ReviewRunsModel =>
         {
             ...table,
             tableName: 'review_runs',
+            timestamps: false,
+            underscored: true,
+        },
+    );
+
+export const defineReviewRunFailures = (
+    sequelize: Sequelize,
+): ReviewRunFailuresModel =>
+    sequelize.define<Model<IReviewRunFailure, ReviewRunFailureDraft>>(
+        'ReviewRunFailures',
+        {
+            id,
+            runId: {
+                type: DataTypes.INTEGER,
+                field: 'run_id',
+                allowNull: false,
+            },
+            clusterId: {
+                type: DataTypes.INTEGER,
+                field: 'cluster_id',
+                allowNull: false,
+            },
+            error: { type: DataTypes.TEXT, allowNull: false },
+            createdAt: { type: DataTypes.DATE, field: 'created_at' },
+        },
+        {
+            ...table,
+            tableName: 'review_run_failures',
             timestamps: false,
             underscored: true,
         },
