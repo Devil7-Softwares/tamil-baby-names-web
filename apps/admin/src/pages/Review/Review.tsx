@@ -7,6 +7,7 @@ import {
     Chip,
     FormControlLabel,
     LinearProgress,
+    Link,
     MenuItem,
     Paper,
     Stack,
@@ -22,8 +23,14 @@ import {
     Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AdminReviewRun, isSettled, ReviewRunStatus } from '@tbn/shared';
+import {
+    AdminReviewRun,
+    isSettled,
+    ReviewRunStatus,
+    RunOutcome,
+} from '@tbn/shared';
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { orpc } from '~/api/orpc';
@@ -53,25 +60,108 @@ const STATUS_COLOUR: Record<
 const counted = (value: number, one: string, many: string): string =>
     `${value.toLocaleString()} ${value === 1 ? one : many}`;
 
-/** What a finished run did, in the words the command line uses. */
-const did = (run: AdminReviewRun): string => {
-    const summary =
-        [
-            run.published && counted(run.published, 'published', 'published'),
-            run.rejected &&
-                counted(run.rejected, 'reading rejected', 'readings rejected'),
-            run.added && counted(run.added, 'written', 'written'),
-            run.dropped && counted(run.dropped, 'row dropped', 'rows dropped'),
-            run.abstained && `${run.abstained} left alone`,
-            run.unchanged && `${run.unchanged} already right`,
-            run.failed && `${run.failed} unreadable`,
-        ]
-            .filter(Boolean)
-            .join(' · ') || 'nothing yet';
+/**
+ * What a finished run did, in the words the command line uses — and each count
+ * a way into the names behind it.
+ *
+ * A number on its own is where the questions start rather than end: "1,050
+ * failed" is only useful once you can see which 1,050, and "412 written" is
+ * only trustworthy once you have read a few. Every part links into the
+ * catalogue filtered to that run and that outcome.
+ */
+const parts = (
+    run: AdminReviewRun,
+): Array<{ outcome: RunOutcome; label: string }> => {
+    const all: Array<{ outcome: RunOutcome; label: string }> = [
+        {
+            outcome: 'published',
+            label: run.published
+                ? counted(run.published, 'published', 'published')
+                : '',
+        },
+        {
+            outcome: 'rejected',
+            label: run.rejected
+                ? counted(run.rejected, 'reading rejected', 'readings rejected')
+                : '',
+        },
+        {
+            outcome: 'written',
+            label: run.added ? counted(run.added, 'written', 'written') : '',
+        },
+        {
+            outcome: 'dropped',
+            label: run.dropped
+                ? counted(run.dropped, 'row dropped', 'rows dropped')
+                : '',
+        },
+        {
+            outcome: 'abstained',
+            label: run.abstained
+                ? `${run.abstained.toLocaleString()} left alone`
+                : '',
+        },
+        {
+            outcome: 'unchanged',
+            label: run.unchanged
+                ? `${run.unchanged.toLocaleString()} already right`
+                : '',
+        },
+        {
+            outcome: 'failed',
+            label: run.failed
+                ? `${run.failed.toLocaleString()} could not be asked`
+                : '',
+        },
+    ];
 
-    // The counts of a run that wrote nothing say what it would have done, and
-    // reading them as what it did would be exactly wrong.
-    return run.applied ? summary : `would have: ${summary}`;
+    return all.filter(({ label }) => label);
+};
+
+/**
+ * The counts of a run that changed nothing say what it *would* have done, and
+ * reading them as things it did would be exactly wrong — hence the prefix. The
+ * links work the same either way: the ledger keeps the status a row would have
+ * reached, so "would have: 175 written" lands on those 175.
+ */
+const Did: React.FC<{ run: AdminReviewRun }> = ({ run }) => {
+    const shown = parts(run);
+
+    if (!shown.length) {
+        return (
+            <Typography variant='body2' color='text.secondary' component='span'>
+                nothing yet
+            </Typography>
+        );
+    }
+
+    return (
+        <Typography variant='body2' color='text.secondary' component='span'>
+            {run.applied ? '' : 'would have: '}
+
+            {shown.map(({ outcome, label }, at) => (
+                <span key={outcome}>
+                    {at > 0 && ' · '}
+
+                    <Link
+                        component={RouterLink}
+                        to={`/names?run=${run.id}&outcome=${outcome}`}
+                        color='inherit'
+                        // Dotted rather than underlined: every count in the
+                        // table is a link, and a row of blue would read as
+                        // navigation instead of as the run's report.
+                        sx={{
+                            textDecorationStyle: 'dotted',
+                            textDecorationColor: 'currentcolor',
+                            '&:hover': { color: 'primary.main' },
+                        }}
+                    >
+                        {label}
+                    </Link>
+                </span>
+            ))}
+        </Typography>
+    );
 };
 
 const when = (iso: string): string => new Date(iso).toLocaleString();
@@ -115,9 +205,9 @@ const Progress: React.FC<{ run: AdminReviewRun; onStop: () => void }> = ({
                 value={run.total ? (done / run.total) * 100 : 0}
             />
 
-            <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
-                {did(run)}
-            </Typography>
+            <Box sx={{ mt: 1 }}>
+                <Did run={run} />
+            </Box>
         </Paper>
     );
 };
@@ -406,7 +496,9 @@ const Review: React.FC = () => {
                                         ).toLocaleString()}{' '}
                                         / {run.total.toLocaleString()}
                                     </TableCell>
-                                    <TableCell>{did(run)}</TableCell>
+                                    <TableCell>
+                                        <Did run={run} />
+                                    </TableCell>
                                     <TableCell>
                                         {run.error ? (
                                             <Tooltip title={run.error}>

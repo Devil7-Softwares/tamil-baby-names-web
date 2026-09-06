@@ -37,8 +37,11 @@ import {
     GENDERS,
     NAME_STATUSES,
     NameStatus,
+    RUN_OUTCOMES,
+    RunOutcome,
 } from '@tbn/shared';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { orpc } from '~/api/orpc';
@@ -57,6 +60,24 @@ const AGENT_REVIEW: Array<{ value: AgentReviewFilter; label: string }> = [
 
 /** Ceilings, not thresholds: "show me what it was at most this sure of". */
 const CONFIDENCE = [90, 75, 60];
+
+/**
+ * What a run did, in the words its own report uses, so the label a person
+ * clicked on the Review page is the label they land on here.
+ */
+const RUN_OUTCOME_LABEL: Record<RunOutcome, string> = {
+    written: 'Wrote a reading',
+    published: 'Published a reading',
+    rejected: 'Rejected a reading',
+    dropped: 'Dropped the row',
+    abstained: 'Left alone — unsure',
+    unchanged: 'Left alone — already right',
+    considered: 'Only gave an opinion',
+    failed: 'Could not be asked',
+};
+
+const isOutcome = (value: string | null): value is RunOutcome =>
+    !!value && (RUN_OUTCOMES as readonly string[]).includes(value);
 
 /** The status, and the only control that changes it. */
 const StatusChip: React.FC<{
@@ -425,6 +446,37 @@ const Names: React.FC = () => {
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(25);
 
+    // The run lives in the URL rather than in state, because the Review page
+    // links straight into it: arriving on a page that is already mounted has
+    // to change what is shown, and local state would quietly ignore it.
+    const [params, setParams] = useSearchParams();
+    const run = params.get('run') ?? '';
+    const outcome = params.get('outcome');
+    const runOutcome: RunOutcome | typeof ANY = isOutcome(outcome)
+        ? outcome
+        : ANY;
+
+    const setRunParams = (next: { run?: string; outcome?: string }): void => {
+        const merged = new URLSearchParams(params);
+
+        for (const [key, value] of Object.entries(next)) {
+            if (value) {
+                merged.set(key, value);
+            } else {
+                merged.delete(key);
+            }
+        }
+
+        // An outcome with no run to ask it about filters nothing, and would sit
+        // in the URL looking as though it did.
+        if (!merged.get('run')) {
+            merged.delete('outcome');
+        }
+
+        setParams(merged, { replace: true });
+        setPage(0);
+    };
+
     const term = useDebounced(search);
 
     const clusters = useQuery(
@@ -438,6 +490,8 @@ const Names: React.FC = () => {
                 ...(duplicatesOnly ? { duplicatesOnly } : {}),
                 ...(agentReview === ANY ? {} : { agentReview }),
                 ...(maxConfidence === ANY ? {} : { maxConfidence }),
+                ...(run ? { run: Number(run) } : {}),
+                ...(run && runOutcome !== ANY ? { runOutcome } : {}),
             },
             // Keeps the previous page on screen while the next one loads, so
             // the table does not collapse on every keystroke.
@@ -552,6 +606,42 @@ const Names: React.FC = () => {
                         {CONFIDENCE.map((ceiling) => (
                             <MenuItem key={ceiling} value={ceiling}>
                                 {ceiling}% sure
+                            </MenuItem>
+                        ))}
+                    </TextField>
+
+                    <TextField
+                        label='From run'
+                        size='small'
+                        type='number'
+                        value={run}
+                        placeholder='#'
+                        onChange={(event) =>
+                            setRunParams({ run: event.target.value })
+                        }
+                        sx={{ minWidth: 110 }}
+                    />
+
+                    <TextField
+                        select
+                        label='Did what'
+                        size='small'
+                        value={runOutcome}
+                        disabled={!run}
+                        onChange={(event) =>
+                            setRunParams({
+                                outcome:
+                                    event.target.value === ANY
+                                        ? ''
+                                        : event.target.value,
+                            })
+                        }
+                        sx={{ minWidth: 200 }}
+                    >
+                        <MenuItem value={ANY}>Anything</MenuItem>
+                        {RUN_OUTCOMES.map((value) => (
+                            <MenuItem key={value} value={value}>
+                                {RUN_OUTCOME_LABEL[value]}
                             </MenuItem>
                         ))}
                     </TextField>

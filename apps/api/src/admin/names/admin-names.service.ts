@@ -87,7 +87,10 @@ export class AdminNamesService {
             limit: query.limit,
             // Bound, because it arrived with the request. The rest of the
             // clause text is built from enums.
-            replacements: { maxConfidence: query.maxConfidence ?? null },
+            replacements: {
+                maxConfidence: query.maxConfidence ?? null,
+                run: query.run ?? null,
+            },
         });
 
         const members = await this.membersFor(

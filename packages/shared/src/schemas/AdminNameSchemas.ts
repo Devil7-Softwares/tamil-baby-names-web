@@ -137,6 +137,32 @@ export const AGENT_REVIEW_FILTERS = [
 
 export type AgentReviewFilter = (typeof AGENT_REVIEW_FILTERS)[number];
 
+/**
+ * What a run did to a cluster, in the words its own report uses — so clicking
+ * "412 written" on a run lands on exactly those 412.
+ *
+ * Read off the ledger rather than stored, because the ledger already says all
+ * of it: `written` is the row the agent created, `published` a reading it
+ * promoted, `rejected` and `dropped` the two things it can throw away, and
+ * `abstained`/`unchanged` the two ways of leaving a cluster alone. Only
+ * `failed` needs a table of its own — nothing was judged, so there is no
+ * ledger entry to read it from.
+ */
+export const RUN_OUTCOMES = [
+    'written',
+    'published',
+    'rejected',
+    'dropped',
+    'abstained',
+    'unchanged',
+    /** It decided, on a run told to write nothing. An opinion, not an act. */
+    'considered',
+    /** The agent could not be asked, or could not be read. */
+    'failed',
+] as const;
+
+export type RunOutcome = (typeof RUN_OUTCOMES)[number];
+
 export const AdminNamesQuerySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -159,6 +185,13 @@ export const AdminNamesQuerySchema = z.object({
      * confidence runs high, so this is the dial that finds the ones to re-read.
      */
     maxConfidence: z.coerce.number().int().min(0).max(100).optional(),
+    /**
+     * Only clusters one review run reached — including the ones it failed on,
+     * which are otherwise invisible: a failure writes no verdict, on purpose.
+     */
+    run: z.coerce.number().int().positive().optional(),
+    /** What the run did to them. Ignored without a `run` to ask it about. */
+    runOutcome: z.enum(RUN_OUTCOMES).optional(),
 });
 
 export const AdminClustersPageSchema = z.object({

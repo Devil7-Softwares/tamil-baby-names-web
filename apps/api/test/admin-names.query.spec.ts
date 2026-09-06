@@ -188,6 +188,94 @@ describe('the second pass over what an agent did', () => {
         expect(sql(clause)).not.toContain('60');
     });
 
+    // Half of what a run like 43 touched is what it could not ask about, and
+    // "show me this run" that hides those answers the question wrongly.
+    it('reads a run as its ledger and its failures together', () => {
+        const [clause] = clauses({ ...base, run: 43 });
+
+        expect(sql(clause)).toContain('"verifications"');
+        expect(sql(clause)).toContain('"review_run_failures"');
+        expect(sql(clause)).toContain(' OR ');
+    });
+
+    it('binds the run rather than writing it into the SQL', () => {
+        const [clause] = clauses({ ...base, run: 43 });
+
+        expect(sql(clause)).toContain(':run');
+        expect(sql(clause)).not.toContain('43');
+    });
+
+    // The one outcome with nothing in the ledger to read it from.
+    it('finds the failures in their own table and nowhere else', () => {
+        const [clause] = clauses({ ...base, run: 43, runOutcome: 'failed' });
+
+        expect(sql(clause)).toContain('"review_run_failures"');
+        expect(sql(clause)).not.toContain('"verifications"');
+    });
+
+    it('tells a reading it wrote from one it merely moved', () => {
+        const [written] = clauses({ ...base, run: 43, runOutcome: 'written' });
+        const [published] = clauses({
+            ...base,
+            run: 43,
+            runOutcome: 'published',
+        });
+
+        expect(sql(written)).toContain('vm."text" = v."proposed"');
+        expect(sql(published)).toContain(`v."to_status" = 'published'`);
+        expect(sql(published)).not.toContain('v."proposed"');
+    });
+
+    // The same transition on the two arcs: a reading thrown away and a
+    // catalogue row thrown away are different things the run counts apart.
+    it('separates a rejected reading from a dropped row', () => {
+        const [rejected] = clauses({
+            ...base,
+            run: 43,
+            runOutcome: 'rejected',
+        });
+        const [dropped] = clauses({ ...base, run: 43, runOutcome: 'dropped' });
+
+        expect(sql(rejected)).toContain('v."meaning_id" IS NOT NULL');
+        expect(sql(dropped)).toContain('v."name_id" IS NOT NULL');
+    });
+
+    // It filters nothing on its own, and would read as though it did.
+    it('ignores an outcome with no run to ask it about', () => {
+        expect(clauses({ ...base, runOutcome: 'failed' })).toEqual([]);
+    });
+
+    // 0017 kept the status a row would have reached, so a run that changed
+    // nothing answers the same questions as one that did. Asking by reason
+    // would collapse all four of its acting outcomes into `considered`.
+    it('asks what a run did by the transition, not by the reason', () => {
+        for (const outcome of ['published', 'rejected', 'dropped'] as const) {
+            const [clause] = clauses({ ...base, run: 41, runOutcome: outcome });
+
+            expect(sql(clause)).toContain('to_status');
+            expect(sql(clause)).not.toContain(`v."reason" = 'decision'`);
+        }
+    });
+
+    // The incumbent being kept is recorded too, and it is not a promotion.
+    it('does not count a reading that was already published', () => {
+        const [clause] = clauses({
+            ...base,
+            run: 42,
+            runOutcome: 'published',
+        });
+
+        expect(sql(clause)).toContain(`v."from_status" <> 'published'`);
+    });
+
+    // An abstention carries what it would have written too, and did not act.
+    it('keeps an abstention out of what the run wrote', () => {
+        const [clause] = clauses({ ...base, run: 42, runOutcome: 'written' });
+
+        expect(sql(clause)).not.toContain('abstained');
+        expect(sql(clause)).toContain(`v."reason" = 'considered'`);
+    });
+
     it('composes with the filters that were already there', () => {
         expect(
             clauses({
@@ -196,7 +284,9 @@ describe('the second pass over what an agent did', () => {
                 gender: 'boy',
                 agentReview: 'unsure',
                 maxConfidence: 75,
+                run: 43,
+                runOutcome: 'abstained',
             }),
-        ).toHaveLength(4);
+        ).toHaveLength(5);
     });
 });

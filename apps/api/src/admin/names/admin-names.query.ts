@@ -3,6 +3,8 @@ import {
     AgentReviewFilter,
     NAME_STATUSES,
     NameStatus,
+    RUN_OUTCOMES,
+    RunOutcome,
 } from '@tbn/shared';
 import { literal, Op, Utils, WhereOptions } from 'sequelize';
 
@@ -84,6 +86,77 @@ const AGENT_REVIEW: Record<AgentReviewFilter, Utils.Literal> = {
     none: literal(`NOT ${verdictExists()}`),
 };
 
+/**
+ * What one run did to a cluster, read back off the ledger.
+ *
+ * Written to hold for a run that changed nothing as well as one that did, which
+ * is what 0017 bought: `considered` replaces the reason and leaves `to_status`
+ * as the status the row *would* have reached. So these ask about the transition
+ * rather than the reason wherever they can, and "175 written" on a run that
+ * wrote nothing lands on the same 175 clusters it would have written to.
+ *
+ * `written` is the reading the agent composed rather than any it moved. On an
+ * applied run that is the row it created, whose text is the one it proposed;
+ * on a run told not to write there is no such row, and the opinion is recorded
+ * against the name instead. An abstention also carries `proposed` and is
+ * neither: it is below the bar and did not act.
+ *
+ * `published` excludes a reading that was already published, because the ledger
+ * records the incumbent being kept as well as a promotion, and only one of
+ * those is something the run did. `rejected` and `dropped` are the same
+ * transition on the two arcs — a reading thrown away, and a catalogue row
+ * thrown away — which is how the run's own report counts them.
+ *
+ * Built from the enum, so the clause text can hold nothing from a request. The
+ * run id is the one value that arrived with one, and it is bound.
+ */
+const RUN_OUTCOME: Record<RunOutcome, string> = {
+    written: `v."proposed" IS NOT NULL
+              AND (vm."text" = v."proposed" OR v."reason" = 'considered')`,
+    published: `v."to_status" = 'published' AND v."from_status" <> 'published'`,
+    rejected: `v."to_status" = 'rejected' AND v."meaning_id" IS NOT NULL`,
+    dropped: `v."to_status" = 'rejected' AND v."name_id" IS NOT NULL`,
+    abstained: `v."reason" = 'abstained'`,
+    unchanged: `v."reason" = 'unchanged'`,
+    considered: `v."reason" = 'considered'`,
+    // Nothing was judged, so there is nothing in the ledger to read: see below.
+    failed: '',
+};
+
+const inRun = (extra: string): string =>
+    `EXISTS (
+        SELECT 1 FROM "verifications" v
+        LEFT JOIN "names" vn ON vn."id" = v."name_id"
+        LEFT JOIN "meanings" vm ON vm."id" = v."meaning_id"
+        WHERE v."run_id" = :run
+          AND COALESCE(vn."cluster_id", vm."cluster_id") = "Clusters"."id"
+          ${extra ? `AND (${extra})` : ''}
+    )`;
+
+const FAILED_IN_RUN = `EXISTS (
+    SELECT 1 FROM "review_run_failures" f
+    WHERE f."run_id" = :run AND f."cluster_id" = "Clusters"."id"
+)`;
+
+/**
+ * Every cluster a run reached, with or without an outcome to narrow it by.
+ * Without one that has to include the failures: they are half of what a run
+ * like 43 touched, and asking "what did this run see" and being shown only
+ * what it managed to answer is the question answered wrongly.
+ */
+const REACHED_BY_RUN: Record<RunOutcome | 'any', Utils.Literal> =
+    Object.fromEntries([
+        ['any', literal(`(${inRun('')} OR ${FAILED_IN_RUN})`)],
+        ...RUN_OUTCOMES.map((outcome) => [
+            outcome,
+            literal(
+                outcome === 'failed'
+                    ? FAILED_IN_RUN
+                    : inRun(RUN_OUTCOME[outcome]),
+            ),
+        ]),
+    ]) as Record<RunOutcome | 'any', Utils.Literal>;
+
 export const adminClustersWhere = (query: AdminNamesQuery): WhereOptions => {
     const clauses: WhereOptions[] = [];
 
@@ -107,6 +180,12 @@ export const adminClustersWhere = (query: AdminNamesQuery): WhereOptions => {
 
     if (query.agentReview) {
         clauses.push(AGENT_REVIEW[query.agentReview]);
+    }
+
+    // The outcome says nothing without a run to ask it about, so it is read
+    // only alongside one rather than quietly filtering the whole catalogue.
+    if (query.run !== undefined) {
+        clauses.push(REACHED_BY_RUN[query.runOutcome ?? 'any']);
     }
 
     if (query.maxConfidence !== undefined) {
