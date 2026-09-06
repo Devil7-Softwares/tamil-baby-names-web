@@ -516,12 +516,14 @@ export class AdminNamesService {
             agent: string | null;
             confidence: number | null;
             proposed: string;
+            written: boolean;
         }>(
             `SELECT DISTINCT ON (
                     COALESCE(vn."cluster_id", vm."cluster_id"), v."agent_id"
                 )
                     COALESCE(vn."cluster_id", vm."cluster_id") AS cluster_id,
-                    a."name" AS agent, v."confidence", v."proposed"
+                    a."name" AS agent, v."confidence", v."proposed",
+                    (vm."text" = v."proposed") AS written
              FROM "verifications" v
              LEFT JOIN "names" vn ON vn."id" = v."name_id"
              LEFT JOIN "meanings" vm ON vm."id" = v."meaning_id"
@@ -541,14 +543,26 @@ export class AdminNamesService {
                     agent: row.agent ?? 'an agent since removed',
                     confidence: row.confidence,
                     text: row.proposed,
-                    confident: (row.confidence ?? 0) >= CONFIDENT_ENOUGH,
+                    // A reading the agent wrote into the catalogue was above
+                    // the bar by construction — below it, it abstains and
+                    // writes nothing. Runs before 0021 recorded no confidence
+                    // for those, and reading the absence as "unsure" would
+                    // grey out the surest proposals there are.
+                    confident:
+                        row.written ||
+                        (row.confidence ?? 0) >= CONFIDENT_ENOUGH,
                 },
             ]);
         }
 
-        // Most sure first, so two that agree sit together at the top.
+        // Most sure first, so two that agree sit together at the top. One that
+        // was acted on but never scored sorts with the confident rather than
+        // below every abstention.
+        const sureness = ({ confidence, confident }: AdminProposal): number =>
+            confidence ?? (confident ? CONFIDENT_ENOUGH : 0);
+
         for (const list of found.values()) {
-            list.sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+            list.sort((a, b) => sureness(b) - sureness(a));
         }
 
         return found;

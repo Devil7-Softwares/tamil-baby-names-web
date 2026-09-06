@@ -31,6 +31,7 @@ const agent: IAgent = {
     keyIv: null,
     keyTag: null,
     options: {},
+    concurrency: null,
     enabled: true,
     createdAt: new Date(0),
     updatedAt: new Date(0),
@@ -314,6 +315,33 @@ describe('applying a verdict', () => {
                 status: 'candidate',
             },
         ]);
+    });
+
+    // Runs 42 and 43 wrote 1,452 readings and left 1,452 clusters out of their
+    // own ledgers, so a re-ask could not reach the very readings a second model
+    // was wanted for.
+    it('records the reading it wrote against the row it created', async () => {
+        const { models, ledger, moves } = build();
+
+        await applyVerdict(
+            models,
+            agent,
+            candidate(),
+            verdict({ publish: null, reject: [], add: 'ஒரு புதிய பொருள்' }),
+            { runId: 43 },
+        );
+
+        expect(ledger).toEqual([
+            expect.objectContaining({
+                meaningId: 99,
+                fromStatus: 'candidate',
+                toStatus: 'candidate',
+                proposed: 'ஒரு புதிய பொருள்',
+                runId: 43,
+            }),
+        ]);
+        // The row was born a candidate; recording it must not move anything.
+        expect(moves).toEqual([]);
     });
 
     it('does not write a reading the cluster already has', async () => {

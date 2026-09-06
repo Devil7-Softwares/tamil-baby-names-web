@@ -339,7 +339,7 @@ export const applyVerdict = async (
         }
 
         if (applied && proposed) {
-            await models.meanings.create(
+            const written = await models.meanings.create(
                 {
                     nameId: candidate.rows[0].id,
                     text: proposed.normalize('NFC'),
@@ -348,14 +348,25 @@ export const applyVerdict = async (
                 },
                 { transaction },
             );
+
+            // Writing a reading promotes nothing and displaces nothing, so it
+            // builds no ledger entry of its own — and a run whose whole act was
+            // writing then leaves no trace it ever saw the cluster. A re-ask
+            // reads the ledger, so a second model could not be pointed at the
+            // readings that most need one. The new row is the act; record it
+            // against that, standing still because it was born where it is.
+            ledger.push({
+                meaningId: written.dataValues.id,
+                fromStatus: 'candidate',
+                toStatus: 'candidate',
+                ...stamp,
+            });
         }
 
         await record(models, considered(ledger, applied), transaction);
 
-        // A verdict whose only act was proposing a reading moves nothing, so it
-        // builds no ledger entry. When the run also writes nothing there is
-        // then no trace it was ever asked — the cluster drops out of the run's
-        // own clusters, and a re-ask silently loses it.
+        // The same gap on a run that writes nothing: there is no row to point
+        // at, so the cluster is recorded against the name instead.
         if (!ledger.length && outcome.added && !applied) {
             await record(
                 models,
