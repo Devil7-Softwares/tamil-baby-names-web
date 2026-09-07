@@ -52,7 +52,10 @@ div.names-container {
                 > thead > tr > th {
                     position: sticky;
                     top: 0;
-                    background-color: #00000080;
+                    // Opaque. At half alpha the rows scrolled under the header
+                    // showed straight through it, so the headings read on top
+                    // of whatever meaning happened to be passing.
+                    background-color: #101820;
                     text-align: left;
                 }
 
@@ -61,6 +64,19 @@ div.names-container {
                     display: block;
                     padding: 5px 10px;
                     white-space: nowrap;
+                }
+
+                // The one column that has to wrap. Held to one line, its
+                // longest sentence becomes the column's smallest width, and
+                // the table cannot fit however wide the window is.
+                //
+                // Wrapping alone breaks at spaces, and Tamil compounds run to
+                // thirty-five letters without one — சொற்பொழிவாற்றுபவர் is a
+                // single word wider than the column, and it spilled over the
+                // number beside it.
+                > tbody > tr > td.meaning {
+                    white-space: normal;
+                    overflow-wrap: break-word;
                 }
             }
         }

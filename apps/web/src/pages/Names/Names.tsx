@@ -21,6 +21,16 @@ interface ILoadedNames {
     filters: IFilterData;
 }
 
+/**
+ * The meaning column: it takes whatever room is left over, down to a floor.
+ *
+ * The floor is what stops it collapsing. Given `minmax(0, ...)` it reaches zero
+ * on a phone while its text still paints, so the meaning draws straight over
+ * the columns beside it. Below this the table is wider than the screen and
+ * scrolls sideways, which is the right answer for six columns on a phone.
+ */
+const MEANING = 'minmax(12rem, 1fr)';
+
 /** A twin pair carries a number per name; a name the method cannot read, none. */
 const nameNumbers = (item: IName | ITwinName): string =>
     ('name1' in item ? [item.nameNumber1, item.nameNumber2] : [item.nameNumber])
@@ -113,17 +123,20 @@ export const Names: React.FC = () => {
             <Card className='names' loading={loading}>
                 <div className='table-container'>
                     {data.length ? (
+                        // The columns beside the meaning size to their
+                        // contents rather than to a fixed 100px, which was
+                        // enough for "Sanskrit" and 17px short of சமஸ்கிருதம்.
                         <table
                             style={{
                                 gridTemplateColumns: `${
                                     filters?.twinNames
-                                        ? 'auto 1fr auto 1fr'
-                                        : 'auto 1fr'
-                                } auto ${!filters?.gender ? '100px' : ''} ${
+                                        ? `auto ${MEANING} auto ${MEANING}`
+                                        : `auto ${MEANING}`
+                                } auto ${!filters?.gender ? 'auto' : ''} ${
                                     !filters?.twinNames && !filters?.religion
-                                        ? '100px'
+                                        ? 'auto'
                                         : ''
-                                } 100px`,
+                                } auto`,
                             }}
                         >
                             <thead>
@@ -154,14 +167,20 @@ export const Names: React.FC = () => {
                                         {'name' in item ? (
                                             <>
                                                 <td>{item.name}</td>
-                                                <td>{item.meaning}</td>
+                                                <td className='meaning'>
+                                                    {item.meaning}
+                                                </td>
                                             </>
                                         ) : (
                                             <>
                                                 <td>{item.name1}</td>
-                                                <td>{item.meaning1}</td>
+                                                <td className='meaning'>
+                                                    {item.meaning1}
+                                                </td>
                                                 <td>{item.name2}</td>
-                                                <td>{item.meaning2}</td>
+                                                <td className='meaning'>
+                                                    {item.meaning2}
+                                                </td>
                                             </>
                                         )}
                                         <td className='name-number'>
