@@ -33,6 +33,23 @@ nav.top-nav-bar {
         z-index: 101;
     }
 
+    span.label {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.15;
+        gap: 3px;
+
+        > span {
+            font-size: 0.88em;
+
+            &.ta {
+                font-size: 0.9em;
+                opacity: 0.75;
+            }
+        }
+    }
+
     .nav-item {
         align-items: center;
         background-color: var(--nav-item-bg-color);
@@ -66,7 +83,7 @@ nav.top-nav-bar {
             height: 28px;
         }
 
-        > span {
+        > span.label {
             margin-left: 8px;
             white-space: nowrap;
         }
@@ -87,18 +104,6 @@ nav.top-nav-bar {
         a.nav-item {
             gap: 10px;
             padding: 0 14px;
-
-            > span.label {
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                line-height: 1.15;
-
-                > span.ta {
-                    font-size: 0.9em;
-                    opacity: 0.75;
-                }
-            }
 
             &.active {
                 background-color: #fff;

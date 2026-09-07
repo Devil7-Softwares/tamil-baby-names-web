@@ -150,11 +150,12 @@ export const Filters: React.FC = () => {
 
     return (
         <Card className='filters' loading={loading}>
-            <h2>Name Type</h2>
+            <h2>பெயர் வகை / Name Type</h2>
             <Button
                 name='false'
                 image={Single}
                 checked={!twinNames}
+                ta='தனிப் பெயர்'
                 onClick={onTwinNamesClick}
             >
                 Single
@@ -163,15 +164,17 @@ export const Filters: React.FC = () => {
                 name='true'
                 image={Twins}
                 checked={twinNames}
+                ta='இரட்டைப் பெயர்'
                 onClick={onTwinNamesClick}
             >
                 Twin
             </Button>
 
-            <h2>Gender</h2>
+            <h2>பாலினம் / Gender</h2>
             <Button
                 image={Gender}
                 checked={!gender || !gender.length}
+                ta='இரண்டும்'
                 onCheckedChange={onGenderClick}
             >
                 Both
@@ -180,6 +183,7 @@ export const Filters: React.FC = () => {
                 name='boy'
                 image={GenderBoy}
                 checked={gender?.includes('boy')}
+                ta='ஆண்'
                 onCheckedChange={onGenderClick}
             >
                 Boy
@@ -188,6 +192,7 @@ export const Filters: React.FC = () => {
                 name='girl'
                 image={GenderGirl}
                 checked={gender?.includes('girl')}
+                ta='பெண்'
                 onCheckedChange={onGenderClick}
             >
                 Girl
@@ -195,10 +200,11 @@ export const Filters: React.FC = () => {
 
             {!twinNames && (
                 <>
-                    <h2>Religion</h2>
+                    <h2>மதம் / Religion</h2>
                     <Button
                         image={Religion}
                         checked={!religion}
+                        ta='அனைத்தும்'
                         onCheckedChange={onReligionClick}
                     >
                         All
@@ -207,6 +213,7 @@ export const Filters: React.FC = () => {
                         name='hindu'
                         image={Hindu}
                         checked={religion === 'hindu'}
+                        ta='இந்து'
                         onCheckedChange={onReligionClick}
                     >
                         Hindu
@@ -215,6 +222,7 @@ export const Filters: React.FC = () => {
                         name='muslim'
                         image={Islam}
                         checked={religion === 'muslim'}
+                        ta='முஸ்லிம்'
                         onCheckedChange={onReligionClick}
                     >
                         Muslim
@@ -223,6 +231,7 @@ export const Filters: React.FC = () => {
                         name='christian'
                         image={Christian}
                         checked={religion === 'christian'}
+                        ta='கிறிஸ்துவர்'
                         onCheckedChange={onReligionClick}
                     >
                         Christian
@@ -230,11 +239,12 @@ export const Filters: React.FC = () => {
                 </>
             )}
 
-            <h2>Starting Letter</h2>
+            <h2>தொடக்க எழுத்து / Starting Letter</h2>
             <Button
                 image={All}
                 name='none'
                 checked={startsWithMode === 'none'}
+                ta='அனைத்து எழுத்தும்'
                 onCheckedChange={onStartsWithModeClick}
             >
                 Any Letter
@@ -243,6 +253,7 @@ export const Filters: React.FC = () => {
                 image={Astrology}
                 name='auto'
                 checked={startsWithMode === 'auto'}
+                ta='பிறந்த நேரப்படி'
                 onCheckedChange={onStartsWithModeClick}
             >
                 By Date &amp; Time of Birth
@@ -251,6 +262,7 @@ export const Filters: React.FC = () => {
                 image={Choose}
                 name='manual'
                 checked={startsWithMode === 'manual'}
+                ta='எழுத்து தேர்வு'
                 onCheckedChange={onStartsWithModeClick}
             >
                 Select Letters
@@ -267,7 +279,7 @@ export const Filters: React.FC = () => {
                 />
             ) : null}
 
-            <h2>Numerology</h2>
+            <h2>எண்கணிதம் / Numerology</h2>
             <Numerology />
 
             <div className='splitter'></div>
@@ -283,8 +295,9 @@ export const Filters: React.FC = () => {
                     className='generate'
                     image={Arrow}
                     onClick={onGenerateClick}
+                    ta='தேடு'
                 >
-                    Generate
+                    Search
                 </Button>
             )}
         </Card>

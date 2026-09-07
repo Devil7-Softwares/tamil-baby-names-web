@@ -52,8 +52,8 @@ export const Numerology: React.FC = () => {
                                     <Button
                                         key={method}
                                         checked={numerology === method}
-                                        title={
-                                            numerologyLocales.en.numerologies[
+                                        ta={
+                                            numerologyLocales.ta.numerologies[
                                                 method
                                             ]
                                         }
@@ -62,7 +62,7 @@ export const Numerology: React.FC = () => {
                                         }
                                     >
                                         {
-                                            numerologyLocales.ta.numerologies[
+                                            numerologyLocales.en.numerologies[
                                                 method
                                             ]
                                         }
@@ -84,9 +84,10 @@ export const Numerology: React.FC = () => {
             <div className='numbers'>
                 <Button
                     checked={!selected.length}
+                    ta='அனைத்து எண்களும்'
                     onCheckedChange={() => setNameNumbers(undefined)}
                 >
-                    Any
+                    All
                 </Button>
                 {NAME_NUMBERS.map((value) => (
                     <Button

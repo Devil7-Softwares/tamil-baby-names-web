@@ -8,6 +8,8 @@ interface IProps extends React.DetailedHTMLProps<
     HTMLButtonElement
 > {
     image?: string;
+    /** The Tamil label, shown above the English one the children carry. */
+    ta?: string;
     checked?: boolean;
     onCheckedChange?: (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -20,6 +22,7 @@ export const Button: React.FC<PropsWithChildren<IProps>> = ({
     checked,
     className,
     image,
+    ta,
     onCheckedChange,
     onClick,
     ...props
@@ -38,6 +41,14 @@ export const Button: React.FC<PropsWithChildren<IProps>> = ({
         }}
     >
         {image && <img src={image} />}
-        {children}
+
+        {ta ? (
+            <span className='label'>
+                <span className='ta'>{ta}</span>
+                <span>{children}</span>
+            </span>
+        ) : (
+            children
+        )}
     </button>
 );

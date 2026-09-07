@@ -36,7 +36,11 @@ export const TopNavigationBar: React.FC = () => {
                 onClick={() => setExpanded(false)}
             >
                 <img src={Logo} alt='' />
-                <span>Tamil Baby Names</span>
+
+                <span className='label'>
+                    <span className='ta'>தமிழ் குழந்தை பெயர்கள்</span>
+                    <span>Tamil Baby Names</span>
+                </span>
             </NavLink>
 
             <div className='spacer'></div>

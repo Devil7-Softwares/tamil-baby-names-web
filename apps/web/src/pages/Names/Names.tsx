@@ -93,16 +93,18 @@ export const Names: React.FC = () => {
                                 : '/',
                         )
                     }
+                    ta='பின்செல்'
                 >
                     Back
                 </Button>
                 <div>
-                    <div>Total Names: {total}</div>
+                    <div>மொத்தம் / Total: {total}</div>
                     <Button
                         onClick={() => {
                             gtag('event', 'export');
                             window.open('/api/export', '_blank');
                         }}
+                        ta='பதிவிறக்கு'
                     >
                         Download
                     </Button>

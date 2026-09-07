@@ -101,14 +101,16 @@ export const AutoLetters: React.FC = () => {
     return (
         <div className='auto-letters'>
             <div className='container input'>
-                <label>Date &amp; Time of Birth</label>
+                <label>
+                    பிறந்த நாள் &amp; நேரம் / Date &amp; Time of Birth
+                </label>
                 <input
                     type='datetime-local'
                     value={dateTimeOfBirth}
                     onChange={(e) => setDateTimeOfBirth(e.target.value)}
                 />
 
-                <label htmlFor='timezone'>Timezone</label>
+                <label htmlFor='timezone'>நேர மண்டலம் / Timezone</label>
                 <Combobox
                     id='timezone'
                     value={timezone}
@@ -125,10 +127,10 @@ export const AutoLetters: React.FC = () => {
                                 <Button
                                     key={method}
                                     checked={panjangam === method}
-                                    title={locales.en.panjangams[method]}
+                                    ta={locales.ta.panjangams[method]}
                                     onCheckedChange={() => setPanjangam(method)}
                                 >
-                                    {locales.ta.panjangams[method]}
+                                    {locales.en.panjangams[method]}
                                 </Button>
                             ))}
                         </div>

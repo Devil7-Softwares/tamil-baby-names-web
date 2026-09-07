@@ -1,9 +1,9 @@
 export const numerologyLocales = {
     en: {
         numerologies: {
-            enkanitham: 'Tamil Enkanitham',
-            chaldean: 'Chaldean',
-            pythagorean: 'Pythagorean',
+            enkanitham: 'Tamil Numerology',
+            chaldean: 'Chaldean Numerology',
+            pythagorean: 'Pythagorean Numerology',
         },
     },
     ta: {

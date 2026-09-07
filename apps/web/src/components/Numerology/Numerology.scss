@@ -30,16 +30,19 @@ div.numerology {
     }
 
     > div.numbers {
-        display: grid;
-        flex-flow: row wrap;
+        // Flex rather than a 40px grid: the digits want that width and "Any"
+        // wants its own, and a fixed track made the bilingual label spill over
+        // the 1 beside it.
+        display: flex;
+        flex-wrap: wrap;
         margin-top: 10px;
-        grid-template-columns: repeat(auto-fill, 40px);
         gap: 5px;
 
         > button {
             display: flex;
             align-items: center;
             justify-content: center;
+            min-width: 40px;
         }
     }
 }
