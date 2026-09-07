@@ -16,7 +16,7 @@ import {
 } from '@tbn/shared';
 import React, { useEffect, useMemo } from 'react';
 
-import { useFilterState } from '../../utils';
+import { useDraft, useFilterState } from '../../utils';
 
 const timezoneOptions = Object.values(
     timezones.reduce<Record<string, (typeof timezones)[number]>>(
@@ -42,9 +42,11 @@ const timezoneOptions = Object.values(
 type T = Parameters<typeof getLunarMansion>[1];
 
 export const AutoLetters: React.FC = () => {
-    const [dateTimeOfBirth, setDateTimeOfBirth] = useFilterState('tob');
+    const [tob, setTob] = useFilterState('tob');
     const [timezone, setTimezone] = useFilterState('tz');
     const [panjangam, setPanjangam] = useFilterState('panjangam');
+
+    const [dateTimeOfBirth, setDateTimeOfBirth] = useDraft(tob, setTob);
 
     const astro = useMemo(() => {
         const date = getBirthDate(dateTimeOfBirth, timezone);
