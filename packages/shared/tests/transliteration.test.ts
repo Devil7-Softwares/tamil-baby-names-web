@@ -4,6 +4,7 @@ import {
     firstSyllable,
     romanise,
     sortKey,
+    tamilise,
 } from '../src/transliteration/Tamil.js';
 
 describe('romanise', () => {
@@ -85,5 +86,69 @@ describe('firstSyllable', () => {
 
     it('has nothing to say about an empty name', () => {
         expect(firstSyllable('')).toBe('');
+    });
+});
+
+/**
+ * Measured against the 1,371 Latin/Tamil pairs the shyamkumar dataset supplies,
+ * where every rule below was chosen because it moved that number: 202 exact
+ * matches to start with, 447 by the end, and character accuracy 72% to 82%.
+ *
+ * A third of names exactly right is a good suggestion and a terrible answer,
+ * which is the whole design: what this produces goes in a box the reader edits
+ * before anything scores it.
+ */
+describe('tamilise', () => {
+    it('reads the ordinary English spelling of a name', () => {
+        expect(tamilise('Amudhan')).toBe('அமுதன்');
+        expect(tamilise('Kavi')).toBe('கவி');
+        expect(tamilise('Meena')).toBe('மீனா');
+        expect(tamilise('Selvi')).toBe('செல்வி');
+    });
+
+    // Tamil does not begin a word with ன, whatever the English suggests.
+    it('opens a name with ந rather than ன', () => {
+        expect(tamilise('Nila')).toBe('நிலா');
+        expect(tamilise('Nila Nila')).toBe('நிலா நிலா');
+    });
+
+    // Tamil assimilates a nasal to what follows and writes the result.
+    it('writes a nasal as the cluster it becomes', () => {
+        expect(tamilise('Thango')).toBe('தங்கோ');
+        expect(tamilise('Anna')).toBe('அண்ணா');
+        expect(tamilise('Anjali')).toBe('அஞ்சலி');
+        expect(tamilise('Sundar')).toBe('சுந்தர்');
+    });
+
+    // The bug this caught: a cluster ending in a pulli left the next vowel
+    // sign hanging off it, so Thango came back as தங்ொ.
+    it('never leaves a vowel sign without a letter to sit on', () => {
+        expect(tamilise('Thango')).not.toContain('்ோ');
+        expect(tamilise('Ponganan')).not.toContain('்ெ');
+    });
+
+    it('ends a name on the long vowel', () => {
+        expect(tamilise('Farida')).toBe('ஃபரிதா');
+        expect(tamilise('Priya')).toBe('ப்ரியா');
+        // Not `i` though: Ravi is ரவி and never ரவீ.
+        expect(tamilise('Ravi')).toBe('ரவி');
+    });
+
+    it('keeps a name that is two words two words', () => {
+        expect(tamilise('Adaikalam Kaathan')).toContain(' ');
+    });
+
+    // Not an inverse, and not claimed to be: romanise folds ண, ந and ன onto
+    // one letter, and nothing can unfold them. It does hold for the names whose
+    // sounds survive the trip, which is most of them.
+    it('round trips a name whose sounds survive romanise', () => {
+        for (const name of ['அமுதன்', 'கவி', 'நிலா', 'செல்வி']) {
+            expect(tamilise(romanise(name))).toBe(name);
+        }
+    });
+
+    it('leaves what it cannot read rather than dropping it', () => {
+        expect(tamilise('')).toBe('');
+        expect(tamilise('Ram-2')).toContain('-2');
     });
 });
