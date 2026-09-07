@@ -6,3 +6,4 @@ export * from './ManualLetters';
 export * from './Numerology';
 export * from './Pagination';
 export * from './ProgressOverlay';
+export * from './TopNavigationBar';

@@ -9,8 +9,8 @@ export const Pages: React.FC = () => {
     return (
         <Routes>
             <Route path='/' element={<Filters />} />
-            <Route path='/names' element={<Names />} />
             <Route path='/calculator' element={<Calculator />} />
+            <Route path='/names' element={<Names />} />
         </Routes>
     );
 };

@@ -1,7 +1,8 @@
-div.calculator {
+div.card.calculator {
+    min-width: 30vw;
     font-size: 0.8em;
 
-    h3 {
+    h2 {
         margin: 0 0 6px;
         font-size: 1.5em;
     }
@@ -12,15 +13,14 @@ div.calculator {
         max-width: 46ch;
     }
 
-    > div.card > div.container {
+    > div.container {
         background-color: #0000004f;
 
         padding: 10px;
         border-radius: 3px;
 
         display: grid;
-        // The entry takes the room left over rather than a fixed width: its
-        // suggest button wrapped under the input at 220px.
+        // 1fr, not a fixed width: the suggest button wrapped under the input.
         grid-template-columns: max-content 1fr;
         align-items: center;
         column-gap: 10px;
@@ -73,8 +73,7 @@ div.calculator {
             padding: 10px;
             text-align: center;
 
-            // Nothing to show is a prompt rather than a failure: the method is
-            // waiting on the other spelling, and says which.
+            // Waiting on the other spelling, not failed.
             &.empty {
                 opacity: 0.5;
             }
@@ -104,9 +103,5 @@ div.calculator {
         margin: 12px 0 0;
         opacity: 0.7;
         max-width: 52ch;
-    }
-
-    div.actions {
-        margin-top: 12px;
     }
 }

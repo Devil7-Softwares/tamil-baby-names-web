@@ -270,15 +270,6 @@ export const Filters: React.FC = () => {
             <h2>Numerology</h2>
             <Numerology />
 
-            {/* The filters narrow the catalogue by number; this works one out
-                for a name that is not in it yet. */}
-            <Button
-                className='calculator-link'
-                onClick={() => navigate('/calculator')}
-            >
-                Work out the number for a name
-            </Button>
-
             <div className='splitter'></div>
 
             <ReCAPTCHA

@@ -35,14 +35,32 @@ body {
         animation: gradiant-animation 15s ease infinite;
         background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
         background-size: 400% 400%;
-        display: flex;
-        flex-direction: column;
         height: 100%;
         overflow: hidden;
 
         display: flex;
+        flex-direction: column;
+        // The nav bar spans the width; the page below does its own centring.
+        align-items: stretch;
+    }
+
+    main.page {
+        display: flex;
+        // A column: a page that fills the height asks with `flex: 1`, which in
+        // a row grows it sideways instead and leaves the names table no height
+        // for its scroller.
+        flex-direction: column;
+        flex: 1 1 auto;
         align-items: center;
-        justify-content: center;
+        overflow: auto;
+        padding: 15px;
+        box-sizing: border-box;
+
+        // Auto margins rather than `justify-content`, which clips the top of
+        // anything taller than the space it centres in.
+        > div.card {
+            margin-block: auto;
+        }
     }
 
     canvas.drifter-stars {
