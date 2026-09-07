@@ -18,6 +18,44 @@ div.auto-letters {
             > div {
                 text-align: right;
             }
+
+            ol.padhams {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+                text-align: right;
+
+                > li {
+                    display: grid;
+                    grid-template-columns: 1.4em 1fr 1fr;
+                    align-items: baseline;
+                    column-gap: 6px;
+                    padding: 1px 4px;
+                    border-radius: 3px;
+                    opacity: 0.55;
+
+                    // The one the birth actually fell in. The others are shown
+                    // to give it a scale, so they stay quieter than it.
+                    &.this-one {
+                        opacity: 1;
+                        font-weight: 600;
+                        background-color: #ffffff1a;
+                    }
+
+                    > span.at {
+                        text-align: left;
+                        opacity: 0.7;
+                    }
+
+                    > span.letter {
+                        text-align: right;
+                    }
+                }
+            }
+
+            div.variants {
+                opacity: 0.6;
+            }
         }
     }
 }

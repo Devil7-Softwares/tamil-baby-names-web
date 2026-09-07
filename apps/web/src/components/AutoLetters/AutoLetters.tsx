@@ -6,6 +6,8 @@ import {
     getLunarMansionIndex,
     getMoonSign,
     getMoonSignIndex,
+    getPadhamIndex,
+    getPadhamLettersForName,
     getStartingLettersForName,
     implementedPanjangams,
     locales,
@@ -53,8 +55,14 @@ export const AutoLetters: React.FC = () => {
 
         const moonSignIndex = getMoonSignIndex(date, panjangam);
         const lunarMansionIndex = getLunarMansionIndex(date, panjangam);
+        const padhamIndex = getPadhamIndex(date, panjangam);
 
         return {
+            padham: padhamIndex + 1,
+            padhamLetters: {
+                en: getPadhamLettersForName(lunarMansionIndex, 'en'),
+                ta: getPadhamLettersForName(lunarMansionIndex, 'ta'),
+            },
             moonSign: {
                 en: getMoonSign(moonSignIndex, 'en'),
                 ta: getMoonSign(moonSignIndex, 'ta'),
@@ -78,6 +86,7 @@ export const AutoLetters: React.FC = () => {
         gtag('event', 'astro', {
             moonSign: astro.moonSign.en,
             lunarMansion: astro.lunarMansion.en,
+            padham: astro.padham,
         });
     }, [astro]);
 
@@ -131,11 +140,40 @@ export const AutoLetters: React.FC = () => {
                 <div>
                     {astro?.lunarMansion.ta} / {astro?.lunarMansion.en}
                 </div>
+                <label>பாதம் / Padham</label>
+                <div>{astro && `${astro.padham} / 4`}</div>
                 <label>பெயர் எழுத்து / Letters for Name</label>
-                <div>
-                    <div>{astro?.letters.ta.join(', ')}</div>
-                    <div>{astro?.letters.en.join(', ')}</div>
-                </div>
+                {/* All four, with the birth's own marked. A quarter shown on
+                    its own does not say that the mansion offered four and the
+                    padham chose between them. */}
+                <ol className='padhams'>
+                    {astro?.padhamLetters.ta.map((letter, at) => (
+                        <li
+                            key={at}
+                            className={
+                                at === astro.padham - 1 ? 'this-one' : undefined
+                            }
+                            aria-current={
+                                at === astro.padham - 1 ? 'true' : undefined
+                            }
+                        >
+                            <span className='at'>{at + 1}</span>
+                            <span className='letter'>{letter}</span>
+                            <span className='letter'>
+                                {astro.padhamLetters.en[at]}
+                            </span>
+                        </li>
+                    ))}
+                </ol>
+                {astro && (
+                    <>
+                        <label>பிற வழக்குகள் / Also Used</label>
+                        <div className='variants'>
+                            <div>{astro.letters.ta.join(', ')}</div>
+                            <div>{astro.letters.en.join(', ')}</div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
