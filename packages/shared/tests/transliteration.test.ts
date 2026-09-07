@@ -147,6 +147,65 @@ describe('tamilise', () => {
         }
     });
 
+    // English writes one letter where Tamil writes two or three, so the
+    // capital is the only way to reach half the alphabet: without it அருண்,
+    // வள்ளி, மறம் and கட்டி cannot be typed at all.
+    it('reaches the letters English does not distinguish', () => {
+        expect(tamilise('aruN')).toBe('அருண்');
+        expect(tamilise('vaLLi')).toBe('வள்ளி');
+        expect(tamilise('maRam')).toBe('மறம்');
+        expect(tamilise('kaTTi')).toBe('கட்டி');
+        expect(tamilise('shaNmuka')).toBe('ஷண்முகா');
+        expect(tamilise('tamizh')).toBe('தமிழ்');
+    });
+
+    // Otherwise every name typed the way names are written would be wrong.
+    // Nothing is lost: Tamil begins no word with any of these letters.
+    it('reads a capital opening a name as only a capital', () => {
+        expect(tamilise('Nila')).toBe('நிலா');
+        expect(tamilise('Raman')).toBe('ரமன்');
+        expect(tamilise('Lakshmi')).toBe('லக்ஷ்மி');
+        expect(tamilise('Sundar')).toBe('சுந்தர்');
+        expect(tamilise('Adaikalam Kaathan')).not.toContain('ண');
+    });
+
+    // Tamil writes எ and ஏ, ஒ and ஓ with different letters where English has
+    // one of each, and a name is not typed twice to find out which.
+    it('reads a capital vowel as the long one', () => {
+        expect(tamilise('dinEsh')).toBe('தினேஷ்');
+        expect(tamilise('dinesh')).toBe('தினெஷ்');
+        expect(tamilise('mOkan')).toBe('மோகன்');
+        expect(tamilise('kumAr')).toBe('குமார்');
+        expect(tamilise('DinEshkumAr')).toBe('தினேஷ்குமார்');
+    });
+
+    // The same exemption the consonants get, and for the same reason: a name
+    // is written with a capital and that is all it means there.
+    it('reads a capital vowel opening a name as only a capital', () => {
+        expect(tamilise('Amudhan')).toBe('அமுதன்');
+        expect(tamilise('Ilango')).toBe(tamilise('ilango'));
+    });
+
+    // ஸ is in 6% of the catalogue and had no way in at all: the names that
+    // carry it are borrowings, and they spell it with a plain lowercase `s`,
+    // so no capital could have reached it. Position is what tells it from ச.
+    it('reads a bare s as ஸ and one with a vowel as ச', () => {
+        expect(tamilise('sree')).toBe('ஸ்ரீ');
+        expect(tamilise('Yusra')).toBe('யுஸ்ரா');
+        expect(tamilise('Skanda')).toBe('ஸ்கந்தா');
+
+        expect(tamilise('Sundar')).toBe('சுந்தர்');
+        expect(tamilise('Selvi')).toBe('செல்வி');
+        // `sh` is its own cluster and is not caught by the rule.
+        expect(tamilise('Shiva')).toBe('ஷிவா');
+    });
+
+    // A marked letter is one character and is read before the clusters are:
+    // `nt` spells ந்த in lower case, which is not what `NT` asked for.
+    it('does not let a cluster swallow a marked letter', () => {
+        expect(tamilise('aNTal')).toBe('அண்டல்');
+    });
+
     it('leaves what it cannot read rather than dropping it', () => {
         expect(tamilise('')).toBe('');
         expect(tamilise('Ram-2')).toContain('-2');

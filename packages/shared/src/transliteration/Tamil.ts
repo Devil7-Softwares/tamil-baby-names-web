@@ -264,6 +264,48 @@ const READ_VOWELS: ReadonlyArray<readonly [string, string, string]> = [
 const OPENS: Record<string, string> = { ன: 'ந' };
 
 /**
+ * The letters English does not distinguish, reached by typing the capital —
+ * `aruN` is அருண் where `arun` is அருன், `maRam` மறம், `kaTTi` கட்டி. The
+ * convention ITRANS uses, so anyone who has typed Thanglish before knows it.
+ *
+ * Not at the start of a word, where a capital is only how a name is written.
+ * That costs nothing: Tamil begins no word with any of these.
+ */
+/**
+ * A bare `s` is the Grantha ஸ rather than ச.
+ *
+ * The names that carry ஸ are almost all borrowings — Thomas, Osman, Yusra,
+ * Skanda, Elias — and they spell it with a plain lowercase `s` in English, so
+ * no capital could distinguish it. What does distinguish it is position: it is
+ * word-final or stands before another consonant, where a native ச is followed
+ * by its own vowel. Sundar and Selvi keep ச; Sri becomes ஸ்ரி.
+ */
+const GRANTHA: Record<string, string> = { ச: 'ஸ' };
+
+/**
+ * The long vowel, reached by typing the capital. Tamil writes எ and ஏ, ஒ and ஓ
+ * with different letters where English has one `e` and one `o`, so `dinEsh` is
+ * தினேஷ் and `dinesh` தினெஷ்.
+ *
+ * Standing form first, then the sign it becomes when it hangs on a consonant.
+ */
+const MARKED_VOWELS: Record<string, readonly [string, string]> = {
+    A: ['ஆ', 'ா'],
+    I: ['ஈ', 'ீ'],
+    U: ['ஊ', 'ூ'],
+    E: ['ஏ', 'ே'],
+    O: ['ஓ', 'ோ'],
+};
+
+const MARKED: Record<string, string> = {
+    N: 'ண',
+    L: 'ள',
+    R: 'ற',
+    T: 'ட',
+    S: 'ஷ',
+};
+
+/**
  * A name ending in one of these ends in the long vowel far more often than the
  * short one - Farida is ஃபரிதா, Thango தங்கோ - and for `a` the inherent vowel a
  * bare consonant already carries would write the short one by saying nothing at
@@ -277,26 +319,50 @@ const at = <T extends readonly [string, ...string[]]>(
     index: number,
 ): T | undefined => table.find(([key]) => text.startsWith(key, index));
 
+/**
+ * The vowel at `index`, as `[read, standing, sign]`. A capital is the long one
+ * — never at the start of a word, where it is only how a name is written.
+ */
+const vowelAt = (
+    name: string,
+    latin: string,
+    index: number,
+    opening: boolean,
+): readonly [string, string, string] | undefined => {
+    const marked = opening ? undefined : MARKED_VOWELS[name[index]];
+
+    if (marked) {
+        return [name[index], marked[0], marked[1]];
+    }
+
+    return at(READ_VOWELS, latin, index);
+};
+
 export const tamilise = (name: string): string => {
     const latin = name.toLowerCase();
     let tamil = '';
     let index = 0;
 
     while (index < latin.length) {
-        const consonant = at(CLUSTERS, latin, index);
+        const opening = !tamil || tamil.endsWith(' ');
 
-        if (consonant) {
-            const [read, spelt] = consonant;
-            const opening = !tamil || tamil.endsWith(' ');
-            const letter = (opening && OPENS[spelt]) || spelt;
-            index += read.length;
+        // Read before the clusters, and always exactly one character: `aNTal`
+        // must be ண then ட rather than matching `nt` as the ந்த it spells in
+        // lower case.
+        const marked = opening ? undefined : MARKED[name[index]];
+        const consonant = marked ? undefined : at(CLUSTERS, latin, index);
 
-            const vowel = at(READ_VOWELS, latin, index);
+        if (marked || consonant) {
+            const spelt = marked ?? consonant![1];
+            const letter = marked ?? ((opening && OPENS[spelt]) || spelt);
+            index += marked ? 1 : consonant![0].length;
+
+            const vowel = vowelAt(name, latin, index, false);
 
             if (!vowel) {
                 // No vowel of its own, so the consonant is bare. Tamil marks
                 // that rather than leaving the inherent `a` to be read.
-                tamil += letter + PULLI;
+                tamil += (GRANTHA[letter] ?? letter) + PULLI;
                 continue;
             }
 
@@ -315,7 +381,7 @@ export const tamilise = (name: string): string => {
             continue;
         }
 
-        const vowel = at(READ_VOWELS, latin, index);
+        const vowel = vowelAt(name, latin, index, opening);
 
         if (vowel) {
             const [sound, standing] = vowel;
