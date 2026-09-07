@@ -131,6 +131,25 @@ export function getLunarMansionIndex(date: Date, panjangam?: Panjangam) {
     return Math.floor((getLongitudeOfMoon(date, panjangam) * 60) / 800.0);
 }
 
+/**
+ * Arcminutes in one padham. A lunar mansion spans 13deg20', a quarter of which
+ * is 3deg20' - 200'. The quarter matters because it is what decides the
+ * syllable a name should start with: the mansion narrows it to four, and the
+ * padham picks one of them.
+ */
+const PADHAM = 200;
+
+/**
+ * Which quarter of its mansion the moon stood in, 0-3.
+ *
+ * Read off the same longitude as the mansion itself rather than derived from
+ * it, so the two can never disagree about where a boundary is: a mansion ends
+ * exactly where its fourth padham does.
+ */
+export function getPadhamIndex(date: Date, panjangam?: Panjangam) {
+    return Math.floor((getLongitudeOfMoon(date, panjangam) * 60) / PADHAM) % 4;
+}
+
 export function getMoonSign(
     index: number,
     locale: keyof typeof locales,
@@ -160,6 +179,32 @@ export function getLunarMansion(
     locale: keyof typeof locales,
 ): string {
     return locales[locale].lunarMansions[
+        dateOrIndex instanceof Date
+            ? getLunarMansionIndex(dateOrIndex)
+            : dateOrIndex
+    ];
+}
+
+/**
+ * The four syllables a mansion offers, one per padham, in order.
+ *
+ * Which of them applies is `getPadhamIndex`, and showing all four alongside it
+ * is deliberate: a reader who is told only their own quarter has no way to see
+ * that the mansion narrowed the choice to four and the padham picked one.
+ */
+export function getPadhamLettersForName(
+    index: number,
+    locale: keyof typeof locales,
+): string[];
+export function getPadhamLettersForName(
+    date: Date,
+    locale: keyof typeof locales,
+): string[];
+export function getPadhamLettersForName(
+    dateOrIndex: Date | number,
+    locale: keyof typeof locales,
+): string[] {
+    return locales[locale].namingLettersByPadham[
         dateOrIndex instanceof Date
             ? getLunarMansionIndex(dateOrIndex)
             : dateOrIndex

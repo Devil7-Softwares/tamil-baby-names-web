@@ -43,6 +43,47 @@ export const locales = {
             'Uthratadhi',
             'Revathi',
         ],
+        /**
+         * The syllable each quarter of a mansion gives a name, in the order
+         * the quarters run.
+         *
+         * A separate table from `namingLettersByLunarMansions` rather than a
+         * slice of it: that one is a bag of every spelling a mansion is
+         * associated with, canonical and variant together, and eleven of its
+         * twenty-seven entries happen to hold exactly the four padhams while
+         * the rest are padded out with alternates in no particular order.
+         * Those eleven are what this was checked against, and they agree
+         * exactly - see `astro.test.ts`, which fails if the two ever diverge.
+         */
+        namingLettersByPadham: [
+            ['CHU', 'CHEY', 'CHO', 'LA'], // Aswini
+            ['LI', 'LU', 'LEY', 'LO'], // Bharani
+            ['A', 'EE', 'U', 'E'], // Karthigai
+            ['O', 'VA', 'VI', 'VU'], // Rogini
+            ['VAY', 'VO', 'KAA', 'KI'], // Mirugasirsham
+            ['KU', 'GHA', 'NGA', 'CHHA'], // Thiruvadhirai
+            ['KAY', 'KO', 'HAA', 'HEE'], // Punarpoosam
+            ['HU', 'HAY', 'HO', 'DA'], // Poosam
+            ['DEE', 'DOO', 'DAY', 'DO'], // Aayilyam
+            ['MA', 'MI', 'MU', 'MAY'], // Magam
+            ['MO', 'TA', 'TI', 'TU'], // Pooram
+            ['TAY', 'TO', 'PA', 'PI'], // Uthram
+            ['PU', 'SHA', 'NA', 'TA'], // Hastham
+            ['PAY', 'PO', 'RAA', 'REE'], // Chithirai
+            ['RU', 'RAY', 'RO', 'THA'], // Swaathi
+            ['THEE', 'THOO', 'THAY', 'THO'], // Visakam
+            ['NA', 'NEE', 'NOO', 'NAY'], // Anusham
+            ['NO', 'YA', 'YEE', 'YU'], // Kettai
+            ['YAY', 'YO', 'BAA', 'BEE'], // Moolam
+            ['BU', 'DHA', 'PHA', 'DA'], // Pooradam
+            ['BAY', 'BO', 'JAA', 'JEE'], // Uthradam
+            ['JU', 'JAY', 'JO', 'KHA'], // Thiruvonam
+            ['GA', 'GEE', 'GU', 'GAY'], // Avittam
+            ['GO', 'SA', 'SEE', 'SU'], // Sadhayam
+            ['SAY', 'SO', 'DAA', 'DEE'], // Pooratadhi
+            ['DU', 'THA', 'JHA', 'GNA'], // Uthratadhi
+            ['DE', 'DO', 'CHAA', 'CHEE'], // Revathi
+        ],
         namingLettersByLunarMansions: [
             ['CHU', 'CHEY', 'CHO', 'LA', 'CHE', 'SU', 'SHU', 'SE', 'SO'],
             ['LI', 'LU', 'LEY', 'LO', 'LEE', 'LE'],
@@ -144,6 +185,47 @@ export const locales = {
             'பூரட்டாதி',
             'உத்திரட்டாதி',
             'ரேவதி',
+        ],
+        /**
+         * The syllable each quarter of a mansion gives a name, in the order
+         * the quarters run.
+         *
+         * A separate table from `namingLettersByLunarMansions` rather than a
+         * slice of it: that one is a bag of every spelling a mansion is
+         * associated with, canonical and variant together, and eleven of its
+         * twenty-seven entries happen to hold exactly the four padhams while
+         * the rest are padded out with alternates in no particular order.
+         * Those eleven are what this was checked against, and they agree
+         * exactly - see `astro.test.ts`, which fails if the two ever diverge.
+         */
+        namingLettersByPadham: [
+            ['சு', 'செ', 'சோ', 'ல'], // Aswini
+            ['லி', 'லு', 'லே', 'லோ'], // Bharani
+            ['அ', 'இ', 'உ', 'எ'], // Karthigai
+            ['ஒ', 'வ', 'வி', 'வு'], // Rogini
+            ['வே', 'வோ', 'கா', 'கி'], // Mirugasirsham
+            ['கு', 'க', 'ங', 'ச்சா'], // Thiruvadhirai
+            ['கே', 'கோ', 'ஹ', 'ஹி'], // Punarpoosam
+            ['ஹு', 'ஹே', 'ஹோ', 'ட'], // Poosam
+            ['டி', 'டு', 'டே', 'டோ'], // Aayilyam
+            ['ம', 'மி', 'மு', 'மே'], // Magam
+            ['மோ', 'ட', 'டி', 'டு'], // Pooram
+            ['டே', 'டோ', 'ப', 'பி'], // Uthram
+            ['பு', 'ஷ', 'ண', 'ட'], // Hastham
+            ['பே', 'போ', 'ர', 'ரி'], // Chithirai
+            ['ரு', 'ரே', 'ரோ', 'த'], // Swaathi
+            ['தி', 'து', 'தே', 'தோ'], // Visakam
+            ['ந', 'நி', 'நு', 'நே'], // Anusham
+            ['நோ', 'ய', 'யி', 'யு'], // Kettai
+            ['யே', 'யோ', 'ப', 'பி'], // Moolam
+            ['பூ', 'த', 'ப', 'ட'], // Pooradam
+            ['பே', 'போ', 'ஜ', 'ஜி'], // Uthradam
+            ['ஜூ', 'ஜே', 'ஜோ', 'கா'], // Thiruvonam
+            ['க', 'கி', 'கு', 'கே'], // Avittam
+            ['கோ', 'ஸ', 'ஸி', 'சூ'], // Sadhayam
+            ['ஸே', 'ஸோ', 'தா', 'தீ'], // Pooratadhi
+            ['து', 'ச', 'ஸ்ரீ', 'ஞ'], // Uthratadhi
+            ['தே', 'தோ', 'ச', 'சி'], // Revathi
         ],
         namingLettersByLunarMansions: [
             ['சு', 'செ', 'சே', 'சொ', 'சோ', 'ல', 'லா'],
