@@ -105,3 +105,47 @@ div.card.calculator {
         max-width: 52ch;
     }
 }
+
+div.card.calculator details.thanglish {
+    margin-top: 12px;
+    background-color: #0000004f;
+    border-radius: 3px;
+    padding: 8px 10px;
+
+    > summary {
+        cursor: pointer;
+        opacity: 0.85;
+    }
+
+    > p {
+        margin: 8px 0;
+        opacity: 0.7;
+    }
+
+    > ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 4px 12px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        > li {
+            align-items: baseline;
+            display: flex;
+            gap: 8px;
+
+            > code {
+                background-color: #00000059;
+                border-radius: 3px;
+                min-width: 3.2em;
+                padding: 1px 5px;
+                text-align: center;
+            }
+
+            > span {
+                opacity: 0.7;
+            }
+        }
+    }
+}

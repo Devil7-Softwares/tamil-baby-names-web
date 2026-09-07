@@ -18,6 +18,22 @@ import { Card } from '../../components';
  * one of the three numbers, which is why both boxes are here rather than a
  * single one with a language switch.
  */
+/**
+ * The convention ITRANS uses, and the only way to reach the letters English
+ * does not distinguish — without it அருண் and கட்டி cannot be typed at all.
+ */
+const THANGLISH: Array<[string, string, string]> = [
+    ['e எ', 'E ஏ', 'dinEsh → தினேஷ்'],
+    ['o ஒ', 'O ஓ', 'mOkan → மோகன்'],
+    ['a அ', 'A ஆ', 'kumAr → குமார்'],
+    ['n ன', 'N ண', 'aruN → அருண்'],
+    ['l ல', 'L ள', 'vaLLi → வள்ளி'],
+    ['r ர', 'R ற', 'maRam → மறம்'],
+    ['t த', 'T ட', 'kaTTi → கட்டி'],
+    ['s ச', 'sh ஷ', 'shiva → ஷிவா'],
+    ['—', 'zh ழ', 'tamizh → தமிழ்'],
+];
+
 const SCRIPT_OF: Record<Numerology, 'ta' | 'en'> = {
     enkanitham: 'ta',
     chaldean: 'en',
@@ -25,8 +41,14 @@ const SCRIPT_OF: Record<Numerology, 'ta' | 'en'> = {
 };
 
 export const Calculator: React.FC = () => {
-    const [tamil, setTamil] = useState('');
+    // What was typed, which is not what is shown: Thanglish goes in and Tamil
+    // comes out, and the keystrokes have to be kept to read `aa` or `nE` as one
+    // thing. Tamil typed on a Tamil keyboard passes through tamilise unchanged,
+    // so the same box takes both without a mode to switch.
+    const [typed, setTyped] = useState('');
     const [latin, setLatin] = useState('');
+
+    const tamil = useMemo(() => tamilise(typed), [typed]);
 
     const results = useMemo(
         () =>
@@ -41,16 +63,29 @@ export const Calculator: React.FC = () => {
         [tamil, latin],
     );
 
-    // Into the box rather than into the score: Chaldean would otherwise be
-    // reading a guess at the spelling instead of the name.
-    const suggest = (into: 'ta' | 'en') => () => {
-        if (into === 'ta') {
-            setTamil(tamilise(latin));
-        } else {
-            setLatin(romanise(tamil));
+    const type = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+        // Shortcuts are the browser's.
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+            return;
         }
 
-        gtag('event', 'calculator', { suggested: into });
+        if (event.key === 'Backspace') {
+            event.preventDefault();
+            setTyped((was) => was.slice(0, -1));
+        } else if (event.key.length === 1) {
+            // One keystroke is one character of what was typed, never of what
+            // is shown: `nE` is one ன‌ே and deleting it must take the E, not
+            // the vowel sign it grew into.
+            event.preventDefault();
+            setTyped((was) => was + event.key);
+        }
+    };
+
+    // Chaldean reads the English box, so it must hold the name as it is spelt
+    // and never a guess: only this direction is offered.
+    const suggestLatin = (): void => {
+        setLatin(romanise(tamil));
+        gtag('event', 'calculator', { suggested: 'en' });
     };
 
     return (
@@ -68,18 +103,23 @@ export const Calculator: React.FC = () => {
                     <input
                         id='tamil'
                         value={tamil}
-                        placeholder='அமுதன்'
+                        placeholder='அமுதன் — or type amudhan'
                         autoComplete='off'
-                        onChange={(e) => setTamil(e.target.value)}
+                        spellCheck={false}
+                        onKeyDown={type}
+                        onPaste={(e) => {
+                            e.preventDefault();
+                            setTyped(
+                                (was) => was + e.clipboardData.getData('text'),
+                            );
+                        }}
+                        // Whatever the keystrokes did not catch — a phone
+                        // keyboard reporting no key, autocorrect, a drag.
+                        // Tamil survives tamilise unchanged, so taking the
+                        // field's own value as what was typed settles rather
+                        // than drifting.
+                        onChange={(e) => setTyped(e.target.value)}
                     />
-                    <button
-                        type='button'
-                        disabled={!latin.trim()}
-                        title='Suggest a Tamil spelling from the English'
-                        onClick={suggest('ta')}
-                    >
-                        ← from English
-                    </button>
                 </div>
 
                 <label htmlFor='latin'>ஆங்கிலம் / English</label>
@@ -95,7 +135,7 @@ export const Calculator: React.FC = () => {
                         type='button'
                         disabled={!tamil.trim()}
                         title='Suggest an English spelling from the Tamil'
-                        onClick={suggest('en')}
+                        onClick={suggestLatin}
                     >
                         ← from Tamil
                     </button>
@@ -129,6 +169,31 @@ export const Calculator: React.FC = () => {
                     </div>
                 ))}
             </div>
+
+            <details className='thanglish'>
+                <summary>
+                    No Tamil keyboard? Type the name in English letters and it
+                    becomes Tamil as you go.
+                </summary>
+
+                <p>
+                    Where Tamil has two letters and English one, the capital is
+                    the second — so <code>Dineshkumar</code> gives தினெஷ் and{' '}
+                    <code>DinEshkumAr</code> தினேஷ்குமார். A capital starting
+                    the name is only a capital. An <code>s</code> with no vowel
+                    after it is ஸ, so <code>sree</code> is ஸ்ரீ.
+                </p>
+
+                <ul>
+                    {THANGLISH.map(([small, big, example]) => (
+                        <li key={big}>
+                            <code>{small}</code>
+                            <code>{big}</code>
+                            <span>{example}</span>
+                        </li>
+                    ))}
+                </ul>
+            </details>
 
             <p className='caveat'>
                 A filled-in spelling is a guess, not a fact — Tamil tells ண, ந
