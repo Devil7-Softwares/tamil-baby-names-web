@@ -18,6 +18,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useDraft, useFilterState } from '../../utils';
 import { Button } from '../Button';
 import { Combobox } from '../Combobox';
+import { Help, PANJANGAM_HELP } from '../Help';
 
 const timezoneOptions = Object.values(
     timezones.reduce<Record<string, (typeof timezones)[number]>>(
@@ -121,7 +122,10 @@ export const AutoLetters: React.FC = () => {
 
                 {implementedPanjangams.length > 1 && (
                     <>
-                        <label>பஞ்சாங்கம் / Panjangam</label>
+                        <label className='with-help'>
+                            பஞ்சாங்கம் / Panjangam
+                            <Help {...PANJANGAM_HELP} />
+                        </label>
                         <div className='choices'>
                             {implementedPanjangams.map((method) => (
                                 <Button

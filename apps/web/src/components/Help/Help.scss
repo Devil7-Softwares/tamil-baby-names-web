@@ -1,0 +1,153 @@
+button.help-icon {
+    background-color: #ffffff26;
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    flex: 0 0 auto;
+    font-family: serif;
+    font-size: 0.85em;
+    font-style: italic;
+    font-weight: 700;
+    line-height: 1;
+    margin-left: 6px;
+
+    // Bare `button` is styled globally with 5px 10px, which made this an
+    // ellipse rather than a circle.
+    box-sizing: border-box;
+    padding: 0;
+    height: 1.6em;
+    width: 1.6em;
+
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+
+    &:hover {
+        background-color: #ffffff4d;
+    }
+}
+
+div.help-backdrop {
+    // Stated, not inherited: the dialog is portalled to the body and this
+    // site's white text is set on #root.
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+
+    align-items: center;
+    background-color: #000000a6;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    padding: 20px;
+    position: fixed;
+    z-index: 200;
+
+    > div.help-dialog {
+        background-color: #171b22;
+        border-radius: 5px;
+        box-shadow: 0 4px 20px #000000a6;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        max-height: 100%;
+        max-width: 50rem;
+        width: 100%;
+
+        > header {
+            align-items: center;
+            display: flex;
+            gap: 10px;
+            padding: 12px 14px 0;
+
+            > h3 {
+                flex: 1;
+                font-size: 1.1em;
+                font-weight: 600;
+                margin: 0;
+            }
+
+            > button.close {
+                background: none;
+                border: none;
+                color: inherit;
+                cursor: pointer;
+                font-size: 1.6em;
+                line-height: 1;
+                opacity: 0.7;
+                padding: 0 4px;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+        }
+
+        // One rule, below the tabs rather than under the heading, or the
+        // strip floats between the two.
+        > nav.tabs {
+            border-bottom: 1px solid #ffffff1a;
+            display: flex;
+            gap: 2px;
+            padding: 8px 14px 0;
+
+            > button {
+                background: none;
+                border: none;
+                border-bottom: 2px solid transparent;
+                border-radius: 3px 3px 0 0;
+                color: inherit;
+                cursor: pointer;
+                font: inherit;
+                font-size: 0.85em;
+                // Sits on the rule, so the marked tab breaks it.
+                margin-bottom: -1px;
+                opacity: 0.6;
+                padding: 7px 14px;
+
+                &:hover {
+                    opacity: 0.85;
+                }
+
+                &.on {
+                    border-bottom-color: #4d9fff;
+                    font-weight: 600;
+                    opacity: 1;
+                }
+            }
+        }
+
+        > div.body {
+            font-size: 0.85em;
+            line-height: 1.55;
+            overflow-y: auto;
+            padding: 12px 14px 16px;
+
+            p {
+                margin: 0 0 10px;
+            }
+
+            dl {
+                margin: 0 0 10px;
+            }
+
+            dt {
+                font-weight: 600;
+                margin-top: 8px;
+            }
+
+            dd {
+                color: #ffffffd9;
+                margin: 2px 0 0;
+                padding-left: 12px;
+            }
+
+            p.pick {
+                background-color: #ffffff0f;
+                border-radius: 4px;
+                margin-bottom: 0;
+                padding: 8px 10px;
+            }
+        }
+    }
+}

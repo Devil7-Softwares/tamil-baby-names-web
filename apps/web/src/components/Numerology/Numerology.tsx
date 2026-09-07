@@ -10,6 +10,7 @@ import React, { useEffect } from 'react';
 
 import { useFilterState } from '../../utils';
 import { Button } from '../Button';
+import { Help, NUMEROLOGY_HELP } from '../Help';
 
 export const Numerology: React.FC = () => {
     const [numerology, setNumerology] = useFilterState('numerology');
@@ -46,7 +47,10 @@ export const Numerology: React.FC = () => {
                 <div className='container'>
                     {implementedNumerologies.length > 1 && (
                         <>
-                            <label>எண்கணிதம் / Numerology</label>
+                            <label className='with-help'>
+                                எண்கணிதம் / Numerology
+                                <Help {...NUMEROLOGY_HELP} />
+                            </label>
                             <div className='choices'>
                                 {implementedNumerologies.map((method) => (
                                     <Button
