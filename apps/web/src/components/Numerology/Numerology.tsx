@@ -4,7 +4,6 @@ import {
     getBirthNumberFor,
     implementedNumerologies,
     NAME_NUMBERS,
-    Numerology as NumerologyMethod,
     numerologyLocales,
 } from '@tbn/shared';
 import React, { useEffect } from 'react';
@@ -48,30 +47,28 @@ export const Numerology: React.FC = () => {
                     {implementedNumerologies.length > 1 && (
                         <>
                             <label>எண்கணிதம் / Numerology</label>
-                            <select
-                                value={numerology}
-                                onChange={(e) =>
-                                    setNumerology(
-                                        e.target.value as NumerologyMethod,
-                                    )
-                                }
-                            >
+                            <div className='choices'>
                                 {implementedNumerologies.map((method) => (
-                                    <option key={method} value={method}>
-                                        {
-                                            numerologyLocales.ta.numerologies[
-                                                method
-                                            ]
-                                        }{' '}
-                                        /{' '}
-                                        {
+                                    <Button
+                                        key={method}
+                                        checked={numerology === method}
+                                        title={
                                             numerologyLocales.en.numerologies[
                                                 method
                                             ]
                                         }
-                                    </option>
+                                        onCheckedChange={() =>
+                                            setNumerology(method)
+                                        }
+                                    >
+                                        {
+                                            numerologyLocales.ta.numerologies[
+                                                method
+                                            ]
+                                        }
+                                    </Button>
                                 ))}
-                            </select>
+                            </div>
                         </>
                     )}
 

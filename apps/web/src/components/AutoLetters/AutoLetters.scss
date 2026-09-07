@@ -9,7 +9,17 @@ div.auto-letters {
         margin-top: 10px;
 
         display: grid;
-        grid-template-columns: auto 200px;
+        // The control column takes what is left rather than a fixed 200px:
+        // a row of choices needs the room, and a long label must be able to
+        // give it up.
+        grid-template-columns: auto minmax(200px, 1fr);
+
+        div.choices {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: flex-end;
+        }
         align-items: center;
         column-gap: 10px;
         row-gap: 10px;

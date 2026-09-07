@@ -11,12 +11,13 @@ import {
     getStartingLettersForName,
     implementedPanjangams,
     locales,
-    Panjangam,
     timezones,
 } from '@tbn/shared';
 import React, { useEffect, useMemo } from 'react';
 
 import { useDraft, useFilterState } from '../../utils';
+import { Button } from '../Button';
+import { Combobox } from '../Combobox';
 
 const timezoneOptions = Object.values(
     timezones.reduce<Record<string, (typeof timezones)[number]>>(
@@ -38,6 +39,11 @@ const timezoneOptions = Object.values(
         {},
     ),
 );
+
+const zoneChoices = timezoneOptions.map((option) => ({
+    value: option.utc[0],
+    label: option.text,
+}));
 
 type T = Parameters<typeof getLunarMansion>[1];
 
@@ -102,34 +108,30 @@ export const AutoLetters: React.FC = () => {
                     onChange={(e) => setDateTimeOfBirth(e.target.value)}
                 />
 
-                <label>Timezone</label>
-                <select
+                <label htmlFor='timezone'>Timezone</label>
+                <Combobox
+                    id='timezone'
                     value={timezone}
-                    onChange={(e) => setTimezone(e.target.value)}
-                >
-                    {timezoneOptions.map((timezone) => (
-                        <option key={timezone.utc[0]} value={timezone.utc[0]}>
-                            {timezone.text}
-                        </option>
-                    ))}
-                </select>
+                    options={zoneChoices}
+                    placeholder='Type a city or an offset'
+                    onChange={setTimezone}
+                />
 
                 {implementedPanjangams.length > 1 && (
                     <>
                         <label>பஞ்சாங்கம் / Panjangam</label>
-                        <select
-                            value={panjangam}
-                            onChange={(e) =>
-                                setPanjangam(e.target.value as Panjangam)
-                            }
-                        >
+                        <div className='choices'>
                             {implementedPanjangams.map((method) => (
-                                <option key={method} value={method}>
-                                    {locales.ta.panjangams[method]} /{' '}
-                                    {locales.en.panjangams[method]}
-                                </option>
+                                <Button
+                                    key={method}
+                                    checked={panjangam === method}
+                                    title={locales.en.panjangams[method]}
+                                    onCheckedChange={() => setPanjangam(method)}
+                                >
+                                    {locales.ta.panjangams[method]}
+                                </Button>
                             ))}
-                        </select>
+                        </div>
                     </>
                 )}
             </div>

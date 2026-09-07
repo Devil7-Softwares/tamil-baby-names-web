@@ -2,6 +2,7 @@ export * from './AutoLetters';
 export * from './Background';
 export * from './Button';
 export * from './Card';
+export * from './Combobox';
 export * from './ManualLetters';
 export * from './Numerology';
 export * from './Pagination';
