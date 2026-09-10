@@ -11,6 +11,7 @@
     "dev": "nest start --watch --preserveWatchOutput",
     "build": "nest build",
     "start": "node dist/main.js",
+    "export:names": "node dist/export-names.js",
     "fixture:review": "node dist/fixture.js",
     "import:names": "node dist/import.js",
     "typecheck": "tsc -b --pretty",
