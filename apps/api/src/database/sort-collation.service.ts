@@ -45,15 +45,16 @@ export class SortCollationService {
      * leaving it at that buries every Tamil name pages deep behind the English
      * spellings. Ordering on the script first keeps each block whole, Tamil
      * first. `id` breaks ties, without which two rows sharing a name could swap
-     * places between pages.
+     * places between pages; a grouped query has no single id, so it names a
+     * column it grouped on instead.
      */
-    order(columns: string[]): Order {
+    order(columns: string[], tieBreak = 'id'): Order {
         return [
             ...columns.flatMap((column) => [
                 literal(`"${column}" ~ '^[A-Za-z]'`),
                 literal(`"${column}"${this.collation}`),
             ]),
-            'id',
+            tieBreak,
         ];
     }
 }

@@ -8,7 +8,7 @@ import {
     PUBLISHED,
     visibleStatuses,
 } from '@tbn/shared';
-import { literal, Op, Sequelize } from 'sequelize';
+import { col, fn, literal, Op, Sequelize } from 'sequelize';
 
 import {
     MEANINGS_MODEL,
@@ -19,6 +19,7 @@ import {
 import {
     MeaningsModel,
     NamesModel,
+    NamesRow,
     TwinNamesModel,
 } from '../database/models.js';
 import { SiteSettingsService } from '../database/site-settings.service.js';
@@ -154,22 +155,52 @@ export class NamesService {
             return [values, count];
         }
 
-        const { rows, count } = await this.names.findAndCountAll({
-            where: namesWhere(filters, startsWith, nameNumbers, statuses),
-            order: this.sortCollation.order(['name']),
-            offset,
-            limit,
-        });
+        const where = namesWhere(filters, startsWith, nameNumbers, statuses);
+
+        // One row per cluster. The import filed many names more than once —
+        // nearly half the list once candidates are on — and a visitor reads
+        // the repeats as the same name listed twice. A cluster's rows share
+        // the spelling, gender and number but not always the religion or
+        // language, so those are gathered rather than one row's kept. The
+        // filters still apply row by row, so a cluster shows if any of its
+        // rows matches.
+        const [rows, count] = await Promise.all([
+            this.names.findAll({
+                where,
+                attributes: [
+                    'clusterId',
+                    'name',
+                    'gender',
+                    'numerology',
+                    [fn('min', col('id')), 'id'],
+                    [fn('min', col('first_letter')), 'firstLetter'],
+                    [
+                        literal(`string_agg(DISTINCT religion, ', ')`),
+                        'religion',
+                    ],
+                    [
+                        literal(`string_agg(DISTINCT language, ', ')`),
+                        'language',
+                    ],
+                ],
+                group: ['clusterId', 'name', 'gender', 'numerology'],
+                order: this.sortCollation.order(['name'], 'clusterId'),
+                offset,
+                limit,
+                raw: true,
+            }) as unknown as Promise<NamesRow[]>,
+            this.names.count({ where, distinct: true, col: 'clusterId' }),
+        ]);
 
         const meanings = await this.meaningsFor(
             statuses,
             'clusterId',
             rows
-                .map(({ dataValues }) => dataValues.clusterId)
+                .map((row) => row.clusterId)
                 .filter((id): id is number => id !== null),
         );
 
-        const values = rows.map(({ dataValues: row }) => ({
+        const values = rows.map((row) => ({
             id: row.id,
             gender: row.gender,
             // Empty rather than null, the same way an absent meaning is: a

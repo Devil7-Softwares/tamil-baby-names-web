@@ -54,10 +54,8 @@ const build = () =>
     new NamesService(
         {} as unknown as Sequelize,
         {
-            findAndCountAll: async () => ({
-                rows: [{ dataValues: name }],
-                count: 1,
-            }),
+            findAll: async () => [name],
+            count: async () => 1,
         } as unknown as NamesModel,
         {
             findAndCountAll: async () => ({

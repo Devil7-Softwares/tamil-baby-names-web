@@ -21,11 +21,20 @@ const filters: IFilterData = {
     numerology: 'chaldean',
 };
 
-/** Two catalogue rows of one spelling, which is what the import filed. */
-const rows = [
-    { id: 1, name: 'அபி', clusterId: 7, numerology: null },
-    { id: 2, name: 'அபி', clusterId: 7, numerology: null },
-];
+/**
+ * The one row the database gives back for a spelling the import filed twice,
+ * once under each religion.
+ */
+const grouped = {
+    id: 1,
+    name: 'அபி',
+    gender: 'boy',
+    clusterId: 7,
+    numerology: null,
+    firstLetter: 'அ',
+    religion: 'இந்து, முஸ்லிம்',
+    language: 'தமிழ்',
+};
 
 const reading = {
     id: 40,
@@ -37,21 +46,33 @@ const reading = {
     status: 'published',
 } as unknown as IMeaning;
 
+interface Captured {
+    list?: { group?: string[] };
+    count?: { distinct?: boolean; col?: string };
+    meanings: Array<Record<string, unknown>>;
+}
+
 const build = (showUnreviewed = false) => {
-    const queried: Array<Record<string, unknown>> = [];
+    const captured: Captured = { meanings: [] };
 
     const service = new NamesService(
         {} as unknown as Sequelize,
         {
-            findAndCountAll: async () => ({
-                rows: rows.map((dataValues) => ({ dataValues })),
-                count: rows.length,
-            }),
+            findAll: async (options: Captured['list']) => {
+                captured.list = options;
+
+                return [grouped];
+            },
+            count: async (options: Captured['count']) => {
+                captured.count = options;
+
+                return 1;
+            },
         } as unknown as NamesModel,
         {} as unknown as TwinNamesModel,
         {
             findAll: async (options: { where: Record<string, unknown> }) => {
-                queried.push(options.where);
+                captured.meanings.push(options.where);
 
                 return [{ dataValues: reading }];
             },
@@ -62,41 +83,61 @@ const build = (showUnreviewed = false) => {
         } as unknown as SiteSettingsService,
     );
 
-    return { service, queried };
+    return { service, captured };
 };
 
-describe('the reading a name is shown with', () => {
-    // The reading is published once per spelling, so looking it up by row left
-    // the 725 clusters the import filed twice showing a blank second row.
-    it('reads by cluster, so both rows of one spelling carry it', async () => {
-        const { service } = build();
+describe('a spelling the import filed more than once', () => {
+    it('is listed once', async () => {
+        const { service, captured } = build();
 
-        const [names] = await service.getNamesForFilter(filters, 1, 10);
+        const [names, total] = await service.getNamesForFilter(filters, 1, 10);
 
-        expect(
-            names.map((row) => (row as { meaning: string }).meaning),
-        ).toEqual([reading.text, reading.text]);
+        expect(captured.list?.group).toContain('clusterId');
+        expect(names).toHaveLength(1);
+        expect(total).toBe(1);
     });
 
-    it('asks for the clusters on the page, not the rows', async () => {
-        const { service, queried } = build();
+    it('is counted once, so the pages match what is shown', async () => {
+        const { service, captured } = build();
 
         await service.getNamesForFilter(filters, 1, 10);
 
-        expect(queried).toEqual([
+        expect(captured.count).toMatchObject({
+            distinct: true,
+            col: 'clusterId',
+        });
+    });
+
+    it('keeps every religion its rows were filed under', async () => {
+        const { service } = build();
+
+        const [[name]] = await service.getNamesForFilter(filters, 1, 10);
+
+        expect((name as { religion: string }).religion).toBe('இந்து, முஸ்லிம்');
+    });
+});
+
+describe('the reading a name is shown with', () => {
+    it('is read by cluster', async () => {
+        const { service, captured } = build();
+
+        const [[name]] = await service.getNamesForFilter(filters, 1, 10);
+
+        expect((name as { meaning: string }).meaning).toBe(reading.text);
+        expect(captured.meanings).toEqual([
             {
-                clusterId: { [Op.in]: [7, 7] },
+                clusterId: { [Op.in]: [7] },
                 status: { [Op.in]: ['published'] },
             },
         ]);
     });
 
-    it('asks for candidate readings too once an admin puts them on the site', async () => {
-        const { service, queried } = build(true);
+    it('includes candidate readings once an admin puts them on the site', async () => {
+        const { service, captured } = build(true);
 
         await service.getNamesForFilter(filters, 1, 10);
 
-        expect(queried[0]?.status).toEqual({
+        expect(captured.meanings[0]?.status).toEqual({
             [Op.in]: ['published', 'candidate'],
         });
     });
