@@ -9,6 +9,8 @@ type FilterDataBase = {
     panjangam: Panjangam;
     numerology: Numerology;
     nameNumbers?: number[];
+    /** Search the mansion's தொடர் எழுத்துக்கள் as well as its own letters. */
+    followOnLetters?: boolean;
 };
 
 // Every variant declares `startsWith` so that `keyof IFilterData` stays the full

@@ -4,6 +4,7 @@ import utc from 'dayjs/plugin/utc.js';
 
 import {
     DEFAULT_PANJANGAM,
+    getFollowOnLettersForName,
     getLunarMansion,
     getLunarMansionIndex,
     getStartingLettersForName,
@@ -65,6 +66,9 @@ export const getStartingLettersForFilter = (
             return [
                 ...getStartingLettersForName(lunarMansionIndex, 'en'),
                 ...getStartingLettersForName(lunarMansionIndex, 'ta'),
+                ...(filter.followOnLetters
+                    ? getFollowOnLettersForName(lunarMansionIndex)
+                    : []),
             ];
         }
     }
@@ -142,6 +146,7 @@ export const getStateFromParams = (params: URLSearchParams): IFilterData => {
                 ? numerology
                 : DEFAULT_NUMEROLOGY,
         nameNumbers: parseNameNumbers(params.get('nameNumbers')),
+        followOnLetters: params.get('followOnLetters') === 'true',
     };
 
     const startsWithMode =

@@ -262,3 +262,44 @@ export const locales = {
         },
     },
 };
+
+/**
+ * தொடர் எழுத்துக்கள்: the letters to fall back on when no name on a mansion's
+ * own letters suits. They fill the vowel-sign gaps the main letters leave, so
+ * every letter a Tamil name opens with belongs to some mansion.
+ *
+ * As the Tamil naming sites give it — one table, copied between them — and
+ * kept verbatim so it can be checked against them. A few entries repeat a
+ * letter the mansion already offers; `getFollowOnLettersForName` drops those.
+ *
+ * Tamil only: none of the sources gives Latin spellings.
+ */
+export const followOnLettersByLunarMansions: readonly string[][] = [
+    ['செ', 'சை'], // Aswini
+    ['சொ', 'சௌ'], // Bharani
+    ['ஆ', 'ஈ'], // Karthigai
+    ['வா', 'வீ'], // Rogini
+    ['வை', 'வொ'], // Mirugasirsham
+    ['கூ', 'கா'], // Thiruvadhirai
+    ['கெ', 'கை'], // Punarpoosam
+    ['கொ', 'கௌ'], // Poosam
+    ['மெ', 'மை'], // Aayilyam
+    ['மா', 'மீ', 'மு'], // Magam
+    ['மொ', 'மௌ'], // Pooram
+    ['பா', 'பி'], // Uthram
+    ['பூ', 'மே'], // Hastham
+    ['பை', 'பௌ'], // Chithirai
+    ['தா'], // Swaathi
+    ['தூ', 'தை'], // Visakam
+    ['நா', 'நீ', 'நூ'], // Anusham
+    ['நே', 'நை'], // Kettai
+    ['பு', 'யூ'], // Moolam
+    ['ஊ', 'எ', 'ஏ'], // Pooradam
+    ['ஓ', 'ஒ', 'ஔ'], // Uthradam
+    ['க', 'கா', 'கி', 'கீ'], // Thiruvonam
+    ['ஞ', 'ஞா', 'கே'], // Avittam
+    ['தோ', 'தௌ'], // Sadhayam
+    ['நோ', 'நௌ'], // Pooratadhi
+    ['யா', 'ஞ'], // Uthratadhi
+    ['சா', 'சீ'], // Revathi
+];

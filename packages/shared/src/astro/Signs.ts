@@ -1,5 +1,5 @@
 import { Panjangam } from '../types/index.js';
-import { locales } from './Locales.js';
+import { followOnLettersByLunarMansions, locales } from './Locales.js';
 import {
     calculateAyanamsa,
     d2r,
@@ -228,4 +228,25 @@ export function getStartingLettersForName(
             ? getLunarMansionIndex(dateOrIndex)
             : dateOrIndex
     ];
+}
+
+/**
+ * The mansion's தொடர் எழுத்துக்கள், less any letter it already searches. The
+ * sources repeat a few of the mansion's own letters, and offering one again as
+ * a fallback would promise names the search has already shown.
+ */
+export function getFollowOnLettersForName(index: number): string[];
+export function getFollowOnLettersForName(date: Date): string[];
+export function getFollowOnLettersForName(
+    dateOrIndex: Date | number,
+): string[] {
+    const index =
+        dateOrIndex instanceof Date
+            ? getLunarMansionIndex(dateOrIndex)
+            : dateOrIndex;
+    const own = new Set(locales.ta.namingLettersByLunarMansions[index]);
+
+    return followOnLettersByLunarMansions[index].filter(
+        (letter) => !own.has(letter),
+    );
 }
