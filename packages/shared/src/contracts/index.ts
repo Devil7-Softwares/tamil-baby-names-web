@@ -4,6 +4,7 @@ import { adminImportContract } from './adminImport.js';
 import { adminNamesContract } from './adminNames.js';
 import { adminOverviewContract } from './adminOverview.js';
 import { adminReviewContract } from './adminReview.js';
+import { adminSettingsContract } from './adminSettings.js';
 
 export * from './adminAgents.js';
 export * from './adminAuth.js';
@@ -11,6 +12,7 @@ export * from './adminImport.js';
 export * from './adminNames.js';
 export * from './adminOverview.js';
 export * from './adminReview.js';
+export * from './adminSettings.js';
 export * from './errors.js';
 
 /**
@@ -26,5 +28,6 @@ export const contract = {
         names: adminNamesContract,
         overview: adminOverviewContract,
         review: adminReviewContract,
+        settings: adminSettingsContract,
     },
 };
