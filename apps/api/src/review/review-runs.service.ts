@@ -31,7 +31,7 @@ type Counts = Pick<
     | 'added'
     | 'dropped'
     | 'failed'
->;
+> & { inputTokens: number; outputTokens: number };
 
 const ZERO: Counts = {
     reviewed: 0,
@@ -42,7 +42,23 @@ const ZERO: Counts = {
     added: 0,
     dropped: 0,
     failed: 0,
+    inputTokens: 0,
+    outputTokens: 0,
 };
+
+/**
+ * US dollars, at the prices the run started with. Null where there is nothing
+ * to price — tokens never recorded, or an agent with no price.
+ */
+const costOf = (run: IReviewRun): number | null =>
+    run.inputTokens === null ||
+    run.outputTokens === null ||
+    run.inputPrice === null ||
+    run.outputPrice === null
+        ? null
+        : (run.inputTokens * run.inputPrice +
+              run.outputTokens * run.outputPrice) /
+          1_000_000;
 
 /** Why a run could not be started, in words the dashboard shows as they are. */
 export class RunRefused extends Error {}
@@ -77,6 +93,9 @@ const seen = (run: IReviewRun, agent: string): AdminReviewRun => ({
     compareWith: run.compareWith,
     applied: run.applied,
     batch: run.batch,
+    inputTokens: run.inputTokens,
+    outputTokens: run.outputTokens,
+    cost: costOf(run),
     startedAt: run.startedAt.toISOString(),
     finishedAt: run.finishedAt?.toISOString() ?? null,
 });
@@ -230,6 +249,10 @@ export class ReviewRunsService implements OnApplicationBootstrap {
             compareWith,
             applied,
             batch,
+            inputTokens: 0,
+            outputTokens: 0,
+            inputPrice: agent.dataValues.inputPrice,
+            outputPrice: agent.dataValues.outputPrice,
             startedAt: new Date(),
         });
 
@@ -309,6 +332,11 @@ export class ReviewRunsService implements OnApplicationBootstrap {
                 unwritten,
                 batch,
                 signal: stop.signal,
+                // Kept with the counts, so every progress write carries them.
+                onUsage: (usage) => {
+                    counts.inputTokens += usage.input;
+                    counts.outputTokens += usage.output;
+                },
                 onProgress: (outcome) => {
                     tally(counts, outcome);
 

@@ -32,6 +32,8 @@ const agent: IAgent = {
     keyTag: null,
     options: {},
     concurrency: null,
+    inputPrice: null,
+    outputPrice: null,
     enabled: true,
     createdAt: new Date(0),
     updatedAt: new Date(0),

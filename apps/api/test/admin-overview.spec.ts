@@ -28,15 +28,46 @@ const entry = (overrides: Partial<IVerification>): IVerification => ({
     ...overrides,
 });
 
+/** Two agents' recorded runs, as the database sums them — numbers as text. */
+const SPEND = [
+    {
+        agent: 'Claude Sonnet',
+        runs: '3',
+        input_tokens: '4200000',
+        output_tokens: '900000',
+        cost: '26.1',
+        unpriced: '0',
+    },
+    {
+        agent: 'Qwen local',
+        runs: '2',
+        input_tokens: '80000',
+        output_tokens: '20000',
+        cost: null,
+        unpriced: '2',
+    },
+];
+
+/** Answers each of the service's raw queries by what it asks for. */
+const query = async (sql: string) => {
+    if (sql.includes('"unrecorded"')) {
+        return [{ unrecorded: '53' }];
+    }
+
+    if (sql.includes('"input_tokens"')) {
+        return SPEND;
+    }
+
+    return [{ duplicated: '726' }];
+};
+
 const build = ({
     names = [] as Array<{ status: string; count: number }>,
     meanings = [] as Array<{ status: string; count: number }>,
     entries = [] as IVerification[],
 }) =>
     new AdminOverviewService(
-        {
-            query: async () => [{ duplicated: '726' }],
-        } as unknown as Sequelize,
+        { query } as unknown as Sequelize,
         {
             count: async () => names,
             findAll: async () => [{ id: 5, name: 'அகாத்' }],
@@ -112,6 +143,38 @@ describe('AdminOverviewService', () => {
         }).get();
 
         expect(overview.activity[0].actor).toBeNull();
+    });
+
+    it('totals what the recorded runs cost, agent by agent', async () => {
+        const { spend } = await build({}).get();
+
+        expect(spend.total).toBeCloseTo(26.1);
+        expect(spend.agents).toEqual([
+            {
+                agent: 'Claude Sonnet',
+                runs: 3,
+                inputTokens: 4_200_000,
+                outputTokens: 900_000,
+                cost: 26.1,
+                unpriced: 0,
+            },
+            {
+                agent: 'Qwen local',
+                runs: 2,
+                inputTokens: 80_000,
+                outputTokens: 20_000,
+                cost: 0,
+                unpriced: 2,
+            },
+        ]);
+    });
+
+    // Runs from before tokens were recorded cannot be priced, and folding them
+    // in at zero would understate the spend without saying so.
+    it('counts the runs that predate token records apart', async () => {
+        const { spend } = await build({}).get();
+
+        expect(spend.unrecorded).toBe(53);
     });
 
     it('asks for no subjects when nothing has been decided', async () => {

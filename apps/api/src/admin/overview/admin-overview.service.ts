@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
     AdminActivity,
     AdminOverview,
+    AdminSpend,
     AdminStatusCounts,
     NameStatus,
 } from '@tbn/shared';
@@ -73,13 +74,14 @@ export class AdminOverviewService {
     ) {}
 
     async get(): Promise<AdminOverview> {
-        const [names, meanings, total, duplicated, activity] =
+        const [names, meanings, total, duplicated, activity, spend] =
             await Promise.all([
                 this.names.count({ group: ['status'] }),
                 this.meanings.count({ group: ['status'] }),
                 this.clusters.count(),
                 this.duplicatedClusters(),
                 this.activity(),
+                this.spend(),
             ]);
 
         return {
@@ -87,6 +89,63 @@ export class AdminOverviewService {
             meanings: countsFrom(meanings),
             clusters: { total, duplicated },
             activity,
+            spend,
+        };
+    }
+
+    /**
+     * What the recorded runs have cost, by agent, at the prices each run
+     * started with. Runs from before tokens were recorded are counted apart
+     * rather than folded in as free.
+     */
+    private async spend(): Promise<AdminSpend> {
+        const [agents, [{ unrecorded }]] = await Promise.all([
+            this.sequelize.query<{
+                agent: string;
+                runs: string;
+                input_tokens: string;
+                output_tokens: string;
+                cost: string | null;
+                unpriced: string;
+            }>(
+                `SELECT "agents"."name" AS "agent",
+                        count(*) AS "runs",
+                        sum("runs"."input_tokens") AS "input_tokens",
+                        sum("runs"."output_tokens") AS "output_tokens",
+                        sum(("runs"."input_tokens" * "runs"."input_price"
+                            + "runs"."output_tokens" * "runs"."output_price")
+                            / 1000000) AS "cost",
+                        count(*) FILTER (
+                            WHERE "runs"."input_price" IS NULL
+                               OR "runs"."output_price" IS NULL
+                        ) AS "unpriced"
+                 FROM "review_runs" AS "runs"
+                 JOIN "agents" ON "agents"."id" = "runs"."agent_id"
+                 WHERE "runs"."input_tokens" IS NOT NULL
+                 GROUP BY "agents"."id", "agents"."name"
+                 ORDER BY "cost" DESC NULLS LAST, "agents"."name"`,
+                { type: QueryTypes.SELECT },
+            ),
+            this.sequelize.query<{ unrecorded: string }>(
+                `SELECT count(*) AS "unrecorded" FROM "review_runs"
+                 WHERE "input_tokens" IS NULL`,
+                { type: QueryTypes.SELECT },
+            ),
+        ]);
+
+        const byAgent = agents.map((row) => ({
+            agent: row.agent,
+            runs: Number(row.runs),
+            inputTokens: Number(row.input_tokens),
+            outputTokens: Number(row.output_tokens),
+            cost: Number(row.cost ?? 0),
+            unpriced: Number(row.unpriced),
+        }));
+
+        return {
+            total: byAgent.reduce((sum, { cost }) => sum + cost, 0),
+            agents: byAgent,
+            unrecorded: Number(unrecorded),
         };
     }
 

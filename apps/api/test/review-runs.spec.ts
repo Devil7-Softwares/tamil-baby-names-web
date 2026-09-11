@@ -50,6 +50,8 @@ interface Options {
     outcomes?: Array<ReviewOutcome | null>;
     /** Blocks the run until released, so a cancel can land mid-way. */
     gate?: Promise<void>;
+    /** Tokens the provider reports for each answer, when it reports any. */
+    usage?: { input: number; output: number };
 }
 
 const build = ({
@@ -59,6 +61,7 @@ const build = ({
     reAskable = 10,
     outcomes = [outcome()],
     gate,
+    usage,
 }: Options = {}) => {
     const store: Partial<IReviewRun>[] = runs.map((run, index) => ({
         id: index + 1,
@@ -160,6 +163,7 @@ const build = ({
             options: {
                 signal?: AbortSignal;
                 onProgress?: (outcome: ReviewOutcome | null) => void;
+                onUsage?: (usage: { input: number; output: number }) => void;
             },
         ) => {
             asked.push(options as Record<string, unknown>);
@@ -168,6 +172,11 @@ const build = ({
 
                 if (options.signal?.aborted) {
                     break;
+                }
+
+                // The answer arrives, and is paid for, before it is read.
+                if (usage) {
+                    options.onUsage?.(usage);
                 }
 
                 options.onProgress?.(each);
@@ -257,6 +266,66 @@ describe('starting a run', () => {
             .filter((n): n is number => typeof n === 'number');
 
         expect(seen).toEqual([...seen].sort((a, b) => a - b));
+    });
+});
+
+describe('what a run cost', () => {
+    it('adds up the tokens and prices them as the run started', async () => {
+        const { service, store } = build({
+            agents: [agent({ inputPrice: 3, outputPrice: 15 })],
+            // An unreadable answer was still paid for.
+            outcomes: [outcome(), null],
+            usage: { input: 1000, output: 200 },
+        });
+
+        await service.start(3, 25);
+        await settle();
+
+        expect(store[0]).toMatchObject({
+            inputTokens: 2000,
+            outputTokens: 400,
+            inputPrice: 3,
+            outputPrice: 15,
+        });
+        // (2,000 × $3 + 400 × $15) per million tokens.
+        expect((await service.get(1))?.cost).toBeCloseTo(0.012);
+    });
+
+    it('shows tokens without a cost for an agent with no price', async () => {
+        const { service } = build({
+            agents: [agent({ inputPrice: null, outputPrice: null })],
+            usage: { input: 500, output: 100 },
+        });
+
+        await service.start(3, 25);
+        await settle();
+
+        expect(await service.get(1)).toMatchObject({
+            inputTokens: 500,
+            outputTokens: 100,
+            cost: null,
+        });
+    });
+
+    // Null, not zero: nothing recorded them, and zero would read as free.
+    it('has no cost for a run from before tokens were recorded', async () => {
+        const { service } = build({
+            runs: [
+                {
+                    agentId: 3,
+                    status: 'finished',
+                    inputTokens: null,
+                    outputTokens: null,
+                    inputPrice: null,
+                    outputPrice: null,
+                },
+            ],
+        });
+
+        expect(await service.get(1)).toMatchObject({
+            inputTokens: null,
+            cost: null,
+        });
     });
 });
 

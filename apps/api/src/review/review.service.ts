@@ -57,6 +57,11 @@ export interface RunOptions {
     unwritten?: boolean;
     /** Called after each cluster, so a caller can show progress or stop. */
     onProgress?: (outcome: ReviewOutcome | null) => void;
+    /**
+     * Called for every answer, before it is read. An answer that cannot be
+     * read was still paid for.
+     */
+    onUsage?: (usage: { input: number; output: number }) => void;
     signal?: AbortSignal;
 }
 
@@ -320,6 +325,10 @@ export class ReviewService {
             });
 
             answer = reply.text;
+
+            if (reply.usage) {
+                options.onUsage?.(reply.usage);
+            }
         } catch (error) {
             const message = (error as AgentCallError).message;
 
@@ -387,6 +396,10 @@ export class ReviewService {
             });
 
             answer = reply.text;
+
+            if (reply.usage) {
+                options.onUsage?.(reply.usage);
+            }
         } catch (error) {
             // A refused or unreachable provider is the run's problem, not this
             // cluster's: it is left untouched and unreviewed, to be asked again.

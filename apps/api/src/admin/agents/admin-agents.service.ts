@@ -41,6 +41,8 @@ const seen = (agent: IAgent): AdminAgent => ({
     options: agent.options ?? {},
     concurrency: agent.concurrency,
     providerConcurrency: requireProvider(agent.provider).concurrency,
+    inputPrice: agent.inputPrice,
+    outputPrice: agent.outputPrice,
     enabled: agent.enabled,
 });
 
@@ -86,6 +88,8 @@ export class AdminAgentsService {
             model: input.model,
             baseUrl: input.baseUrl,
             options: input.options,
+            inputPrice: input.inputPrice ?? null,
+            outputPrice: input.outputPrice ?? null,
             enabled: input.enabled,
             ...this.keyColumns(input.apiKey),
         });
@@ -109,6 +113,12 @@ export class AdminAgentsService {
             ...(input.baseUrl === undefined ? {} : { baseUrl: input.baseUrl }),
             ...(input.options === undefined ? {} : { options: input.options }),
             ...(input.enabled === undefined ? {} : { enabled: input.enabled }),
+            ...(input.inputPrice === undefined
+                ? {}
+                : { inputPrice: input.inputPrice }),
+            ...(input.outputPrice === undefined
+                ? {}
+                : { outputPrice: input.outputPrice }),
             // Absent leaves the saved key alone; null clears it; a string
             // replaces it. Sending an unchanged key back to change the model
             // would mean the dashboard had to hold one.

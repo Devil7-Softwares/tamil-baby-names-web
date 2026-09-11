@@ -224,6 +224,9 @@ export interface IAgent {
     options: Record<string, unknown>;
     /** Requests in flight at once. Null defers to the provider's own figure. */
     concurrency: number | null;
+    /** US dollars per million tokens. Null for a model that costs nothing. */
+    inputPrice: number | null;
+    outputPrice: number | null;
     enabled: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -239,6 +242,8 @@ export type AgentDraft = Pick<IAgent, 'slug' | 'name' | 'provider' | 'model'> &
             | 'keyTag'
             | 'options'
             | 'enabled'
+            | 'inputPrice'
+            | 'outputPrice'
         >
     >;
 
@@ -280,6 +285,12 @@ export interface IReviewRun {
     /** Clusters per request. 1 is one at a time, which is how all the
      * calibration behind the model comparison was measured. */
     batch: number;
+    /** Null on runs from before these were recorded. */
+    inputTokens: number | null;
+    outputTokens: number | null;
+    /** The agent's prices when the run started. */
+    inputPrice: number | null;
+    outputPrice: number | null;
     startedAt: Date;
     finishedAt: Date | null;
 }
@@ -564,6 +575,8 @@ export const defineAgents = (sequelize: Sequelize): AgentsModel =>
             keyIv: { type: DataTypes.BLOB, field: 'key_iv' },
             keyTag: { type: DataTypes.BLOB, field: 'key_tag' },
             concurrency: DataTypes.INTEGER,
+            inputPrice: { type: DataTypes.DOUBLE, field: 'input_price' },
+            outputPrice: { type: DataTypes.DOUBLE, field: 'output_price' },
             options: {
                 type: DataTypes.JSONB,
                 allowNull: false,
@@ -633,6 +646,10 @@ export const defineReviewRuns = (sequelize: Sequelize): ReviewRunsModel =>
                 allowNull: false,
                 defaultValue: 1,
             },
+            inputTokens: { type: DataTypes.INTEGER, field: 'input_tokens' },
+            outputTokens: { type: DataTypes.INTEGER, field: 'output_tokens' },
+            inputPrice: { type: DataTypes.DOUBLE, field: 'input_price' },
+            outputPrice: { type: DataTypes.DOUBLE, field: 'output_price' },
             startedAt: { type: DataTypes.DATE, field: 'started_at' },
             finishedAt: { type: DataTypes.DATE, field: 'finished_at' },
         },
