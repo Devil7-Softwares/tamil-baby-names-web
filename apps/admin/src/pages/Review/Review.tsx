@@ -34,6 +34,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { orpc } from '~/api/orpc';
+import { formatCost, formatTokens } from '~/utils/cost';
 
 const BATCHES = [10, 25, 100, 500, 2000];
 
@@ -166,6 +167,36 @@ const Did: React.FC<{ run: AdminReviewRun }> = ({ run }) => {
 
 const when = (iso: string): string => new Date(iso).toLocaleString();
 
+/** What a run cost, and why when it cannot say. */
+const Spent: React.FC<{ run: AdminReviewRun }> = ({ run }) => {
+    if (run.inputTokens === null || run.outputTokens === null) {
+        return (
+            <Tooltip title='This run is from before token counts were recorded.'>
+                <Typography variant='body2' color='text.secondary'>
+                    —
+                </Typography>
+            </Tooltip>
+        );
+    }
+
+    const tokens = `${formatTokens(run.inputTokens)} in · ${formatTokens(run.outputTokens)} out`;
+
+    return (
+        <Box>
+            <Typography variant='body2'>
+                {run.cost === null ? 'No price set' : formatCost(run.cost)}
+            </Typography>
+            <Typography
+                variant='caption'
+                color='text.secondary'
+                sx={{ display: 'block', whiteSpace: 'nowrap' }}
+            >
+                {tokens}
+            </Typography>
+        </Box>
+    );
+};
+
 const Progress: React.FC<{ run: AdminReviewRun; onStop: () => void }> = ({
     run,
     onStop,
@@ -189,6 +220,8 @@ const Progress: React.FC<{ run: AdminReviewRun; onStop: () => void }> = ({
                 <Typography variant='body2' color='text.secondary'>
                     {done.toLocaleString()} / {run.total.toLocaleString()}
                 </Typography>
+
+                <Spent run={run} />
 
                 <Button
                     size='small'
@@ -460,6 +493,7 @@ const Review: React.FC = () => {
                                 <TableCell>Started</TableCell>
                                 <TableCell>Looked at</TableCell>
                                 <TableCell>What it did</TableCell>
+                                <TableCell>Cost</TableCell>
                                 <TableCell>Ended</TableCell>
                             </TableRow>
                         </TableHead>
@@ -500,6 +534,9 @@ const Review: React.FC = () => {
                                         <Did run={run} />
                                     </TableCell>
                                     <TableCell>
+                                        <Spent run={run} />
+                                    </TableCell>
+                                    <TableCell>
                                         {run.error ? (
                                             <Tooltip title={run.error}>
                                                 <Chip
@@ -527,7 +564,7 @@ const Review: React.FC = () => {
 
                             {runs.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6}>
+                                    <TableCell colSpan={7}>
                                         <Typography
                                             variant='body2'
                                             color='text.secondary'

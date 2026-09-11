@@ -51,6 +51,8 @@ interface Draft {
     /** Off means one at a time. `concurrency` is only read when this is on. */
     parallel: boolean;
     concurrency: string;
+    inputPrice: string;
+    outputPrice: string;
     enabled: boolean;
 }
 
@@ -64,8 +66,24 @@ export interface Saved {
     options: Record<string, unknown>;
     /** Null defers to the provider's own figure. */
     concurrency: number | null;
+    /** US dollars per million tokens; null for no price. */
+    inputPrice: number | null;
+    outputPrice: number | null;
     enabled: boolean;
 }
+
+/** Empty is "no price"; anything else must be a number, zero or more. */
+const priceOf = (value: string): number | null | undefined => {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+        return null;
+    }
+
+    const price = Number(trimmed);
+
+    return Number.isFinite(price) && price >= 0 ? price : undefined;
+};
 
 const blank = (provider: AgentProviderId): Draft => ({
     name: '',
@@ -76,6 +94,8 @@ const blank = (provider: AgentProviderId): Draft => ({
     options: '',
     parallel: true,
     concurrency: '',
+    inputPrice: '',
+    outputPrice: '',
     enabled: true,
 });
 
@@ -97,6 +117,8 @@ const draftOf = (agent: AdminAgent): Draft => ({
         agent.concurrency && agent.concurrency !== 1
             ? String(agent.concurrency)
             : '',
+    inputPrice: agent.inputPrice === null ? '' : String(agent.inputPrice),
+    outputPrice: agent.outputPrice === null ? '' : String(agent.outputPrice),
     enabled: agent.enabled,
 });
 
@@ -137,6 +159,8 @@ export const AgentDialog: React.FC<{
         agent ? draftOf(agent) : blank(first),
     );
     const [badOptions, setBadOptions] = useState<string | null>(null);
+    const inputPrice = priceOf(draft.inputPrice);
+    const outputPrice = priceOf(draft.outputPrice);
 
     const chosen = providers.find(({ id }) => id === draft.provider);
     const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -163,11 +187,17 @@ export const AgentDialog: React.FC<{
             ...(draft.apiKey ? { apiKey: draft.apiKey } : {}),
             options,
             concurrency: draft.parallel ? Number(draft.concurrency) || null : 1,
+            inputPrice: inputPrice ?? null,
+            outputPrice: outputPrice ?? null,
             enabled: draft.enabled,
         });
     };
 
-    const incomplete = !draft.name.trim() || !draft.model.trim();
+    const incomplete =
+        !draft.name.trim() ||
+        !draft.model.trim() ||
+        inputPrice === undefined ||
+        outputPrice === undefined;
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth='md'>
@@ -342,6 +372,57 @@ export const AgentDialog: React.FC<{
                                     : 'One request at a time, which is what a model on this machine wants.'}
                             </Typography>
                         </Stack>
+                    </Section>
+
+                    <Section title='What it costs'>
+                        <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={2}
+                        >
+                            <TextField
+                                label='Input price'
+                                size='small'
+                                type='number'
+                                sx={{ flex: 1 }}
+                                value={draft.inputPrice}
+                                onChange={(event) =>
+                                    set('inputPrice', event.target.value)
+                                }
+                                error={inputPrice === undefined}
+                                slotProps={{
+                                    htmlInput: { min: 0, step: 'any' },
+                                    input: {
+                                        startAdornment: '$',
+                                    },
+                                }}
+                            />
+
+                            <TextField
+                                label='Output price'
+                                size='small'
+                                type='number'
+                                sx={{ flex: 1 }}
+                                value={draft.outputPrice}
+                                onChange={(event) =>
+                                    set('outputPrice', event.target.value)
+                                }
+                                error={outputPrice === undefined}
+                                slotProps={{
+                                    htmlInput: { min: 0, step: 'any' },
+                                    input: {
+                                        startAdornment: '$',
+                                    },
+                                }}
+                            />
+                        </Stack>
+
+                        <Typography variant='caption' color='text.secondary'>
+                            US dollars per million tokens, as the provider’s
+                            price page lists them. Leave both empty for a model
+                            that costs nothing per token. A run keeps the prices
+                            it started with, so changing them here does not
+                            change what earlier runs cost.
+                        </Typography>
                     </Section>
 
                     <Section title='Availability'>
