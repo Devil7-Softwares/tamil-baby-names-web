@@ -29,6 +29,25 @@ export const AdminActivitySchema = z.object({
     at: z.iso.datetime(),
 });
 
+/** What one agent's recorded runs have cost, all told. */
+export const AdminAgentSpendSchema = z.object({
+    agent: z.string(),
+    runs: Count,
+    inputTokens: Count,
+    outputTokens: Count,
+    /** US dollars, over the runs that had a price. */
+    cost: z.number().nonnegative(),
+    /** Runs that recorded tokens while the agent had no price. */
+    unpriced: Count,
+});
+
+export const AdminSpendSchema = z.object({
+    total: z.number().nonnegative(),
+    agents: z.array(AdminAgentSpendSchema),
+    /** Runs from before tokens were recorded, which no total can include. */
+    unrecorded: Count,
+});
+
 export const AdminOverviewSchema = z.object({
     names: AdminStatusCountsSchema,
     meanings: AdminStatusCountsSchema,
@@ -38,8 +57,11 @@ export const AdminOverviewSchema = z.object({
         duplicated: Count,
     }),
     activity: z.array(AdminActivitySchema),
+    spend: AdminSpendSchema,
 });
 
+export type AdminAgentSpend = z.infer<typeof AdminAgentSpendSchema>;
+export type AdminSpend = z.infer<typeof AdminSpendSchema>;
 export type AdminStatusCounts = z.infer<typeof AdminStatusCountsSchema>;
 export type AdminActivity = z.infer<typeof AdminActivitySchema>;
 export type AdminOverview = z.infer<typeof AdminOverviewSchema>;

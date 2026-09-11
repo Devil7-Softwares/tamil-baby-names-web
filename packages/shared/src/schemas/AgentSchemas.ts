@@ -15,6 +15,12 @@ const text = (max: number) => z.string().trim().min(1).max(max);
 const ConcurrencySchema = z.number().int().min(1).max(32);
 
 /**
+ * US dollars per million tokens, as the providers' price pages list them.
+ * Null for a model that costs nothing per token — one on this machine.
+ */
+const PriceSchema = z.number().min(0).max(10000);
+
+/**
  * An agent as the dashboard sees it. There is no key here and there never will
  * be: a saved key is write-only, and `hasKey` is the whole of what can be said
  * about it afterwards.
@@ -33,6 +39,8 @@ export const AdminAgentSchema = z.object({
     concurrency: ConcurrencySchema.nullable(),
     /** What the provider would do, so the form can show what null means. */
     providerConcurrency: z.number().int().min(1),
+    inputPrice: PriceSchema.nullable(),
+    outputPrice: PriceSchema.nullable(),
     enabled: z.boolean(),
 });
 
@@ -90,6 +98,8 @@ export const AgentCreateSchema = z.object({
     apiKey: z.string().min(1).max(500).nullish(),
     options: OptionsSchema,
     concurrency: ConcurrencySchema.nullish(),
+    inputPrice: PriceSchema.nullish(),
+    outputPrice: PriceSchema.nullish(),
     enabled: z.boolean().default(true),
 });
 
@@ -106,6 +116,9 @@ export const AgentUpdateSchema = z.object({
     apiKey: z.string().min(1).max(500).nullish(),
     options: z.record(z.string(), z.unknown()).optional(),
     concurrency: ConcurrencySchema.nullish(),
+    /** Absent leaves the price alone; null clears it. */
+    inputPrice: PriceSchema.nullish(),
+    outputPrice: PriceSchema.nullish(),
     enabled: z.boolean().optional(),
 });
 

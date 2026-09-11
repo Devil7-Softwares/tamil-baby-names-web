@@ -32,6 +32,14 @@ export const AdminReviewRunSchema = z.object({
     applied: z.boolean(),
     /** Clusters per request; 1 is one at a time. */
     batch: z.number().int().min(1),
+    /** Null on runs from before tokens were recorded. */
+    inputTokens: z.number().int().nonnegative().nullable(),
+    outputTokens: z.number().int().nonnegative().nullable(),
+    /**
+     * US dollars, at the agent's prices when the run started. Null where the
+     * tokens were not recorded or the agent had no price.
+     */
+    cost: z.number().nonnegative().nullable(),
     startedAt: z.string(),
     finishedAt: z.string().nullable(),
 });
