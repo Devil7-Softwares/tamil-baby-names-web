@@ -48,6 +48,7 @@ export const Filters: React.FC = () => {
     const [numerology] = useFilterState('numerology');
     const [nameNumbers] = useFilterState('nameNumbers');
     const [followOnLetters] = useFilterState('followOnLetters');
+    const [relatedLetters] = useFilterState('relatedLetters');
 
     const onTwinNamesClick = (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -111,6 +112,7 @@ export const Filters: React.FC = () => {
                     startsWithMode,
                     nameNumbers,
                     followOnLetters,
+                    relatedLetters,
                 },
             });
 
@@ -130,6 +132,7 @@ export const Filters: React.FC = () => {
                         numerology,
                         nameNumbers,
                         followOnLetters,
+                        relatedLetters,
                     },
                     { headers: { token } },
                 )

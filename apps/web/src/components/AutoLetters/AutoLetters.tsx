@@ -9,6 +9,7 @@ import {
     getMoonSignIndex,
     getPadhamIndex,
     getPadhamLettersForName,
+    getRelatedLetters,
     getStartingLettersForName,
     implementedPanjangams,
     locales,
@@ -55,6 +56,8 @@ export const AutoLetters: React.FC = () => {
     const [panjangam, setPanjangam] = useFilterState('panjangam');
     const [followOnLetters, setFollowOnLetters] =
         useFilterState('followOnLetters');
+    const [relatedLetters, setRelatedLetters] =
+        useFilterState('relatedLetters');
 
     const [dateTimeOfBirth, setDateTimeOfBirth] = useDraft(tob, setTob);
 
@@ -90,6 +93,19 @@ export const AutoLetters: React.FC = () => {
             followOn: getFollowOnLettersForName(lunarMansionIndex),
         };
     }, [dateTimeOfBirth, timezone, panjangam]);
+
+    // Partners of whatever the search holds, so turning the follow-on letters
+    // on brings their partners into this row as well.
+    const related = useMemo(
+        () =>
+            astro
+                ? getRelatedLetters([
+                      ...astro.letters.ta,
+                      ...(followOnLetters ? astro.followOn : []),
+                  ])
+                : [],
+        [astro, followOnLetters],
+    );
 
     useEffect(() => {
         if (!astro) {
@@ -212,6 +228,30 @@ export const AutoLetters: React.FC = () => {
                                 onCheckedChange={() => setFollowOnLetters(true)}
                             >
                                 Include Follow-on
+                            </Button>
+                        </div>
+                    </>
+                )}
+                {related.length > 0 && (
+                    <>
+                        <label>இணை எழுத்துக்கள் / Related Letters</label>
+                        <div>{related.join(', ')}</div>
+
+                        <label>தேடலில் / In Search</label>
+                        <div className='choices'>
+                            <Button
+                                checked={!relatedLetters}
+                                ta='காட்டியவை மட்டும்'
+                                onCheckedChange={() => setRelatedLetters(false)}
+                            >
+                                As Shown
+                            </Button>
+                            <Button
+                                checked={relatedLetters}
+                                ta='இணையும் சேர்த்து'
+                                onCheckedChange={() => setRelatedLetters(true)}
+                            >
+                                Include Related
                             </Button>
                         </div>
                     </>
