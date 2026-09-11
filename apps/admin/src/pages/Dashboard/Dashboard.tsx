@@ -1,12 +1,14 @@
 import {
     Alert,
     Chip,
+    FormControlLabel,
     LinearProgress,
     Paper,
     Stack,
+    Switch,
     Typography,
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminActivity, AdminStatusCounts, NAME_STATUSES } from '@tbn/shared';
 
 import { orpc } from '~/api/orpc';
@@ -86,6 +88,55 @@ const Decision: React.FC<{ entry: AdminActivity }> = ({ entry }) => (
     </Stack>
 );
 
+/** What the public site serves. Reviewers see it; only an admin flips it. */
+const PublicSite: React.FC<{ canChange: boolean }> = ({ canChange }) => {
+    const queryClient = useQueryClient();
+    const settings = useQuery(orpc.admin.settings.get.queryOptions());
+
+    const update = useMutation(
+        orpc.admin.settings.update.mutationOptions({
+            onSuccess: (data) =>
+                queryClient.setQueryData(
+                    orpc.admin.settings.get.queryKey(),
+                    data,
+                ),
+        }),
+    );
+
+    return (
+        <Paper sx={{ p: 2 }}>
+            <Typography variant='subtitle1'>Public site</Typography>
+
+            <FormControlLabel
+                control={
+                    <Switch
+                        checked={settings.data?.showUnreviewed ?? false}
+                        disabled={
+                            !canChange || !settings.data || update.isPending
+                        }
+                        onChange={(_event, showUnreviewed) =>
+                            update.mutate({ showUnreviewed })
+                        }
+                    />
+                }
+                label='Show unreviewed names'
+            />
+
+            <Typography variant='body2' color='text.secondary'>
+                Candidates appear beside the published names, with the newest
+                candidate reading where none is published. Rejected names never
+                appear.
+            </Typography>
+
+            {update.isError && (
+                <Alert severity='error' sx={{ mt: 1 }}>
+                    The setting could not be changed.
+                </Alert>
+            )}
+        </Paper>
+    );
+};
+
 const Dashboard: React.FC = () => {
     const { user } = useAuth();
     const overview = useQuery(orpc.admin.overview.get.queryOptions());
@@ -99,6 +150,8 @@ const Dashboard: React.FC = () => {
             <Typography variant='body2' color='text.secondary'>
                 Signed in as {user?.name} ({user?.role}).
             </Typography>
+
+            <PublicSite canChange={user?.role === 'admin'} />
 
             {overview.isFetching && <LinearProgress />}
 
