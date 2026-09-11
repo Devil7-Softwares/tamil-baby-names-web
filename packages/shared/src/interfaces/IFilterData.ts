@@ -11,6 +11,8 @@ type FilterDataBase = {
     nameNumbers?: number[];
     /** Search the mansion's தொடர் எழுத்துக்கள் as well as its own letters. */
     followOnLetters?: boolean;
+    /** Search each letter's short or long partner too — யு with யூ. */
+    relatedLetters?: boolean;
 };
 
 // Every variant declares `startsWith` so that `keyof IFilterData` stays the full

@@ -7,6 +7,7 @@ import {
     getFollowOnLettersForName,
     getLunarMansion,
     getLunarMansionIndex,
+    getRelatedLetters,
     getStartingLettersForName,
     isImplementedPanjangam,
 } from '../astro/index.js';
@@ -63,13 +64,17 @@ export const getStartingLettersForFilter = (
                 filter.panjangam,
             );
 
-            return [
+            const letters = [
                 ...getStartingLettersForName(lunarMansionIndex, 'en'),
                 ...getStartingLettersForName(lunarMansionIndex, 'ta'),
                 ...(filter.followOnLetters
                     ? getFollowOnLettersForName(lunarMansionIndex)
                     : []),
             ];
+
+            return filter.relatedLetters
+                ? [...letters, ...getRelatedLetters(letters)]
+                : letters;
         }
     }
 
@@ -147,6 +152,7 @@ export const getStateFromParams = (params: URLSearchParams): IFilterData => {
                 : DEFAULT_NUMEROLOGY,
         nameNumbers: parseNameNumbers(params.get('nameNumbers')),
         followOnLetters: params.get('followOnLetters') === 'true',
+        relatedLetters: params.get('relatedLetters') === 'true',
     };
 
     const startsWithMode =
