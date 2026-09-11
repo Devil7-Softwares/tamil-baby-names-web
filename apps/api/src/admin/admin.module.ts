@@ -18,6 +18,7 @@ import { AdminOverviewController } from './overview/admin-overview.controller.js
 import { AdminOverviewService } from './overview/admin-overview.service.js';
 import { AdminReviewController } from './review/admin-review.controller.js';
 import { AdminReviewService } from './review/admin-review.service.js';
+import { AdminSettingsController } from './settings/admin-settings.controller.js';
 import { AdminBootstrapService } from './users/admin-bootstrap.service.js';
 import { UsersService } from './users/users.service.js';
 
@@ -45,6 +46,7 @@ declare module '@orpc/nest' {
         AdminNamesController,
         AdminOverviewController,
         AdminReviewController,
+        AdminSettingsController,
     ],
     providers: [
         AdminAgentsService,

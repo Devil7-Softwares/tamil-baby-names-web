@@ -1,4 +1,4 @@
-import { getNameNumber, IFilterData } from '@tbn/shared';
+import { getNameNumber, IFilterData, visibleStatuses } from '@tbn/shared';
 import { Op } from 'sequelize';
 import { describe, expect, it } from 'vitest';
 
@@ -180,17 +180,39 @@ describe('namesWhere', () => {
     });
 
     it('serves published rows only, whatever else was asked for', () => {
-        expect(allClauses(namesWhere(base, undefined, null))).toContainEqual({
-            status: 'published',
-        });
+        const published = { status: { [Op.in]: ['published'] } };
+
+        expect(allClauses(namesWhere(base, undefined, null))).toContainEqual(
+            published,
+        );
 
         expect(
             allClauses(namesWhere({ ...base, religion: 'hindu' }, ['க'], null)),
-        ).toContainEqual({ status: 'published' });
+        ).toContainEqual(published);
 
         expect(
             allClauses(twinNamesWhere({ ...base, twinNames: true }, [], null)),
-        ).toContainEqual({ status: 'published' });
+        ).toContainEqual(published);
+    });
+
+    it('adds candidates when the site serves them, and never rejected rows', () => {
+        const statuses = visibleStatuses(true);
+        const opted = { status: { [Op.in]: ['published', 'candidate'] } };
+
+        expect(
+            allClauses(namesWhere(base, undefined, null, statuses)),
+        ).toContainEqual(opted);
+
+        expect(
+            allClauses(
+                twinNamesWhere(
+                    { ...base, twinNames: true },
+                    [],
+                    null,
+                    statuses,
+                ),
+            ),
+        ).toContainEqual(opted);
     });
 });
 

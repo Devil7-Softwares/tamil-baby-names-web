@@ -7,6 +7,7 @@ import {
     NamesModel,
     TwinNamesModel,
 } from '../src/database/models.js';
+import { SiteSettingsService } from '../src/database/site-settings.service.js';
 import { SortCollationService } from '../src/database/sort-collation.service.js';
 import { NamesService } from '../src/names/names.service.js';
 
@@ -68,6 +69,9 @@ const build = () =>
             findAll: async () => [],
         } as unknown as MeaningsModel,
         { order: () => [] } as unknown as SortCollationService,
+        {
+            get: async () => ({ showUnreviewed: false }),
+        } as unknown as SiteSettingsService,
     );
 
 describe('what a client is sent', () => {

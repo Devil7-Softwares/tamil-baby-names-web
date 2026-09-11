@@ -312,6 +312,16 @@ export type ReviewRunFailuresModel = ModelStatic<
     Model<IReviewRunFailure, ReviewRunFailureDraft>
 >;
 
+/** The one row of switches for the public site. */
+export interface ISiteSettings {
+    id: number;
+    showUnreviewed: boolean;
+    updatedBy: number | null;
+    updatedAt: Date;
+}
+
+export type SiteSettingsModel = ModelStatic<Model<ISiteSettings>>;
+
 const table = {
     timestamps: false,
 };
@@ -660,6 +670,22 @@ export const defineReviewRunFailures = (
             timestamps: false,
             underscored: true,
         },
+    );
+
+export const defineSiteSettings = (sequelize: Sequelize): SiteSettingsModel =>
+    sequelize.define<Model<ISiteSettings>>(
+        'SiteSettings',
+        {
+            id: { type: DataTypes.SMALLINT, primaryKey: true },
+            showUnreviewed: {
+                type: DataTypes.BOOLEAN,
+                field: 'show_unreviewed',
+                allowNull: false,
+            },
+            updatedBy: { type: DataTypes.INTEGER, field: 'updated_by' },
+            updatedAt: { type: DataTypes.DATE, field: 'updated_at' },
+        },
+        { ...table, tableName: 'site_settings' },
     );
 
 export const defineAdminUsers = (sequelize: Sequelize): AdminUsersModel =>

@@ -4,8 +4,9 @@ import {
     IName,
     ITwinName,
     NameNumerology,
-    PUBLISHED,
+    NameStatus,
     Religion,
+    visibleStatuses,
 } from '@tbn/shared';
 import { Op, WhereOptions } from 'sequelize';
 
@@ -92,15 +93,16 @@ export const nameNumberWhere = (
     ),
 });
 
-// The public site serves published rows only; a candidate exists but is not
-// on the site until a reviewer says so.
+// Published only unless an admin has put the candidates on the site too; a
+// rejected row is never served either way.
 export const twinNamesWhere = (
     filters: IFilterData,
     startsWith: string[] | undefined,
     nameNumbers: WhereOptions | null,
+    statuses: NameStatus[] = visibleStatuses(false),
 ): WhereOptions => ({
     [Op.and]: [
-        { status: PUBLISHED },
+        { status: { [Op.in]: statuses } },
         startsWith && startsWith.length
             ? {
                   [Op.or]: startsWith.flatMap((char) => {
@@ -122,9 +124,10 @@ export const namesWhere = (
     filters: IFilterData,
     startsWith: string[] | undefined,
     nameNumbers: WhereOptions | null,
+    statuses: NameStatus[] = visibleStatuses(false),
 ): WhereOptions => ({
     [Op.and]: [
-        { status: PUBLISHED },
+        { status: { [Op.in]: statuses } },
         startsWith && startsWith.length
             ? filters.startsWithMode === 'manual'
                 ? {

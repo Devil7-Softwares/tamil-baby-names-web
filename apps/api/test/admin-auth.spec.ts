@@ -26,6 +26,7 @@ import {
 } from '../src/database/database.constants.js';
 import { LookupsService } from '../src/database/lookups.service.js';
 import { IAdminUser } from '../src/database/models.js';
+import { SiteSettingsService } from '../src/database/site-settings.service.js';
 import { SortCollationService } from '../src/database/sort-collation.service.js';
 import { appOptions, configureApp } from '../src/setup.js';
 
@@ -80,12 +81,17 @@ const build = async (env: Record<string, string>, row: IAdminUser | null) => {
                 useValue: { ready: Promise.resolve() },
             },
             LookupsService,
+            {
+                provide: SiteSettingsService,
+                useValue: { get: async () => ({ showUnreviewed: false }) },
+            },
         ],
         exports: [
             ADMIN_USERS_MODEL,
             ...catalogue,
             DatabaseBootstrap,
             LookupsService,
+            SiteSettingsService,
             SortCollationService,
         ],
     })

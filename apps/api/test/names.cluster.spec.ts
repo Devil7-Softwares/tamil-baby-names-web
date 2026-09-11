@@ -8,6 +8,7 @@ import {
     NamesModel,
     TwinNamesModel,
 } from '../src/database/models.js';
+import { SiteSettingsService } from '../src/database/site-settings.service.js';
 import { SortCollationService } from '../src/database/sort-collation.service.js';
 import { NamesService } from '../src/names/names.service.js';
 
@@ -36,7 +37,7 @@ const reading = {
     status: 'published',
 } as unknown as IMeaning;
 
-const build = () => {
+const build = (showUnreviewed = false) => {
     const queried: Array<Record<string, unknown>> = [];
 
     const service = new NamesService(
@@ -56,6 +57,9 @@ const build = () => {
             },
         } as unknown as MeaningsModel,
         { order: () => [] } as unknown as SortCollationService,
+        {
+            get: async () => ({ showUnreviewed }),
+        } as unknown as SiteSettingsService,
     );
 
     return { service, queried };
@@ -80,7 +84,20 @@ describe('the reading a name is shown with', () => {
         await service.getNamesForFilter(filters, 1, 10);
 
         expect(queried).toEqual([
-            { clusterId: { [Op.in]: [7, 7] }, status: 'published' },
+            {
+                clusterId: { [Op.in]: [7, 7] },
+                status: { [Op.in]: ['published'] },
+            },
         ]);
+    });
+
+    it('asks for candidate readings too once an admin puts them on the site', async () => {
+        const { service, queried } = build(true);
+
+        await service.getNamesForFilter(filters, 1, 10);
+
+        expect(queried[0]?.status).toEqual({
+            [Op.in]: ['published', 'candidate'],
+        });
     });
 });

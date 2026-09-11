@@ -15,6 +15,7 @@ import {
     REVIEW_RUN_FAILURES_MODEL,
     REVIEW_RUNS_MODEL,
     SEQUELIZE,
+    SITE_SETTINGS_MODEL,
     SOURCES_MODEL,
     TWIN_NAMES_MODEL,
     VERIFICATIONS_MODEL,
@@ -31,10 +32,12 @@ import {
     defineReligions,
     defineReviewRunFailures,
     defineReviewRuns,
+    defineSiteSettings,
     defineSources,
     defineTwinNames,
     defineVerifications,
 } from './models.js';
+import { SiteSettingsService } from './site-settings.service.js';
 import { SortCollationService } from './sort-collation.service.js';
 
 @Global()
@@ -114,8 +117,14 @@ import { SortCollationService } from './sort-collation.service.js';
             useFactory: defineReviewRunFailures,
             inject: [SEQUELIZE],
         },
+        {
+            provide: SITE_SETTINGS_MODEL,
+            useFactory: defineSiteSettings,
+            inject: [SEQUELIZE],
+        },
         DatabaseBootstrap,
         LookupsService,
+        SiteSettingsService,
         SortCollationService,
     ],
     exports: [
@@ -133,8 +142,10 @@ import { SortCollationService } from './sort-collation.service.js';
         AGENTS_MODEL,
         REVIEW_RUNS_MODEL,
         REVIEW_RUN_FAILURES_MODEL,
+        SITE_SETTINGS_MODEL,
         DatabaseBootstrap,
         LookupsService,
+        SiteSettingsService,
         SortCollationService,
     ],
 })

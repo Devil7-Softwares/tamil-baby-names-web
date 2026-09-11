@@ -4,9 +4,11 @@ import {
     IFilterData,
     IName,
     ITwinName,
+    NameStatus,
     PUBLISHED,
+    visibleStatuses,
 } from '@tbn/shared';
-import { Op, Sequelize } from 'sequelize';
+import { literal, Op, Sequelize } from 'sequelize';
 
 import {
     MEANINGS_MODEL,
@@ -19,6 +21,7 @@ import {
     NamesModel,
     TwinNamesModel,
 } from '../database/models.js';
+import { SiteSettingsService } from '../database/site-settings.service.js';
 import { SortCollationService } from '../database/sort-collation.service.js';
 import {
     nameNumberWhere,
@@ -36,18 +39,27 @@ export class NamesService {
         @Inject(TWIN_NAMES_MODEL) private readonly twinNames: TwinNamesModel,
         @Inject(MEANINGS_MODEL) private readonly meanings: MeaningsModel,
         private readonly sortCollation: SortCollationService,
+        private readonly settings: SiteSettingsService,
     ) {}
 
+    private async statuses(): Promise<NameStatus[]> {
+        return visibleStatuses((await this.settings.get()).showUnreviewed);
+    }
+
     /**
-     * The published meaning of every row on the page, keyed by subject and
-     * slot. A second query rather than a join, because the name lists are
-     * ordered by a collation Sequelize cannot express inside an include.
+     * One meaning for every row on the page, keyed by subject and slot. A
+     * second query rather than a join, because the name lists are ordered by a
+     * collation Sequelize cannot express inside an include.
      *
      * Single names read by cluster rather than by row: the reading is published
      * once for the spelling, so the second row of a name the import filed twice
      * would otherwise show nothing.
+     *
+     * With candidates on the site, a slot can hold several readings; the
+     * published reading wins, then the newest.
      */
-    private async publishedMeanings(
+    private async meaningsFor(
+        statuses: NameStatus[],
         column: 'clusterId' | 'twinNameId',
         ids: number[],
     ): Promise<Map<string, string>> {
@@ -56,16 +68,28 @@ export class NamesService {
         }
 
         const rows = await this.meanings.findAll({
-            where: { [column]: { [Op.in]: ids }, status: PUBLISHED },
+            where: {
+                [column]: { [Op.in]: ids },
+                status: { [Op.in]: statuses },
+            },
             attributes: [column, 'slot', 'text'],
+            order: [
+                [literal(`status = '${PUBLISHED}'`), 'DESC'],
+                ['updatedAt', 'DESC'],
+            ],
         });
 
-        return new Map(
-            rows.map(({ dataValues }) => [
-                `${dataValues[column]}:${dataValues.slot}`,
-                dataValues.text,
-            ]),
-        );
+        const meanings = new Map<string, string>();
+
+        for (const { dataValues } of rows) {
+            const key = `${dataValues[column]}:${dataValues.slot}`;
+
+            if (!meanings.has(key)) {
+                meanings.set(key, dataValues.text);
+            }
+        }
+
+        return meanings;
     }
 
     async getNamesForFilter(
@@ -75,6 +99,7 @@ export class NamesService {
     ): Promise<[IName[] | ITwinName[], number]> {
         const startsWith = getStartingLettersForFilter(filters);
         const wanted = wantedNumbers(filters);
+        const statuses = await this.statuses();
 
         const nameNumbers = wanted.length
             ? nameNumberWhere(filters, wanted)
@@ -84,13 +109,19 @@ export class NamesService {
 
         if (filters.twinNames) {
             const { rows, count } = await this.twinNames.findAndCountAll({
-                where: twinNamesWhere(filters, startsWith, nameNumbers),
+                where: twinNamesWhere(
+                    filters,
+                    startsWith,
+                    nameNumbers,
+                    statuses,
+                ),
                 order: this.sortCollation.order(['name1', 'name2']),
                 offset,
                 limit,
             });
 
-            const meanings = await this.publishedMeanings(
+            const meanings = await this.meaningsFor(
+                statuses,
                 'twinNameId',
                 rows.map(({ dataValues }) => dataValues.id),
             );
@@ -124,13 +155,14 @@ export class NamesService {
         }
 
         const { rows, count } = await this.names.findAndCountAll({
-            where: namesWhere(filters, startsWith, nameNumbers),
+            where: namesWhere(filters, startsWith, nameNumbers, statuses),
             order: this.sortCollation.order(['name']),
             offset,
             limit,
         });
 
-        const meanings = await this.publishedMeanings(
+        const meanings = await this.meaningsFor(
+            statuses,
             'clusterId',
             rows
                 .map(({ dataValues }) => dataValues.clusterId)
@@ -156,11 +188,14 @@ export class NamesService {
 
     async getFirstLetters(filters: IFilterData): Promise<string[]> {
         // The picker offers letters the site can actually show, so it reads the
-        // same published subset the name lists do.
+        // same subset the name lists do.
         const where = filters.gender
-            ? `WHERE status = '${PUBLISHED}' AND gender = :gender`
-            : `WHERE status = '${PUBLISHED}'`;
-        const replacements = filters.gender ? { gender: filters.gender } : {};
+            ? `WHERE status IN (:statuses) AND gender = :gender`
+            : `WHERE status IN (:statuses)`;
+        const replacements = {
+            statuses: await this.statuses(),
+            ...(filters.gender ? { gender: filters.gender } : {}),
+        };
 
         // The alias is quoted because postgres folds unquoted identifiers to
         // lower case, which would return the column as `firstletter`. The
