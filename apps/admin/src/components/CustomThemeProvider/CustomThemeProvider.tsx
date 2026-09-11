@@ -12,10 +12,17 @@ import {
 export const CustomThemeProvider: React.FC<PropsWithChildren> = ({
     children,
 }) => {
-    const [savedTheme, setSavedTheme] = usePersistedState<SavedTheme>(
+    const [stored, setSavedTheme] = usePersistedState<SavedTheme>(
         'theme',
         SavedTheme.SYSTEM,
     );
+
+    // Anything else served from this origin can leave its own value under
+    // `theme` — one left it JSON-encoded, as '"system"' — and MUI throws on a
+    // mode it does not know, taking the whole dashboard down with it.
+    const savedTheme = Object.values(SavedTheme).includes(stored)
+        ? stored
+        : SavedTheme.SYSTEM;
 
     const systemPrefersDark = useMediaQuery('(prefers-color-scheme: dark)');
 
