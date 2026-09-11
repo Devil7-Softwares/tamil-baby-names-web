@@ -155,6 +155,66 @@ describe('configuring an agent', () => {
     });
 });
 
+// The dialog sent these from the start and the service dropped them, so every
+// agent ran at its provider's default whatever the form said.
+describe('how many requests an agent takes at once', () => {
+    it('is saved when the agent is created', async () => {
+        const { service, store } = build();
+
+        const saved = await service.create({ ...created, concurrency: 2 });
+
+        expect(saved.concurrency).toBe(2);
+        expect(store[0].concurrency).toBe(2);
+    });
+
+    // One at a time is how the dialog says "not in parallel".
+    it('keeps one at a time as a choice of its own', async () => {
+        const { service } = build();
+
+        expect(
+            (await service.create({ ...created, concurrency: 1 })).concurrency,
+        ).toBe(1);
+    });
+
+    it('is changed, cleared or left alone on update', async () => {
+        const { service, store } = build([agent({ id: 1, concurrency: 4 })]);
+
+        await service.update({ id: 1, name: 'Renamed' });
+        expect(store[0].concurrency).toBe(4);
+
+        await service.update({ id: 1, concurrency: 2 });
+        expect(store[0].concurrency).toBe(2);
+
+        // Null defers to the provider rather than meaning "unchanged".
+        await service.update({ id: 1, concurrency: null });
+        expect(store[0].concurrency).toBeNull();
+    });
+});
+
+describe('what an agent costs', () => {
+    it('saves its prices, and clears them with null', async () => {
+        const { service, store } = build();
+
+        const saved = await service.create({
+            ...created,
+            inputPrice: 3,
+            outputPrice: 15,
+        });
+
+        expect(saved).toMatchObject({ inputPrice: 3, outputPrice: 15 });
+
+        await service.update({ id: saved.id, name: 'Renamed' });
+        expect(store[0]).toMatchObject({ inputPrice: 3, outputPrice: 15 });
+
+        await service.update({
+            id: saved.id,
+            inputPrice: null,
+            outputPrice: null,
+        });
+        expect(store[0]).toMatchObject({ inputPrice: null, outputPrice: null });
+    });
+});
+
 describe('changing an agent', () => {
     it('leaves the saved key alone when none is sent', async () => {
         const { service, store } = build();

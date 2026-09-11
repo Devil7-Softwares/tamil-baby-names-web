@@ -242,6 +242,7 @@ export type AgentDraft = Pick<IAgent, 'slug' | 'name' | 'provider' | 'model'> &
             | 'keyTag'
             | 'options'
             | 'enabled'
+            | 'concurrency'
             | 'inputPrice'
             | 'outputPrice'
         >

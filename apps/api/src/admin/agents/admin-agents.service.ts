@@ -88,6 +88,7 @@ export class AdminAgentsService {
             model: input.model,
             baseUrl: input.baseUrl,
             options: input.options,
+            concurrency: input.concurrency ?? null,
             inputPrice: input.inputPrice ?? null,
             outputPrice: input.outputPrice ?? null,
             enabled: input.enabled,
@@ -113,6 +114,10 @@ export class AdminAgentsService {
             ...(input.baseUrl === undefined ? {} : { baseUrl: input.baseUrl }),
             ...(input.options === undefined ? {} : { options: input.options }),
             ...(input.enabled === undefined ? {} : { enabled: input.enabled }),
+            // Null is a choice — defer to the provider — not an absence.
+            ...(input.concurrency === undefined
+                ? {}
+                : { concurrency: input.concurrency }),
             ...(input.inputPrice === undefined
                 ? {}
                 : { inputPrice: input.inputPrice }),
