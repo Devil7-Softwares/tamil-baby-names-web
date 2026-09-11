@@ -2,6 +2,7 @@ import './AutoLetters.scss';
 
 import {
     getBirthDate,
+    getFollowOnLettersForName,
     getLunarMansion,
     getLunarMansionIndex,
     getMoonSign,
@@ -52,6 +53,8 @@ export const AutoLetters: React.FC = () => {
     const [tob, setTob] = useFilterState('tob');
     const [timezone, setTimezone] = useFilterState('tz');
     const [panjangam, setPanjangam] = useFilterState('panjangam');
+    const [followOnLetters, setFollowOnLetters] =
+        useFilterState('followOnLetters');
 
     const [dateTimeOfBirth, setDateTimeOfBirth] = useDraft(tob, setTob);
 
@@ -84,6 +87,7 @@ export const AutoLetters: React.FC = () => {
                 en: getStartingLettersForName(lunarMansionIndex, 'en'),
                 ta: getStartingLettersForName(lunarMansionIndex, 'ta'),
             } as Record<T, string[]>,
+            followOn: getFollowOnLettersForName(lunarMansionIndex),
         };
     }, [dateTimeOfBirth, timezone, panjangam]);
 
@@ -181,6 +185,34 @@ export const AutoLetters: React.FC = () => {
                         <div className='variants'>
                             <div>{astro.letters.ta.join(', ')}</div>
                             <div>{astro.letters.en.join(', ')}</div>
+                        </div>
+                    </>
+                )}
+                {astro && astro.followOn.length > 0 && (
+                    <>
+                        <label>தொடர் எழுத்துக்கள் / Follow-on Letters</label>
+                        <div>{astro.followOn.join(', ')}</div>
+
+                        {/* A fallback, as every source uses them: the search
+                            stays on the mansion's own letters unless asked. */}
+                        <label>தேடலில் / In Search</label>
+                        <div className='choices'>
+                            <Button
+                                checked={!followOnLetters}
+                                ta='முதன்மை மட்டும்'
+                                onCheckedChange={() =>
+                                    setFollowOnLetters(false)
+                                }
+                            >
+                                Main Only
+                            </Button>
+                            <Button
+                                checked={followOnLetters}
+                                ta='தொடர் எழுத்தும் சேர்த்து'
+                                onCheckedChange={() => setFollowOnLetters(true)}
+                            >
+                                Include Follow-on
+                            </Button>
                         </div>
                     </>
                 )}
